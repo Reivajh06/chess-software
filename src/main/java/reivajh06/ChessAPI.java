@@ -6,7 +6,7 @@ import io.javalin.http.staticfiles.Location;
 
 public class ChessAPI {
 
-	private final int PORT = 8080;
+	private final int PORT = 7070;
 	private Javalin server;
 
 	public ChessAPI() {
