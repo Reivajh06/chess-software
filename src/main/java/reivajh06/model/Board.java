@@ -6,13 +6,16 @@ import java.util.Map;
 public class Board {
 
 	//Tile -> null if does not contain any piece. Could be changed to a Tiles enum
-	private Map<String, Piece> tiles;
-
+	private final Map<String, Piece> tiles;
 
 	public Board(PieceColor userColor) {
 		tiles = new HashMap<>();
 
 		allocatePieces(userColor);
+	}
+
+	public Piece removeFromTile(String tile) {
+		return tiles.replace(tile, null);
 	}
 
 	private void allocatePieces(PieceColor userColor) {
