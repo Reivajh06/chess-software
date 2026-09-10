@@ -1,9 +1,14 @@
 package reivajh06;
 
+import reivajh06.model.Board;
+import reivajh06.model.PieceColor;
+
 public class Launcher {
 
 	static void main(String[] args) {
-		System.out.println(Character.toString((char)0x61));
 		new ChessAPI().start();
+		Board board = new Board(PieceColor.BLACK);
+
+		board.debug();
 	}
 }
