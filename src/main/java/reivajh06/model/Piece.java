@@ -2,8 +2,6 @@ package reivajh06.model;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Locale;
-
 public record Piece(PieceType type, PieceColor color) {
 
 	public String getCode() {
