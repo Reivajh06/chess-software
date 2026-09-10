@@ -3,6 +3,7 @@ package reivajh06;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
+import reivajh06.endpoints.*;
 
 public class ChessAPI {
 
@@ -20,25 +21,14 @@ public class ChessAPI {
 	}
 
 	public void configureEndpoints(JavalinConfig config) {
+		//Creates get endpoints for every file inside web folder
 		config.staticFiles.add("/web", Location.CLASSPATH);
-		loadWebPage(config);
-	}
 
-	private void loadWebPage(JavalinConfig config) {
-
-		/**configRoutes.get("/", ctx -> {
-			ctx.contentType("text/html");
-			ctx.result(Files.readString(new File("web/static/chatbot.html").toPath()));
-		});
-
-		server.get("/resource/{type}", ctx -> {
-			String type = ctx.pathParam("type");
-			if(type.equalsIgnoreCase("css")) {
-				ctx.contentType("text/css");
-			} else {
-				ctx.contentType("text/javascript");
-			}
-			ctx.result(Files.readString(new File("web/static/chatbot." + type).toPath()));
-		});**/
+		config.routes.get("/api/game-options", new GetGameOptions());
+		config.routes.post("/api/games", new PostCreateGame());
+		config.routes.get("/api/games/{gameId}", new GetGameStatus());
+		config.routes.get("/api/games/{gameId}/legal-moves?from={square}", new GetLegalMoves());
+		config.routes.post("/api/games/{gameId}/moves", new PostSubmitMove());
+		config.routes.post("/api/games/{gameId}/turns/advance", new PostNextMove());
 	}
 }
