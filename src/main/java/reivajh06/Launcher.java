@@ -7,7 +7,7 @@ public class Launcher {
 
 	static void main(String[] args) {
 		new ChessAPI().start();
-		Board board = new Board(PieceColor.BLACK);
+		Board board = new Board();
 
 		board.debug();
 	}

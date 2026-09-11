@@ -3,7 +3,7 @@ package reivajh06.model;
 public enum GameStatus {
 
     ACTIVE,
-    WIN,
-    LOSE,
+    WHITE_WIN,
+    BLACK_WIN,
     DRAW
 }

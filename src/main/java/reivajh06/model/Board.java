@@ -8,24 +8,19 @@ public class Board {
 	//Tile -> null if does not contain any piece. Could be changed to a Tiles enum
 	private final Map<String, Piece> tiles;
 
-	public Board(PieceColor userColor) {
+	public Board() {
 		tiles = new HashMap<>();
 
-		allocatePieces(userColor);
+		allocatePieces(PieceColor.BLACK);
+		allocatePieces(PieceColor.WHITE);
 	}
 
 	public Piece removeFromTile(String tile) {
 		return tiles.replace(tile, null);
 	}
 
-	private void allocatePieces(PieceColor userColor) {
-		allocatePieces(true, userColor == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
-		fillMiddle();
-		allocatePieces(false, userColor);
-	}
-
-	private void allocatePieces(boolean placedFront, PieceColor color) {
-		if(placedFront) {
+	private void allocatePieces(PieceColor color) {
+		if(color == PieceColor.BLACK) {
 			for(int i = 0; i < 8; i++) {						//Unicode based
 				tiles.put(Character.toString(0x61 + i) + 7, new Piece(PieceType.PAWN, color));
 			}
@@ -65,12 +60,12 @@ public class Board {
 	}
 
 	public void debug() {
-		for(int i = 1; i <= 8; i++) {
+		for(int i = 8; i > 0; i--) {
 			StringBuilder row = new StringBuilder();
 
 			for(int j = 0; j < 8; j++) {
 				Piece p = tiles.get(Character.toString(0x61 + j) + i);
-				row.append(p == null ? "null" : p.type());
+				row.append(p == null ? "null" : String.valueOf(p.color().name().charAt(0)) + String.valueOf(p.type().name().charAt(0)));
 				row.append(" ");
 			}
 
