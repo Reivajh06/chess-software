@@ -3,11 +3,13 @@ package reivajh06;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
+import reivajh06.model.Game;
 //import reivajh06.endpoints.*;
 
 public class ChessAPI {
 
 	private static final int PORT = 5000;
+	private static Game game;
 	private Javalin server;
 
 	public ChessAPI() {

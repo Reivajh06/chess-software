@@ -12,6 +12,7 @@ public class Board {
 		tiles = new HashMap<>();
 
 		allocatePieces(PieceColor.BLACK);
+		fillMiddle();
 		allocatePieces(PieceColor.WHITE);
 	}
 
