@@ -1,12 +1,14 @@
 package reivajh06.model;
 
+import reivajh06.model.pieces.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class Board {
 
 	//Tile -> null if does not contain any piece. Could be changed to a Tiles enum
-	private final Map<String, Piece> tiles;
+	private final Map<Tile, Piece> tiles;
 
 	public Board() {
 		tiles = new HashMap<>();
@@ -16,46 +18,37 @@ public class Board {
 		allocatePieces(PieceColor.WHITE);
 	}
 
-	public Piece removeFromTile(String tile) {
+	public Piece removeFromTile(Tile tile) {
 		return tiles.replace(tile, null);
 	}
 
 	private void allocatePieces(PieceColor color) {
+		int pawnRow = 2;
+		int kingRow = 1;
+
 		if(color == PieceColor.BLACK) {
-			for(int i = 0; i < 8; i++) {						//Unicode based
-				tiles.put(Character.toString(0x61 + i) + 7, new Piece(PieceType.PAWN, color));
-			}
-
-			tiles.put("a8", new Piece(PieceType.ROOK, color));
-			tiles.put("b8", new Piece(PieceType.HORSE, color));
-			tiles.put("c8", new Piece(PieceType.BISHOP, color));
-			tiles.put("d8", new Piece(PieceType.QUEEN, color));
-			tiles.put("e8", new Piece(PieceType.KING, color));
-			tiles.put("f8", new Piece(PieceType.BISHOP, color));
-			tiles.put("g8", new Piece(PieceType.HORSE, color));
-			tiles.put("h8", new Piece(PieceType.ROOK, color));
-
-			return;
+			pawnRow = 7;
+			kingRow = 8;
 		}
 
 		for(int i = 0; i < 8; i++) {						//Unicode based
-			tiles.put(Character.toString(0x61 + i) + 2, new Piece(PieceType.PAWN, color));
+			tiles.put(new Tile(Character.toString(0x61 + i), pawnRow), new Pawn(color));
 		}
 
-		tiles.put("a1", new Piece(PieceType.ROOK, color));
-		tiles.put("b1", new Piece(PieceType.HORSE, color));
-		tiles.put("c1", new Piece(PieceType.BISHOP, color));
-		tiles.put("d1", new Piece(PieceType.QUEEN, color));
-		tiles.put("e1", new Piece(PieceType.KING, color));
-		tiles.put("f1", new Piece(PieceType.BISHOP, color));
-		tiles.put("g1", new Piece(PieceType.HORSE, color));
-		tiles.put("h1", new Piece(PieceType.ROOK, color));
+		tiles.put(new Tile("a", kingRow), new Rook(color));
+		tiles.put(new Tile("b", kingRow), new Knight(color));
+		tiles.put(new Tile("c", kingRow), new Bishop(color));
+		tiles.put(new Tile("d", kingRow), new Queen(color));
+		tiles.put(new Tile("e", kingRow), new King(color));
+		tiles.put(new Tile("f", kingRow), new Bishop(color));
+		tiles.put(new Tile("g", kingRow), new Knight(color));
+		tiles.put(new Tile("h", kingRow), new Rook(color));
 	}
 
 	private void fillMiddle() {
 		for(int i = 3; i <= 6; i++) {
 			for(int j = 0; j < 8; j++) {
-				tiles.put(Character.toString(0x61 + j) + i, null);
+				tiles.put(new Tile(Character.toString(0x61 + j), i), null);
 			}
 		}
 	}
@@ -65,8 +58,8 @@ public class Board {
 			StringBuilder row = new StringBuilder();
 
 			for(int j = 0; j < 8; j++) {
-				Piece p = tiles.get(Character.toString(0x61 + j) + i);
-				row.append(p == null ? "null" : String.valueOf(p.color().name().charAt(0)) + String.valueOf(p.type().name().charAt(0)));
+				Piece p = tiles.get(new Tile(Character.toString(0x61 + j), i));
+				row.append(p == null ? "null" : p.toString());
 				row.append(" ");
 			}
 

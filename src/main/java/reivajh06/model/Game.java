@@ -1,5 +1,7 @@
 package reivajh06.model;
 
+import reivajh06.model.pieces.Piece;
+
 import java.util.ArrayList;
 import java.util.List;
 
