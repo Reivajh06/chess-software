@@ -1,5 +1,6 @@
 package reivajh06.model;
 
+import reivajh06.model.pieces.Pawn;
 import reivajh06.model.pieces.Piece;
 
 import java.util.ArrayList;
@@ -24,5 +25,16 @@ public class Game {
         whiteEaten = new ArrayList<>();
         blackEaten = new ArrayList<>();
         board = new Board();
+    }
+
+    public void move(Tile from, Tile to) {
+        if(board.pieceAt(from) instanceof Pawn pawn) pawn.finishStartMove();
+
+        board.move(from, to);
+    }
+
+    public void debug() {
+        board.debug();
+        System.out.println();
     }
 }

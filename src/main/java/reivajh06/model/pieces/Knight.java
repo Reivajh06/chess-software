@@ -1,5 +1,7 @@
 package reivajh06.model.pieces;
 
+import reivajh06.model.Tile;
+
 import java.util.List;
 
 public class Knight extends Piece {
@@ -15,12 +17,12 @@ public class Knight extends Piece {
 	}
 
 	@Override
-	public String getCode() {
-		return color.name().charAt(0) + name();
+	public List<Tile> possibleMoves(Tile currentTile) {
+		return List.of();
 	}
 
 	@Override
-	public List<String> possibleMoves(String currentTile) {
-		return List.of();
+	public String getCode() {
+		return color.name().charAt(0) + name();
 	}
 }

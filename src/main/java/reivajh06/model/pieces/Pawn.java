@@ -1,5 +1,7 @@
 package reivajh06.model.pieces;
 
+import reivajh06.model.Tile;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,10 +15,18 @@ public class Pawn extends Piece {
 		startingMove = true;
 	}
 
-	@Override
-	public List<String> possibleMoves(String currentTile) {
-		List<String> moveset = new ArrayList<>();
-		return moveset;
+	public void finishStartMove() {
+		startingMove = false;
+	}
 
+	@Override
+	public List<Tile> possibleMoves(Tile currentTile) {
+		List<Tile> moveset = new ArrayList<>();
+
+		moveset.add(new Tile(currentTile.col(), currentTile.row() + movementFactor));
+
+		if(startingMove) moveset.add(new Tile(currentTile.col(), currentTile.row() + movementFactor * 2));
+
+		return moveset;
 	}
 }

@@ -1,5 +1,7 @@
 package reivajh06.model.pieces;
 
+import reivajh06.model.Tile;
+
 import java.util.List;
 
 public class Queen extends Piece {
@@ -10,7 +12,7 @@ public class Queen extends Piece {
 	}
 
 	@Override
-	public List<String> possibleMoves(String currentTile) {
+	public List<Tile> possibleMoves(Tile currentTile) {
 		return List.of();
 	}
 }

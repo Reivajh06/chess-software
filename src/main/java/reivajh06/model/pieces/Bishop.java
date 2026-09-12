@@ -1,5 +1,8 @@
 package reivajh06.model.pieces;
 
+import reivajh06.model.Tile;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class Bishop extends Piece {
@@ -10,7 +13,13 @@ public class Bishop extends Piece {
 	}
 
 	@Override
-	public List<String> possibleMoves(String currentTile) {
-		return List.of();
+	public List<Tile> possibleMoves(Tile currentTile) {
+		List<Tile> moveset = new ArrayList<>();
+
+		return moveset;
+	}
+
+	private List<Tile> upperLeftDiagonal(Tile currentTile) {
+	 return List.of();
 	}
 }
