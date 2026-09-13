@@ -1,8 +1,9 @@
 package reivajh06.model.pieces;
 
-import reivajh06.model.Tile;
 import reivajh06.model.movement.Move;
+import reivajh06.model.movement.MoveBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Knight extends Piece {
@@ -24,6 +25,17 @@ public class Knight extends Piece {
 
 	@Override
 	public List<Move> moveset() {
-		return List.of();
+		List<Move> moveset = new ArrayList<>();
+
+		moveset.add(new MoveBuilder().forward().forward().left().repetitions(1).build());
+		moveset.add(new MoveBuilder().forward().forward().right().repetitions(1).build());
+		moveset.add(new MoveBuilder().forward().left().left().repetitions(1).build());
+		moveset.add(new MoveBuilder().forward().right().right().repetitions(1).build());
+		moveset.add(new MoveBuilder().backward().backward().left().repetitions(1).build());
+		moveset.add(new MoveBuilder().backward().backward().right().repetitions(1).build());
+		moveset.add(new MoveBuilder().backward().left().left().repetitions(1).build());
+		moveset.add(new MoveBuilder().backward().right().right().repetitions(1).build());
+
+		return moveset;
 	}
 }

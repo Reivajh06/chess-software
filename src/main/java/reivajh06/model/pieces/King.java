@@ -17,6 +17,15 @@ public class King extends Piece {
 	public List<Move> moveset() {
 		List<Move> moveset = new ArrayList<>();
 
+		moveset.add(new MoveBuilder().forward().repetitions(1).build());
+		moveset.add(new MoveBuilder().backward().repetitions(1).build());
+		moveset.add(new MoveBuilder().left().repetitions(1).build());
+		moveset.add(new MoveBuilder().right().repetitions(1).build());
+		moveset.add(new MoveBuilder().forwardLeft().repetitions(1).build());
+		moveset.add(new MoveBuilder().forwardRight().repetitions(1).build());
+		moveset.add(new MoveBuilder().backwardLeft().repetitions(1).build());
+		moveset.add(new MoveBuilder().backwardRight().repetitions(1).build());
+
 		return moveset;
 	}
 }
