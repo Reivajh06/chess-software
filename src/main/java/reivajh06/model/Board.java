@@ -3,14 +3,13 @@ package reivajh06.model;
 import reivajh06.model.movement.Move;
 import reivajh06.model.pieces.*;
 
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Board {
 
-	//TODO CHANGE THE CODIFICATION OF COLUMNS INTO AN ENUM.
-	//TODO MAKE THE BOARD HAVE THE LOGIC OF GETTING THE TILES A PIECE CAN MOVE LIKE moveTiles(Tile from, Direction[] steps)
-	//TODO MAKE AN ENUM DIRECTION ? BASED ON FORWARD BACKWARD LEFT AND RIGHT
 	public static final int ALL_TILES = 8;
 
 
@@ -35,26 +34,38 @@ public class Board {
 		return tiles.get(tile);
 	}
 
-	public Tile pieceLocation(Piece piece) {
-		return tiles.entrySet().stream()
-				.filter(e -> e.getValue().equals(piece))
-				.map(Map.Entry::getKey)
-				.findFirst()
-				.orElse(null);
-	}
-
-	public List<Tile> possiblePieceMoves(Piece piece) {
+	public List<Tile> possiblePieceMoves(Tile tile) {
+		Piece piece = pieceAt(tile);
 		List<Tile> possibleTiles = new ArrayList<>();
 		List<Move> moveset = piece.moveset();
 		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
 
-		Tile currentTile = pieceLocation(piece);
-
 		for(Move move : moveset) {
 			int n = 0;
 
-			while(n < move.repetitions() && validTile(currentTile)) {
+			int i = (tile.col().code + move.x() * movementFactor) - BoardColumns.A.code;
 
+			if(i < 0 || i >= 8) continue;
+
+			Tile t = new Tile(
+					BoardColumns.values()[i % 8],
+					tile.row() + move.y() * movementFactor
+			);
+
+			while(n < move.repetitions() && validTile(t)) {
+				possibleTiles.add(t);
+				n++;
+
+				if(n >= move.repetitions()) break;
+
+				i = ((t.col().code + move.x() * movementFactor) - BoardColumns.A.code);
+
+				if(i < 0 || i >= 8) break;
+
+				t = new Tile(
+						BoardColumns.values()[i % 8],
+						t.row() + move.y() * movementFactor
+				);
 			}
 		}
 
@@ -62,10 +73,11 @@ public class Board {
 	}
 
 	private boolean validTile(Tile t) {
-		return true;
-		/*return BoardColumns.valueOf(t.col().toUpperCase()).code < 8 &&
-				BoardColumns.valueOf(t.col().toUpperCase()).code > 0 &&;
-	*/}
+		return t.col().code <= BoardColumns.H.code &&
+				t.col().code >= BoardColumns.A.code &&
+				t.row() <= 8 &&
+				t.row() > 0;
+	}
 
 	private void allocatePieces(PieceColor color) {
 		int pawnRow = 2;
@@ -77,23 +89,23 @@ public class Board {
 		}
 
 		for(int i = 0; i < 8; i++) {						//Unicode based
-			tiles.put(new Tile(Character.toString(BoardColumns.A.code + i), pawnRow), new Pawn(color));
+			tiles.put(new Tile(BoardColumns.values()[i], pawnRow), new Pawn(color));
 		}
 
-		tiles.put(new Tile("a", kingRow), new Rook(color));
-		tiles.put(new Tile("b", kingRow), new Knight(color));
-		tiles.put(new Tile("c", kingRow), new Bishop(color));
-		tiles.put(new Tile("d", kingRow), new Queen(color));
-		tiles.put(new Tile("e", kingRow), new King(color));
-		tiles.put(new Tile("f", kingRow), new Bishop(color));
-		tiles.put(new Tile("g", kingRow), new Knight(color));
-		tiles.put(new Tile("h", kingRow), new Rook(color));
+		tiles.put(new Tile(BoardColumns.A, kingRow), new Rook(color));
+		tiles.put(new Tile(BoardColumns.B, kingRow), new Knight(color));
+		tiles.put(new Tile(BoardColumns.C, kingRow), new Bishop(color));
+		tiles.put(new Tile(BoardColumns.D, kingRow), new Queen(color));
+		tiles.put(new Tile(BoardColumns.E, kingRow), new King(color));
+		tiles.put(new Tile(BoardColumns.F, kingRow), new Bishop(color));
+		tiles.put(new Tile(BoardColumns.G, kingRow), new Knight(color));
+		tiles.put(new Tile(BoardColumns.H, kingRow), new Rook(color));
 	}
 
 	private void fillMiddle() {
 		for(int i = 3; i <= 6; i++) {
 			for(int j = 0; j < 8; j++) {
-				tiles.put(new Tile(Character.toString(BoardColumns.A.code + j), i), null);
+				tiles.put(new Tile(BoardColumns.values()[j], i), null);
 			}
 		}
 	}
@@ -103,7 +115,7 @@ public class Board {
 			StringBuilder row = new StringBuilder();
 
 			for(int j = 0; j < 8; j++) {
-				Piece p = tiles.get(new Tile(Character.toString(BoardColumns.values()[j].code), i));
+				Piece p = tiles.get(new Tile(BoardColumns.values()[j], i));
 				row.append(p == null ? ".." : p.toString());
 				row.append(" ");
 			}
