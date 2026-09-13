@@ -18,10 +18,10 @@ public class Bishop extends Piece {
 	public List<Move> moveset() {
 		List<Move> moveset = new ArrayList<>();
 
-		moveset.add(new MoveBuilder().forwardLeft().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().forwardRight().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().backwardLeft().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().backwardRight().repetitions(Board.ALL_TILES).build());
+		moveset.add(new MoveBuilder().forwardLeft().allRepetitions().build());
+		moveset.add(new MoveBuilder().forwardRight().allRepetitions().build());
+		moveset.add(new MoveBuilder().backwardLeft().allRepetitions().build());
+		moveset.add(new MoveBuilder().backwardRight().allRepetitions().build());
 
 		return moveset;
 	}

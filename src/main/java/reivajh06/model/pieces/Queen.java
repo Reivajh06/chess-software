@@ -18,14 +18,14 @@ public class Queen extends Piece {
 	public List<Move> moveset() {
 		List<Move> moveset = new ArrayList<>();
 
-		moveset.add(new MoveBuilder().forward().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().backward().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().left().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().right().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().forwardLeft().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().forwardRight().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().backwardLeft().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().backwardRight().repetitions(Board.ALL_TILES).build());
+		moveset.add(new MoveBuilder().forward().allRepetitions().build());
+		moveset.add(new MoveBuilder().backward().allRepetitions().build());
+		moveset.add(new MoveBuilder().left().allRepetitions().build());
+		moveset.add(new MoveBuilder().right().allRepetitions().build());
+		moveset.add(new MoveBuilder().forwardLeft().allRepetitions().build());
+		moveset.add(new MoveBuilder().forwardRight().allRepetitions().build());
+		moveset.add(new MoveBuilder().backwardLeft().allRepetitions().build());
+		moveset.add(new MoveBuilder().backwardRight().allRepetitions().build());
 
 		return moveset;
 	}

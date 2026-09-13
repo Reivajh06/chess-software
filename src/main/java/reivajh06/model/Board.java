@@ -10,9 +10,6 @@ import java.util.Map;
 
 public class Board {
 
-	public static final int ALL_TILES = 8;
-
-
 	private final Map<Tile, Piece> tiles;
 
 
@@ -35,6 +32,7 @@ public class Board {
 	}
 
 	public List<Tile> possiblePieceMoves(Tile tile) {
+		//TODO refactor this method so it gets way cleaner than this
 		Piece piece = pieceAt(tile);
 		List<Tile> possibleTiles = new ArrayList<>();
 		List<Move> moveset = piece.moveset();

@@ -2,6 +2,8 @@ package reivajh06.model.movement;
 
 public class MoveBuilder {
 
+	public static final int ALL_TILES = 8;
+
 	private int x;
 	private int y;
 	private int nRepetitions;
@@ -52,8 +54,11 @@ public class MoveBuilder {
 
 	public MoveBuilder repetitions(int nRepetitions) {
 		this.nRepetitions = nRepetitions;
-
 		return this;
+	}
+
+	public MoveBuilder allRepetitions() {
+		return repetitions(ALL_TILES);
 	}
 
 	public Move build() {

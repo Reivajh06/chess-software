@@ -18,10 +18,10 @@ public class Rook extends Piece {
 	public List<Move> moveset() {
 		List<Move> moveset = new ArrayList<>();
 
-		moveset.add(new MoveBuilder().forward().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().backward().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().left().repetitions(Board.ALL_TILES).build());
-		moveset.add(new MoveBuilder().right().repetitions(Board.ALL_TILES).build());
+		moveset.add(new MoveBuilder().forward().allRepetitions().build());
+		moveset.add(new MoveBuilder().backward().allRepetitions().build());
+		moveset.add(new MoveBuilder().left().allRepetitions().build());
+		moveset.add(new MoveBuilder().right().allRepetitions().build());
 
 		return moveset;
 	}
