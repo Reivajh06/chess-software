@@ -1,9 +1,10 @@
 package reivajh06.model;
 
+import reivajh06.model.movement.Move;
 import reivajh06.model.pieces.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class Board {
 
@@ -33,6 +34,38 @@ public class Board {
 	public Piece pieceAt(Tile tile) {
 		return tiles.get(tile);
 	}
+
+	public Tile pieceLocation(Piece piece) {
+		return tiles.entrySet().stream()
+				.filter(e -> e.getValue().equals(piece))
+				.map(Map.Entry::getKey)
+				.findFirst()
+				.orElse(null);
+	}
+
+	public List<Tile> possiblePieceMoves(Piece piece) {
+		List<Tile> possibleTiles = new ArrayList<>();
+		List<Move> moveset = piece.moveset();
+		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
+
+		Tile currentTile = pieceLocation(piece);
+
+		for(Move move : moveset) {
+			int n = 0;
+
+			while(n < move.repetitions() && validTile(currentTile)) {
+
+			}
+		}
+
+		return possibleTiles;
+	}
+
+	private boolean validTile(Tile t) {
+		return true;
+		/*return BoardColumns.valueOf(t.col().toUpperCase()).code < 8 &&
+				BoardColumns.valueOf(t.col().toUpperCase()).code > 0 &&;
+	*/}
 
 	private void allocatePieces(PieceColor color) {
 		int pawnRow = 2;
