@@ -7,21 +7,14 @@ import java.util.Map;
 
 public class Board {
 
-	//Unicode codification of columns, first is a, then b...
-	private static final Map<Character, Integer> COLUMNSCODES = new HashMap<>(
-			Map.of(
-					'a', 0x61,
-					'b', 0x62,
-					'c' , 0x63,
-					'd', 0x64,
-					'e', 0x65,
-					'f', 0x66,
-					'g', 0x67,
-					'h', 0x68
-			)
-	);
+	//TODO CHANGE THE CODIFICATION OF COLUMNS INTO AN ENUM.
+	//TODO MAKE THE BOARD HAVE THE LOGIC OF GETTING THE TILES A PIECE CAN MOVE LIKE moveTiles(Tile from, Direction[] steps)
+	//TODO MAKE AN ENUM DIRECTION ? BASED ON FORWARD BACKWARD LEFT AND RIGHT
+	public static final int ALL_TILES = 8;
+
 
 	private final Map<Tile, Piece> tiles;
+
 
 	public Board() {
 		tiles = new HashMap<>();
@@ -29,10 +22,6 @@ public class Board {
 		allocatePieces(PieceColor.BLACK);
 		fillMiddle();
 		allocatePieces(PieceColor.WHITE);
-	}
-
-	public static int columnCode(char col) {
-		return COLUMNSCODES.get(col);
 	}
 
 	public Piece move(Tile from, Tile to) {
@@ -55,7 +44,7 @@ public class Board {
 		}
 
 		for(int i = 0; i < 8; i++) {						//Unicode based
-			tiles.put(new Tile(Character.toString(COLUMNSCODES.get('a') + i), pawnRow), new Pawn(color));
+			tiles.put(new Tile(Character.toString(BoardColumns.A.code + i), pawnRow), new Pawn(color));
 		}
 
 		tiles.put(new Tile("a", kingRow), new Rook(color));
@@ -71,7 +60,7 @@ public class Board {
 	private void fillMiddle() {
 		for(int i = 3; i <= 6; i++) {
 			for(int j = 0; j < 8; j++) {
-				tiles.put(new Tile(Character.toString(COLUMNSCODES.get('a') + j), i), null);
+				tiles.put(new Tile(Character.toString(BoardColumns.A.code + j), i), null);
 			}
 		}
 	}
@@ -81,7 +70,7 @@ public class Board {
 			StringBuilder row = new StringBuilder();
 
 			for(int j = 0; j < 8; j++) {
-				Piece p = tiles.get(new Tile(Character.toString(COLUMNSCODES.get('a') + j), i));
+				Piece p = tiles.get(new Tile(Character.toString(BoardColumns.values()[j].code), i));
 				row.append(p == null ? ".." : p.toString());
 				row.append(" ");
 			}

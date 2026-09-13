@@ -1,6 +1,7 @@
 package reivajh06.model.pieces;
 
 import reivajh06.model.Tile;
+import reivajh06.model.movement.Move;
 
 import java.util.List;
 
@@ -17,12 +18,12 @@ public class Knight extends Piece {
 	}
 
 	@Override
-	public List<Tile> possibleMoves(Tile currentTile) {
-		return List.of();
+	public String getCode() {
+		return color.name().charAt(0) + name();
 	}
 
 	@Override
-	public String getCode() {
-		return color.name().charAt(0) + name();
+	public List<Move> moveset() {
+		return List.of();
 	}
 }

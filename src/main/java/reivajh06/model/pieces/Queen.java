@@ -1,7 +1,8 @@
 package reivajh06.model.pieces;
 
-import reivajh06.model.Tile;
+import reivajh06.model.movement.Move;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Queen extends Piece {
@@ -12,7 +13,11 @@ public class Queen extends Piece {
 	}
 
 	@Override
-	public List<Tile> possibleMoves(Tile currentTile) {
-		return List.of();
+	public List<Move> moveset() {
+		List<Move> moveset = new ArrayList<>();
+
+
+
+		return moveset;
 	}
 }
