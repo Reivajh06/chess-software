@@ -12,7 +12,6 @@ public class Board {
 
 	private final Map<Tile, Piece> tiles;
 
-
 	public Board() {
 		tiles = new HashMap<>();
 
@@ -31,8 +30,12 @@ public class Board {
 		return tiles.get(tile);
 	}
 
+	public boolean hasPiece(Tile tile) {
+		return pieceAt(tile) != null;
+	}
+
 	public List<Tile> possiblePieceMoves(Tile tile) {
-		//TODO refactor this method so it gets way cleaner than this
+		//TODO refactor this and add pawn conditions
 		Piece piece = pieceAt(tile);
 		List<Tile> possibleTiles = new ArrayList<>();
 		List<Move> moveset = piece.moveset();
@@ -50,7 +53,11 @@ public class Board {
 					tile.row() + move.y() * movementFactor
 			);
 
+			if(hasPiece(t) && pieceAt(t).color() == piece.color()) continue;
+
 			while(n < move.repetitions() && validTile(t)) {
+				if(hasPiece(t) && pieceAt(t).color() == piece.color()) break;
+
 				possibleTiles.add(t);
 				n++;
 
@@ -68,6 +75,13 @@ public class Board {
 		}
 
 		return possibleTiles;
+	}
+
+	private boolean isDiagonalMove(Tile from, Tile to) {
+		int xOffset = Math.abs(from.row() - to.row());
+		int yOffset = Math.abs(from.col().code - to.col().code);
+
+		return (xOffset == 1) && (yOffset == 1);
 	}
 
 	private boolean validTile(Tile t) {
