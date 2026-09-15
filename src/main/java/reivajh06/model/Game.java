@@ -1,9 +1,5 @@
 package reivajh06.model;
 
-import reivajh06.model.pieces.Pawn;
-import reivajh06.model.pieces.Piece;
-import reivajh06.model.pieces.PieceColor;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,14 +31,14 @@ public class Game {
         board = new Board();
     }
 
-    public boolean move(Tile from, Tile to) {
+    public boolean move(Square from, Square to) {
         Piece p = board.pieceAt(from);
 
         if(colorTurn != p.color()) return false;
 
-        List<Tile> validTiles = board.possiblePieceMoves(from);
+        List<Square> validSquares = board.possiblePieceMoves(from);
 
-        if(!validTiles.contains(to)) return false;
+        if(!validSquares.contains(to)) return false;
 
         Piece pieceEaten = board.move(from, to);
 

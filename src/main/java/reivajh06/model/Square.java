@@ -2,9 +2,9 @@ package reivajh06.model;
 
 import org.jetbrains.annotations.NotNull;
 
-public record Tile(BoardColumns col, int row) {
+public record Square(BoardColumns col, int row) {
 
-	public Tile(String name) {
+	public Square(String name) {
 		this(BoardColumns.valueOf(name.substring(0, 1).toUpperCase()), name.charAt(1) - '0');
 	}
 

@@ -1,14 +1,16 @@
-package reivajh06.model.pieces;
+package reivajh06.model;
 
 import org.jetbrains.annotations.NotNull;
 import reivajh06.model.movement.Move;
 
 import java.util.List;
 
-public abstract class Piece {
+public class Piece {
 
-	protected PieceColor color;
-	protected String name;
+	private PieceColor color;
+	private PieceType type;
+	private String name;
+	private List<Move> moveset;
 
 	public Piece(PieceColor color) {
 		this.color = color;
@@ -26,7 +28,13 @@ public abstract class Piece {
 		return name;
 	}
 
-	public abstract List<Move> moveset();
+	public PieceType type() {
+		return type;
+	}
+
+	public void setMoveset(List<Move> moveset) {
+		this.moveset = moveset;
+	}
 
 	@NotNull
 	@Override

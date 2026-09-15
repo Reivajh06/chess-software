@@ -1,7 +1,6 @@
 package reivajh06.model;
 
 import reivajh06.model.movement.Move;
-import reivajh06.model.pieces.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +9,7 @@ import java.util.Map;
 
 public class Board {
 
-	private final Map<Tile, Piece> tiles;
+	private final Map<Square, Piece> tiles;
 
 	public Board() {
 		tiles = new HashMap<>();
@@ -20,37 +19,37 @@ public class Board {
 		allocatePieces(PieceColor.WHITE);
 	}
 
-	public Piece move(Tile from, Tile to) {
+	public Piece move(Square from, Square to) {
 		if(tiles.get(from) == null) return null;
 
 		return tiles.replace(to, tiles.remove(from));
 	}
 
-	public Piece pieceAt(Tile tile) {
-		return tiles.get(tile);
+	public Piece pieceAt(Square square) {
+		return tiles.get(square);
 	}
 
-	public boolean hasPiece(Tile tile) {
-		return pieceAt(tile) != null;
+	public boolean hasPiece(Square square) {
+		return pieceAt(square) != null;
 	}
 
-	public List<Tile> possiblePieceMoves(Tile tile) {
+	public List<Square> possiblePieceMoves(Square square) {
 		//TODO refactor this and add pawn conditions
-		Piece piece = pieceAt(tile);
-		List<Tile> possibleTiles = new ArrayList<>();
+		Piece piece = pieceAt(square);
+		List<Square> possibleSquares = new ArrayList<>();
 		List<Move> moveset = piece.moveset();
 		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
 
 		for(Move move : moveset) {
 			int n = 0;
 
-			int i = (tile.col().code + move.x() * movementFactor) - BoardColumns.A.code;
+			int i = (square.col().code + move.x() * movementFactor) - BoardColumns.A.code;
 
 			if(i < 0 || i >= 8) continue;
 
-			Tile t = new Tile(
+			Square t = new Square(
 					BoardColumns.values()[i % 8],
-					tile.row() + move.y() * movementFactor
+					square.row() + move.y() * movementFactor
 			);
 
 			if(hasPiece(t) && pieceAt(t).color() == piece.color()) continue;
@@ -58,7 +57,7 @@ public class Board {
 			while(n < move.repetitions() && validTile(t)) {
 				if(hasPiece(t) && pieceAt(t).color() == piece.color()) break;
 
-				possibleTiles.add(t);
+				possibleSquares.add(t);
 				n++;
 
 				if(n >= move.repetitions()) break;
@@ -67,24 +66,24 @@ public class Board {
 
 				if(i < 0 || i >= 8) break;
 
-				t = new Tile(
+				t = new Square(
 						BoardColumns.values()[i % 8],
 						t.row() + move.y() * movementFactor
 				);
 			}
 		}
 
-		return possibleTiles;
+		return possibleSquares;
 	}
 
-	private boolean isDiagonalMove(Tile from, Tile to) {
+	private boolean isDiagonalMove(Square from, Square to) {
 		int xOffset = Math.abs(from.row() - to.row());
 		int yOffset = Math.abs(from.col().code - to.col().code);
 
 		return (xOffset == 1) && (yOffset == 1);
 	}
 
-	private boolean validTile(Tile t) {
+	private boolean validTile(Square t) {
 		return t.col().code <= BoardColumns.H.code &&
 				t.col().code >= BoardColumns.A.code &&
 				t.row() <= 8 &&
@@ -101,23 +100,23 @@ public class Board {
 		}
 
 		for(int i = 0; i < 8; i++) {						//Unicode based
-			tiles.put(new Tile(BoardColumns.values()[i], pawnRow), new Pawn(color));
+			tiles.put(new Square(BoardColumns.values()[i], pawnRow), new Pawn(color));
 		}
 
-		tiles.put(new Tile(BoardColumns.A, kingRow), new Rook(color));
-		tiles.put(new Tile(BoardColumns.B, kingRow), new Knight(color));
-		tiles.put(new Tile(BoardColumns.C, kingRow), new Bishop(color));
-		tiles.put(new Tile(BoardColumns.D, kingRow), new Queen(color));
-		tiles.put(new Tile(BoardColumns.E, kingRow), new King(color));
-		tiles.put(new Tile(BoardColumns.F, kingRow), new Bishop(color));
-		tiles.put(new Tile(BoardColumns.G, kingRow), new Knight(color));
-		tiles.put(new Tile(BoardColumns.H, kingRow), new Rook(color));
+		tiles.put(new Square(BoardColumns.A, kingRow), new Rook(color));
+		tiles.put(new Square(BoardColumns.B, kingRow), new Knight(color));
+		tiles.put(new Square(BoardColumns.C, kingRow), new Bishop(color));
+		tiles.put(new Square(BoardColumns.D, kingRow), new Queen(color));
+		tiles.put(new Square(BoardColumns.E, kingRow), new King(color));
+		tiles.put(new Square(BoardColumns.F, kingRow), new Bishop(color));
+		tiles.put(new Square(BoardColumns.G, kingRow), new Knight(color));
+		tiles.put(new Square(BoardColumns.H, kingRow), new Rook(color));
 	}
 
 	private void fillMiddle() {
 		for(int i = 3; i <= 6; i++) {
 			for(int j = 0; j < 8; j++) {
-				tiles.put(new Tile(BoardColumns.values()[j], i), null);
+				tiles.put(new Square(BoardColumns.values()[j], i), null);
 			}
 		}
 	}
@@ -127,7 +126,7 @@ public class Board {
 			StringBuilder row = new StringBuilder();
 
 			for(int j = 0; j < 8; j++) {
-				Piece p = tiles.get(new Tile(BoardColumns.values()[j], i));
+				Piece p = tiles.get(new Square(BoardColumns.values()[j], i));
 				row.append(p == null ? ".." : p.toString());
 				row.append(" ");
 			}

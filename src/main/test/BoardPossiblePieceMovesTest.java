@@ -3,8 +3,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import reivajh06.model.Board;
-import reivajh06.model.Tile;
-import reivajh06.model.pieces.Piece;
+import reivajh06.model.Square;
+import reivajh06.model.Piece;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -31,13 +31,13 @@ class BoardPossiblePieceMovesTest {
 
 	@ParameterizedTest(name = "{index} => Tile {0}")
 	@MethodSource("startingPositions")
-	void possiblePieceMovesFromStartingPosition(Tile from, Set<Tile> expectedMoves) {
+	void possiblePieceMovesFromStartingPosition(Square from, Set<Square> expectedMoves) {
 		Piece piece = board.pieceAt(from);
 		assertNotNull(piece, "No piece found at starting tile " + from);
 
 		String pieceDescription = formatColor(piece) + " " + piece.getClass().getSimpleName();
 
-		List<Tile> calculatedMoves;
+		List<Square> calculatedMoves;
 
 		try {
 			calculatedMoves = board.possiblePieceMoves(from);
@@ -60,15 +60,15 @@ class BoardPossiblePieceMovesTest {
 			return;
 		}
 
-		Set<Tile> actualMoves = new HashSet<>(calculatedMoves);
+		Set<Square> actualMoves = new HashSet<>(calculatedMoves);
 
-		Set<Tile> correctMoves = new HashSet<>(actualMoves);
+		Set<Square> correctMoves = new HashSet<>(actualMoves);
 		correctMoves.retainAll(expectedMoves);
 
-		Set<Tile> incorrectMoves = new HashSet<>(actualMoves);
+		Set<Square> incorrectMoves = new HashSet<>(actualMoves);
 		incorrectMoves.removeAll(expectedMoves);
 
-		Set<Tile> missingMoves = new HashSet<>(expectedMoves);
+		Set<Square> missingMoves = new HashSet<>(expectedMoves);
 		missingMoves.removeAll(actualMoves);
 
 		System.out.println();
@@ -100,24 +100,24 @@ class BoardPossiblePieceMovesTest {
 		return Character.toUpperCase(color.charAt(0)) + color.substring(1);
 	}
 
-	private static String formatTiles(Collection<Tile> tiles) {
-		return tiles.stream()
+	private static String formatTiles(Collection<Square> squares) {
+		return squares.stream()
 				.sorted(
-						Comparator.comparingInt((Tile tile) -> tile.col().ordinal())
-								.thenComparingInt(Tile::row)
+						Comparator.comparingInt((Square square) -> square.col().ordinal())
+								.thenComparingInt(Square::row)
 				)
-				.map(Tile::toString)
+				.map(Square::toString)
 				.collect(Collectors.joining(", ", "[", "]"));
 	}
 
-	private static Set<Tile> tiles(String... names) {
+	private static Set<Square> tiles(String... names) {
 		return Stream.of(names)
-				.map(Tile::new)
+				.map(Square::new)
 				.collect(Collectors.toSet());
 	}
 
 	private static Arguments testCase(String from, String... expectedMoves) {
-		return Arguments.of(new Tile(from), tiles(expectedMoves));
+		return Arguments.of(new Square(from), tiles(expectedMoves));
 	}
 
 	static Stream<Arguments> startingPositions() {
