@@ -1,6 +1,5 @@
 package reivajh06.model.pieces;
 
-import reivajh06.model.Board;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveBuilder;
 

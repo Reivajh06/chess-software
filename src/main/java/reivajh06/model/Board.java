@@ -34,9 +34,20 @@ public class Board {
 		return pieceAt(tile) != null;
 	}
 
-	public List<Tile> possiblePieceMoves(Tile tile) {
+	public List<Tile> tilesWithPieces(PieceColor color) {
+		return tiles.entrySet().stream()
+				.filter(e -> {
+					Piece p = e.getValue();
+
+					return p != null && p.color() == color;
+				})
+				.map(Map.Entry::getKey)
+				.toList();
+	}
+
+	public List<Tile> possiblePieceMoves(Tile from) {
 		//TODO refactor this and add pawn conditions
-		Piece piece = pieceAt(tile);
+		Piece piece = pieceAt(from);
 		List<Tile> possibleTiles = new ArrayList<>();
 		List<Move> moveset = piece.moveset();
 		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
@@ -44,32 +55,37 @@ public class Board {
 		for(Move move : moveset) {
 			int n = 0;
 
-			int i = (tile.col().code + move.x() * movementFactor) - BoardColumns.A.code;
+			int i = (from.col().code + move.x() * movementFactor) - File.A.code;
 
 			if(i < 0 || i >= 8) continue;
 
-			Tile t = new Tile(
-					BoardColumns.values()[i % 8],
-					tile.row() + move.y() * movementFactor
+			Tile to = new Tile(
+					File.values()[i % 8],
+					from.row() + move.y() * movementFactor
 			);
 
-			if(hasPiece(t) && pieceAt(t).color() == piece.color()) continue;
+			while(n < move.repetitions() && validTile(to)) {
+				Piece p = pieceAt(to);
 
-			while(n < move.repetitions() && validTile(t)) {
-				if(hasPiece(t) && pieceAt(t).color() == piece.color()) break;
+				if(p != null) {
+					if(p.color() == piece.color()) break;
 
-				possibleTiles.add(t);
+				} else if(piece instanceof Pawn && isDiagonalMove(from, to)) break;
+
+				if(hasPiece(to) && pieceAt(to).color() == piece.color()) break;
+
+				possibleTiles.add(to);
 				n++;
 
 				if(n >= move.repetitions()) break;
 
-				i = ((t.col().code + move.x() * movementFactor) - BoardColumns.A.code);
+				i = ((to.col().code + move.x() * movementFactor) - File.A.code);
 
 				if(i < 0 || i >= 8) break;
 
-				t = new Tile(
-						BoardColumns.values()[i % 8],
-						t.row() + move.y() * movementFactor
+				to = new Tile(
+						File.values()[i % 8],
+						to.row() + move.y() * movementFactor
 				);
 			}
 		}
@@ -85,8 +101,8 @@ public class Board {
 	}
 
 	private boolean validTile(Tile t) {
-		return t.col().code <= BoardColumns.H.code &&
-				t.col().code >= BoardColumns.A.code &&
+		return t.col().code <= File.H.code &&
+				t.col().code >= File.A.code &&
 				t.row() <= 8 &&
 				t.row() > 0;
 	}
@@ -101,23 +117,23 @@ public class Board {
 		}
 
 		for(int i = 0; i < 8; i++) {						//Unicode based
-			tiles.put(new Tile(BoardColumns.values()[i], pawnRow), new Pawn(color));
+			tiles.put(new Tile(File.values()[i], pawnRow), new Pawn(color));
 		}
 
-		tiles.put(new Tile(BoardColumns.A, kingRow), new Rook(color));
-		tiles.put(new Tile(BoardColumns.B, kingRow), new Knight(color));
-		tiles.put(new Tile(BoardColumns.C, kingRow), new Bishop(color));
-		tiles.put(new Tile(BoardColumns.D, kingRow), new Queen(color));
-		tiles.put(new Tile(BoardColumns.E, kingRow), new King(color));
-		tiles.put(new Tile(BoardColumns.F, kingRow), new Bishop(color));
-		tiles.put(new Tile(BoardColumns.G, kingRow), new Knight(color));
-		tiles.put(new Tile(BoardColumns.H, kingRow), new Rook(color));
+		tiles.put(new Tile(File.A, kingRow), new Rook(color));
+		tiles.put(new Tile(File.B, kingRow), new Knight(color));
+		tiles.put(new Tile(File.C, kingRow), new Bishop(color));
+		tiles.put(new Tile(File.D, kingRow), new Queen(color));
+		tiles.put(new Tile(File.E, kingRow), new King(color));
+		tiles.put(new Tile(File.F, kingRow), new Bishop(color));
+		tiles.put(new Tile(File.G, kingRow), new Knight(color));
+		tiles.put(new Tile(File.H, kingRow), new Rook(color));
 	}
 
 	private void fillMiddle() {
 		for(int i = 3; i <= 6; i++) {
 			for(int j = 0; j < 8; j++) {
-				tiles.put(new Tile(BoardColumns.values()[j], i), null);
+				tiles.put(new Tile(File.values()[j], i), null);
 			}
 		}
 	}
@@ -127,7 +143,7 @@ public class Board {
 			StringBuilder row = new StringBuilder();
 
 			for(int j = 0; j < 8; j++) {
-				Piece p = tiles.get(new Tile(BoardColumns.values()[j], i));
+				Piece p = tiles.get(new Tile(File.values()[j], i));
 				row.append(p == null ? ".." : p.toString());
 				row.append(" ");
 			}

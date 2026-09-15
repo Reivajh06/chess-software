@@ -1,5 +1,6 @@
 package reivajh06.model;
 
+import reivajh06.model.pieces.King;
 import reivajh06.model.pieces.Pawn;
 import reivajh06.model.pieces.Piece;
 import reivajh06.model.pieces.PieceColor;
@@ -19,6 +20,7 @@ public class Game {
     private Difficulty difficulty;
     private final List<MoveData> movesHistory;
     private final Map<PieceColor, List<Piece>> piecesEaten;
+    private boolean onCheck = false;
 
     public Game(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
@@ -36,6 +38,8 @@ public class Game {
     }
 
     public boolean move(Tile from, Tile to) {
+        if(onCheck) return false;
+
         Piece p = board.pieceAt(from);
 
         if(colorTurn != p.color()) return false;
@@ -46,9 +50,28 @@ public class Game {
 
         Piece pieceEaten = board.move(from, to);
 
+        if(p instanceof Pawn pawn) pawn.finishStartMove();
+
         if(pieceEaten != null) piecesEaten.get(pieceEaten.color()).add(pieceEaten);
 
+        colorTurn = colorTurn == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
+        movesHistory.add(new MoveData(p, from, to, pieceEaten));
+
+        handleCheck(p, to);
+
         return true;
+    }
+
+    public void handleCheck(Piece piece, Tile tile) {
+        Tile kingTile = board.possiblePieceMoves(tile).stream()
+                .filter(t -> board.pieceAt(t) instanceof King k && k.color() != piece.color())
+                .findFirst()
+                .orElse(null);
+
+        if(kingTile == null) return;
+
+        //TODO
+
     }
 
     public void debug() {

@@ -1,4 +1,4 @@
-package reivajh06;
+package reivajh06.api;
 
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
