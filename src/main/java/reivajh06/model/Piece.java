@@ -12,7 +12,8 @@ public class Piece {
 	private String name;
 	private List<Move> moveset;
 
-	public Piece(PieceColor color) {
+	public Piece(PieceType type, PieceColor color) {
+		this.type = type;
 		this.color = color;
 	}
 

@@ -2,11 +2,10 @@ package reivajh06.model.movement;
 
 public class MoveBuilder {
 
-	public static final int ALL_TILES = 8;
-
 	private int x;
 	private int y;
-	private int nRepetitions;
+	private int nRepetitions = 1;
+	private static final int MAX_POSSIBLE_REPETITIONS = -1;
 
 	public MoveBuilder forward() {
 		y += 1;
@@ -58,7 +57,7 @@ public class MoveBuilder {
 	}
 
 	public MoveBuilder allRepetitions() {
-		return repetitions(ALL_TILES);
+		return repetitions(MAX_POSSIBLE_REPETITIONS);
 	}
 
 	public Move build() {

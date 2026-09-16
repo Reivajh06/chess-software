@@ -9,6 +9,7 @@ public class Game {
 
     public PieceColor colorTurn = PieceColor.WHITE;
 
+    private final GameController gameController;
     private Gamemode gamemode;
     private final Board board;
     private GameStatus status;
@@ -29,23 +30,26 @@ public class Game {
                 )
         );
         board = new Board();
+        gameController = new GameController();
+
+        gameController.setupBoard(board);
     }
 
-    public boolean move(Square from, Square to) {
+    /*public boolean move(Tile from, Tile to) {
         Piece p = board.pieceAt(from);
 
         if(colorTurn != p.color()) return false;
 
-        List<Square> validSquares = board.possiblePieceMoves(from);
+        List<Tile> validTiles = board.possiblePieceMoves(from);
 
-        if(!validSquares.contains(to)) return false;
+        if(!validTiles.contains(to)) return false;
 
         Piece pieceEaten = board.move(from, to);
 
         if(pieceEaten != null) piecesEaten.get(pieceEaten.color()).add(pieceEaten);
 
         return true;
-    }
+    }*/
 
     public void debug() {
         board.debug();

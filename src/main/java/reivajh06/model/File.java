@@ -1,6 +1,6 @@
 package reivajh06.model;
 
-public enum BoardColumns {
+public enum File {
 
 	A(0x61),
 	B(0x62),
@@ -13,7 +13,7 @@ public enum BoardColumns {
 
 	public final int code;
 
-	BoardColumns(int code) {
+	File(int code) {
 		this.code = code;
 	}
 }

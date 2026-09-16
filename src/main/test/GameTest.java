@@ -1,7 +1,7 @@
 import reivajh06.model.Difficulty;
 import reivajh06.model.Game;
 import reivajh06.model.Gamemode;
-import reivajh06.model.Square;
+import reivajh06.model.Tile;
 
 public class GameTest {
 
@@ -47,7 +47,7 @@ public class GameTest {
 
 	private static void move(Game game, String from, String to) {
 		System.out.println(from + " -> " + to);
-		game.move(new Square(from), new Square(to));
+		game.move(new Tile(from), new Tile(to));
 		game.debug();
 	}
 }
