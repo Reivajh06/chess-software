@@ -9,7 +9,7 @@ public record Tile(File file, Rank rank) {
 	}
 
 	public String name() {
-		return file().name().charAt(0) + rank.name().substring(0, 1);
+		return file().name().substring(0, 1) + rank.number;
 	}
 
 	@NotNull

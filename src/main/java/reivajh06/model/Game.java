@@ -30,26 +30,26 @@ public class Game {
                 )
         );
         board = new Board();
-        gameController = new GameController();
+        gameController = new GameController(board);
 
-        gameController.setupBoard(board);
+        gameController.setupBoard();
     }
 
-    /*public boolean move(Tile from, Tile to) {
+    public boolean move(Tile from, Tile to) {
         Piece p = board.pieceAt(from);
 
         if(colorTurn != p.color()) return false;
 
-        List<Tile> validTiles = board.possiblePieceMoves(from);
+        return gameController.movePiece(from, to, this::registerMove);
+    }
 
-        if(!validTiles.contains(to)) return false;
+    public void registerMove(Tile from, Tile to) {
+        movesHistory.add(new MoveData(board.pieceAt(from), from, to, board.removeFromTile(to)));
+    }
 
-        Piece pieceEaten = board.move(from, to);
-
-        if(pieceEaten != null) piecesEaten.get(pieceEaten.color()).add(pieceEaten);
-
-        return true;
-    }*/
+    public List<MoveData> movesHistory() {
+        return movesHistory;
+    }
 
     public void debug() {
         board.debug();
