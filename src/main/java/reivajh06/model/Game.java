@@ -7,8 +7,6 @@ import java.util.Map;
 
 public class Game {
 
-    public PieceColor colorTurn = PieceColor.WHITE;
-
     private final GameController gameController;
     private Gamemode gamemode;
     private final Board board;
@@ -16,6 +14,7 @@ public class Game {
     private Difficulty difficulty;
     private final List<MoveData> movesHistory;
     private final Map<PieceColor, List<Piece>> piecesEaten;
+    private boolean debug = false;
 
     public Game(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
@@ -29,6 +28,7 @@ public class Game {
                         PieceColor.BLACK, new ArrayList<>()
                 )
         );
+
         board = new Board();
         gameController = new GameController(board);
 
@@ -36,11 +36,15 @@ public class Game {
     }
 
     public boolean move(Tile from, Tile to) {
-        Piece p = board.pieceAt(from);
+        boolean moveMade = gameController.movePiece(from, to, this::registerMove);
 
-        if(colorTurn != p.color()) return false;
+        if(debug) printBoard();
 
-        return gameController.movePiece(from, to, this::registerMove);
+        return moveMade;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     public void registerMove(Tile from, Tile to) {
@@ -51,8 +55,12 @@ public class Game {
         return movesHistory;
     }
 
-    public void debug() {
-        board.debug();
+    public PieceColor colorTurn() {
+        return gameController.colorTurn();
+    }
+
+    public void printBoard() {
+        board.printBoard();
         System.out.println();
     }
 }

@@ -1,7 +1,9 @@
 package reivajh06.model;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Board {
 
@@ -18,10 +20,6 @@ public class Board {
 				tiles.put(new Tile(files[j], ranks[i]), null);
 			}
 		}
-	}
-
-	public void move(Tile from, Tile to) {
-		tiles.put(to, pieceAt(from));
 	}
 
 	public Piece removeFromTile(Tile t) {
@@ -44,9 +42,12 @@ public class Board {
 		return tiles.replace(tile, piece);
 	}
 
-	public void debug() {
+	public void printBoard() {
+		System.out.println(new StringBuilder().append("   ").append(Arrays.stream(File.values()).map(File::name).collect(Collectors.joining("	"))));
+
 		for(int i = 7; i >= 0; i--) {
 			StringBuilder row = new StringBuilder();
+			row.append(Rank.values()[i].number).append(" ");
 
 			for(int j = 0; j < 8; j++) {
 				Piece p = tiles.get(new Tile(File.values()[j], Rank.values()[i]));

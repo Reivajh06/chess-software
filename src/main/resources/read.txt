@@ -1,8 +1,0 @@
-Eliminate piece inheritance
-
-Define moveset use in another class. Define PieceFactory class so that a piece can be easily created (PieceFactory.createPawn() will
-configure a pawn with the moveset and type of a pawn)
-
-Define moveset as a move rule
-
-Simplify board logic and center the possible moves method as a method from a GamesRules class that will oversee the application of chess rules

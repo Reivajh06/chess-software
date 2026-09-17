@@ -1,18 +1,15 @@
 package reivajh06.model;
 
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.Moveset;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class GameController {
 
 	private final Board board;
-
-	public GameController gameController;
+	private PieceColor colorTurn = PieceColor.WHITE;
 
 	public GameController(Board board) {
 		this.board = board;
@@ -21,6 +18,10 @@ public class GameController {
 	public void setupBoard() {
 		allocatePieces(board, PieceColor.BLACK);
 		allocatePieces(board, PieceColor.WHITE);
+	}
+
+	public PieceColor colorTurn() {
+		return colorTurn;
 	}
 
 	private void allocatePieces(Board board, PieceColor color) {
@@ -47,21 +48,24 @@ public class GameController {
 	}
 
 	public boolean movePiece(Tile from, Tile to, BiConsumer<Tile, Tile> onValidMove) {
-		Piece p = board.pieceAt(from);
-		Piece pieceEaten = board.pieceAt(to);
+		if(board.pieceAt(from).color() != colorTurn) return false;
+		if(!board.hasPiece(from)) return false;
 
-		List<Tile> validTiles = movesetTiles(from);
+		List<Tile> validTiles = calculateMovesetTiles(from);
 
 		if(!validTiles.contains(to)) return false;
 
 		onValidMove.accept(from, to);
-		board.move(from, to);
+		board.removeFromTile(to);
+		board.addPiece(to, board.removeFromTile(from));
+		colorTurn = colorTurn == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
 
 		return true;
 	}
 
-	public List<Tile> movesetTiles(Tile tile) {
-		Piece piece = board.pieceAt(tile);
+	//TODO remake this function. It has issues when calculating tiles
+	public List<Tile> calculateMovesetTiles(Tile start) {
+		Piece piece = board.pieceAt(start);
 		List<Tile> possibleTiles = new ArrayList<>();
 		List<Move> moveset = piece.moveset();
 		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
@@ -69,32 +73,37 @@ public class GameController {
 		for(Move move : moveset) {
 			int n = 0;
 
-			int i = (tile.file().code + move.x() * movementFactor) - File.A.code;
+			int file = (start.file().code + move.x() * movementFactor) - File.A.code;
 
-			if(i < 0 || i >= 8) continue;
+			if(file < 0 || file >= 8) continue;
 
-			Tile t = new Tile(
-					File.values()[i % 8],
-					Rank.values()[tile.rank().number + move.y() * movementFactor]
+			int rank = start.rank().number + move.y() * movementFactor - 1;
+
+			if(rank < 0) continue;
+
+			Tile destination = new Tile(
+					File.values()[file % 8],
+					Rank.values()[rank]
 			);
 
-			if(board.hasPiece(t) && board.pieceAt(t).color() == piece.color()) continue;
+			if(board.hasPiece(destination) && board.pieceAt(destination).color() == piece.color()) continue;
 
-			while(n < move.repetitions() && validTile(t)) {
-				if(board.hasPiece(t) && board.pieceAt(t).color() == piece.color()) break;
+			while(n < move.repetitions() && validTile(destination)) {
+				if(board.hasPiece(destination) && board.pieceAt(destination).color() == piece.color()) break;
+				if(piece.type() == PieceType.PAWN && isDiagonalMove(start, destination) && !board.hasPiece(destination)) break;
 
-				possibleTiles.add(t);
+				possibleTiles.add(destination);
 				n++;
 
 				if(n >= move.repetitions()) break;
 
-				i = ((t.file().code + move.x() * movementFactor) - File.A.code);
+				file = ((destination.file().code + move.x() * movementFactor) - File.A.code);
 
-				if(i < 0 || i >= 8) break;
+				if(file < 0 || file >= 8) break;
 
-				t = new Tile(
-						File.values()[i % 8],
-						Rank.values()[t.rank().number + move.y() * movementFactor]
+				destination = new Tile(
+						File.values()[file % 8],
+						Rank.values()[destination.rank().number + move.y() * movementFactor]
 				);
 			}
 		}
