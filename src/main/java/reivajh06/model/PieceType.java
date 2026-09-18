@@ -1,5 +1,7 @@
 package reivajh06.model;
 
+import java.util.Arrays;
+
 public enum PieceType {
 
 	PAWN,
@@ -7,5 +9,9 @@ public enum PieceType {
 	KNIGHT,
 	KING,
 	QUEEN,
-	BISHOP
+	BISHOP;
+
+	public static boolean isClassicType(String typeName) {
+		return Arrays.stream(values()).filter(t -> t.name().equalsIgnoreCase(typeName)).findFirst().orElse(null) != null;
+	}
 }

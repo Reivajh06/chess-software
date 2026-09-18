@@ -1,9 +1,12 @@
-package reivajh06.model;
+package reivajh06.game_logic;
 
+import reivajh06.model.*;
 import reivajh06.model.movement.Move;
+import reivajh06.model.movement.Moveset;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 public class GameController {
@@ -67,7 +70,7 @@ public class GameController {
 	public List<Tile> calculateMovesetTiles(Tile start) {
 		Piece piece = board.pieceAt(start);
 		List<Tile> possibleTiles = new ArrayList<>();
-		List<Move> moveset = piece.moveset();
+		Set<Move> moveset = Moveset.getMoveset(piece.typeName());
 		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
 
 		for(Move move : moveset) {
@@ -90,7 +93,7 @@ public class GameController {
 
 			while(n < move.repetitions() && validTile(destination)) {
 				if(board.hasPiece(destination) && board.pieceAt(destination).color() == piece.color()) break;
-				if(piece.type() == PieceType.PAWN && isDiagonalMove(start, destination) && !board.hasPiece(destination)) break;
+				if(PieceType.isClassicType(piece.typeName()) && PieceType.valueOf(piece.typeName()) == PieceType.PAWN && isDiagonalMove(start, destination) && !board.hasPiece(destination)) break;
 
 				possibleTiles.add(destination);
 				n++;
@@ -110,6 +113,27 @@ public class GameController {
 
 		return possibleTiles;
 	}
+
+	public List<Tile> calculateMovesetTiles2(Tile start) {
+		List<Tile> tiles = new ArrayList<>();
+		Piece piece = board.pieceAt(start);
+		Set<Move> moveset = Moveset.getMoveset(piece.typeName());
+
+		for(Move move : moveset) {
+			List<Tile> moveTiles = calculateMoveTiles(start, move);
+
+
+		}
+
+		return tiles;
+	}
+
+	private List<Tile> calculateMoveTiles(Tile start, Move move) {
+		List<Tile> tiles = new ArrayList<>();
+
+		return tiles;
+	}
+
 
 	private boolean isDiagonalMove(Tile from, Tile to) {
 		int xOffset = Math.abs(from.rank().number - to.rank().number);

@@ -1,25 +1,25 @@
 package reivajh06.model;
 
 import org.jetbrains.annotations.NotNull;
-import reivajh06.model.movement.Move;
-import reivajh06.model.movement.Moveset;
-
-import java.util.List;
 
 public class Piece {
 
 	private PieceColor color;
-	private PieceType type;
-	private List<Move> moveset;
+	private final String typeName;
+	private final String name;
+
+	public Piece(String typeName, PieceColor color) {
+		this.typeName = typeName.trim().toUpperCase();
+		this.color = color;
+		name = color.name().charAt(0) + typeName.substring(0, 1);
+	}
 
 	public Piece(PieceType type, PieceColor color) {
-		this.type = type;
-		this.color = color;
-		setMoveset(Moveset.classicMoveset(type));
+		this(type.name().toLowerCase(), color);
 	}
 
 	public String getCode() {
-		return String.valueOf(color.name().charAt(0)) + type.name().substring(0, 2);
+		return color.name().charAt(0) + typeName.substring(0, 2);
 	}
 
 	public PieceColor color() {
@@ -27,19 +27,11 @@ public class Piece {
 	}
 
 	public String name() {
-		return color.name().charAt(0) + type.name().substring(0, 1);
+		return name;
 	}
 
-	public PieceType type() {
-		return type;
-	}
-
-	public List<Move> moveset() {
-		return moveset;
-	}
-
-	public void setMoveset(List<Move> moveset) {
-		this.moveset = moveset;
+	public String typeName() {
+		return typeName;
 	}
 
 	@NotNull

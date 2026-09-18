@@ -1,13 +1,16 @@
-package reivajh06.model;
+package reivajh06.game_logic;
+
+import reivajh06.model.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Game {
+public class GameSession {
 
-    private final GameController gameController;
+    private final GameController controller;
+    private final RulesValidator rulesValidator;
     private Gamemode gamemode;
     private final Board board;
     private GameStatus status;
@@ -16,7 +19,7 @@ public class Game {
     private final Map<PieceColor, List<Piece>> piecesEaten;
     private boolean debug = false;
 
-    public Game(Gamemode gamemode, Difficulty difficulty) {
+    public GameSession(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
         this.gamemode = gamemode;
 
@@ -30,13 +33,14 @@ public class Game {
         );
 
         board = new Board();
-        gameController = new GameController(board);
+        controller = new GameController(board);
+        rulesValidator = new RulesValidator(board);
 
-        gameController.setupBoard();
+        controller.setupBoard();
     }
 
     public boolean move(Tile from, Tile to) {
-        boolean moveMade = gameController.movePiece(from, to, this::registerMove);
+        boolean moveMade = controller.movePiece(from, to, this::registerMove);
 
         if(debug) printBoard();
 
@@ -56,7 +60,7 @@ public class Game {
     }
 
     public PieceColor colorTurn() {
-        return gameController.colorTurn();
+        return controller.colorTurn();
     }
 
     public void printBoard() {

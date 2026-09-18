@@ -2,26 +2,25 @@ package reivajh06.model.movement;
 
 import reivajh06.model.PieceType;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Moveset {
 
-	public static final List<Move> PAWN = List.of(
+	private static final Set<Move> PAWN = Set.of(
 			new MoveBuilder().forward().build(),
 			new MoveBuilder().forwardLeft().build(),
 			new MoveBuilder().forwardRight().build()
 	);
 
-	public static final List<Move> ROOK = List.of(
+	private static final Set<Move> ROOK = Set.of(
 			new MoveBuilder().forward().allRepetitions().build(),
 			new MoveBuilder().backward().allRepetitions().build(),
 			new MoveBuilder().left().allRepetitions().build(),
 			new MoveBuilder().right().allRepetitions().build()
 	);
 
-	public static final List<Move> KING = List.of(
+	private static final Set<Move> KING = Set.of(
 			new MoveBuilder().forward().build(),
 			new MoveBuilder().backward().build(),
 			new MoveBuilder().left().build(),
@@ -32,7 +31,7 @@ public class Moveset {
 			new MoveBuilder().backwardRight().build()
 	);
 
-	public static final List<Move> QUEEN = List.of(
+	private static final Set<Move> QUEEN = Set.of(
 			new MoveBuilder().forward().allRepetitions().build(),
 			new MoveBuilder().backward().allRepetitions().build(),
 			new MoveBuilder().left().allRepetitions().build(),
@@ -43,14 +42,14 @@ public class Moveset {
 			new MoveBuilder().backwardRight().allRepetitions().build()
 	);
 
-	public static final List<Move> BISHOP = List.of(
+	private static final Set<Move> BISHOP = Set.of(
 			new MoveBuilder().forwardLeft().allRepetitions().build(),
 			new MoveBuilder().forwardRight().allRepetitions().build(),
 			new MoveBuilder().backwardLeft().allRepetitions().build(),
 			new MoveBuilder().backwardRight().allRepetitions().build()
 	);
 
-	public static final List<Move> KNIGHT = List.of(
+	private static final Set<Move> KNIGHT = Set.of(
 			new MoveBuilder().forward().forward().left().build(),
 			new MoveBuilder().forward().forward().right().build(),
 			new MoveBuilder().backward().backward().left().build(),
@@ -61,29 +60,45 @@ public class Moveset {
 			new MoveBuilder().backward().right().right().build()
 	);
 
-	private static final Map<String, List<Move>> CUSTOM_MOVESETS = new HashMap<>();
-	private static final Map<PieceType, List<Move>> CLASSIC_MOVESETS = new HashMap<>(Map.of(
-			PieceType.PAWN, PAWN,
-			PieceType.ROOK, ROOK,
-			PieceType.BISHOP, BISHOP,
-			PieceType.KNIGHT, KNIGHT,
-			PieceType.QUEEN, QUEEN,
-			PieceType.KING, KING
-			));
+	private static final Map<String, Set<Move>> MOVESETS;
 
-	public static List<Move> customMoveset(String name) {
-		return CUSTOM_MOVESETS.get(name);
+	static {
+		MOVESETS = new HashMap<>();
+		addPredefinedMoveset(PieceType.PAWN, PAWN);
+		addPredefinedMoveset(PieceType.QUEEN, QUEEN);
+		addPredefinedMoveset(PieceType.BISHOP, BISHOP);
+		addPredefinedMoveset(PieceType.KNIGHT, KNIGHT);
+		addPredefinedMoveset(PieceType.ROOK, ROOK);
+		addPredefinedMoveset(PieceType.KING, KING);
 	}
 
-	public static void addCustomMoveset(String name, List<Move> moveset) {
-		CUSTOM_MOVESETS.put(name, moveset);
+	public static boolean addPredefinedMoveset(PieceType classicType, Set<Move> moveset) {
+		return addCustomMoveset(classicType.name(), moveset);
 	}
 
-	public static List<Move> removeMoveset(String name) {
-		return CUSTOM_MOVESETS.remove(name);
+	public static boolean addCustomMoveset(String typeName, Set<Move> moveset) {
+		if(MOVESETS.containsKey(typeName)) return false;
+
+		MOVESETS.put(typeName.toLowerCase(), moveset);
+
+		return true;
 	}
 
-	public static List<Move> classicMoveset(PieceType type) {
-		return CLASSIC_MOVESETS.get(type);
+	public static void updateMoveset(String typeName, Set<Move> moves) {
+		Set<Move> moveset = MOVESETS.get(typeName);
+
+		if(moveset == null) return;
+
+		moveset.addAll(moves);
+	}
+
+	public static Set<Move> removeMoveset(String typeName) {
+		if(Arrays.stream(PieceType.values()).map(PieceType::name).toList().contains(typeName)) return null;
+
+		return MOVESETS.remove(typeName);
+	}
+
+	public static Set<Move> getMoveset(String typeName) {
+		return MOVESETS.get(typeName);
 	}
 }
