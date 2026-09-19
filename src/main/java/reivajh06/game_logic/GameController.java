@@ -2,17 +2,13 @@ package reivajh06.game_logic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.Moveset;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.function.BiConsumer;
 
 public class GameController {
 
 	private final Board board;
-	private PieceColor colorTurn = PieceColor.WHITE;
 
 	public GameController(Board board) {
 		this.board = board;
@@ -21,10 +17,6 @@ public class GameController {
 	public void setupBoard() {
 		allocatePieces(board, PieceColor.BLACK);
 		allocatePieces(board, PieceColor.WHITE);
-	}
-
-	public PieceColor colorTurn() {
-		return colorTurn;
 	}
 
 	private void allocatePieces(Board board, PieceColor color) {
@@ -50,90 +42,41 @@ public class GameController {
 		board.addPiece(new Tile(File.H, Rank.values()[kingRow - 1]), new Piece(PieceType.ROOK, color));
 	}
 
-	public boolean movePiece(Tile from, Tile to, BiConsumer<Tile, Tile> onValidMove) {
-		if(board.pieceAt(from).color() != colorTurn) return false;
-		if(!board.hasPiece(from)) return false;
+	public Piece movePiece(Tile from, Tile to) {
+		if(!board.hasPiece(from)) return null;
 
-		List<Tile> validTiles = calculateMovesetTiles(from);
-
-		if(!validTiles.contains(to)) return false;
-
-		onValidMove.accept(from, to);
-		board.removeFromTile(to);
+		Piece eaten = board.removeFromTile(to);
 		board.addPiece(to, board.removeFromTile(from));
-		colorTurn = colorTurn == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
 
-		return true;
+		return eaten;
 	}
 
-	//TODO remake this function. It has issues when calculating tiles
-	public List<Tile> calculateMovesetTiles(Tile start) {
-		Piece piece = board.pieceAt(start);
-		List<Tile> possibleTiles = new ArrayList<>();
-		Set<Move> moveset = Moveset.getMoveset(piece.typeName());
-		int movementFactor = piece.color() == PieceColor.BLACK ? -1 : 1;
+	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {
+		List<Tile> tiles = new ArrayList<>();
+		Tile t = start;
+		int movementFactor = color == PieceColor.BLACK ? -1 : 1;
 
-		for(Move move : moveset) {
-			int n = 0;
+		for(int i = 0; i < move.repetitions(); i++) {
+			int fileIndex = t.file().code + move.x() * movementFactor - File.A.code;
+			int rankIndex = t.rank().number + move.y() * movementFactor - Rank.ONE.number;
 
-			int file = (start.file().code + move.x() * movementFactor) - File.A.code;
+			if(outOfBounds(fileIndex, rankIndex)) break;
 
-			if(file < 0 || file >= 8) continue;
-
-			int rank = start.rank().number + move.y() * movementFactor - 1;
-
-			if(rank < 0) continue;
-
-			Tile destination = new Tile(
-					File.values()[file % 8],
-					Rank.values()[rank]
+			t = new Tile(
+					File.values()[fileIndex],
+					Rank.values()[rankIndex]
 			);
 
-			if(board.hasPiece(destination) && board.pieceAt(destination).color() == piece.color()) continue;
-
-			while(n < move.repetitions() && validTile(destination)) {
-				if(board.hasPiece(destination) && board.pieceAt(destination).color() == piece.color()) break;
-				if(PieceType.isClassicType(piece.typeName()) && PieceType.valueOf(piece.typeName()) == PieceType.PAWN && isDiagonalMove(start, destination) && !board.hasPiece(destination)) break;
-
-				possibleTiles.add(destination);
-				n++;
-
-				if(n >= move.repetitions()) break;
-
-				file = ((destination.file().code + move.x() * movementFactor) - File.A.code);
-
-				if(file < 0 || file >= 8) break;
-
-				destination = new Tile(
-						File.values()[file % 8],
-						Rank.values()[destination.rank().number + move.y() * movementFactor]
-				);
-			}
-		}
-
-		return possibleTiles;
-	}
-
-	public List<Tile> calculateMovesetTiles2(Tile start) {
-		List<Tile> tiles = new ArrayList<>();
-		Piece piece = board.pieceAt(start);
-		Set<Move> moveset = Moveset.getMoveset(piece.typeName());
-
-		for(Move move : moveset) {
-			List<Tile> moveTiles = calculateMoveTiles(start, move);
-
-
+			tiles.add(t);
 		}
 
 		return tiles;
 	}
 
-	private List<Tile> calculateMoveTiles(Tile start, Move move) {
-		List<Tile> tiles = new ArrayList<>();
-
-		return tiles;
+	private boolean outOfBounds(int fileIndex, int rankIndex) {
+		return (fileIndex < 0 || fileIndex >= File.values().length) ||
+				(rankIndex < 0 || rankIndex >= Rank.values().length);
 	}
-
 
 	private boolean isDiagonalMove(Tile from, Tile to) {
 		int xOffset = Math.abs(from.rank().number - to.rank().number);

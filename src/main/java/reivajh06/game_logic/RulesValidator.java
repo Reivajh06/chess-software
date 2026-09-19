@@ -1,8 +1,10 @@
 package reivajh06.game_logic;
 
 import reivajh06.model.Board;
+import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
 import reivajh06.model.movement.Move;
+import reivajh06.model.movement.MoveRule;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,10 +15,12 @@ public class RulesValidator {
 
 	private final Board board;
 	private final Map<Move, Set<MoveRule>> movementRules;
+	private PieceColor turn;
 
 	public RulesValidator(Board board) {
 		this.board = board;
 		movementRules = new HashMap<>();
+		turn = PieceColor.WHITE;
 	}
 
 	public void addMoveRules(Move move, Set<MoveRule> rules) {
@@ -35,15 +39,27 @@ public class RulesValidator {
 		rules.addAll(additionalRules);
 	}
 
-	public List<Tile> filterMovesetTiles(Move move, Tile from, List<Tile> pendingTiles) {
+	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
 		Set<MoveRule> moveRules = movementRules.get(move);
 
 		return pendingTiles.stream().filter(pendingTile -> {
 			for(MoveRule rule : moveRules) {
-				if(!rule.comply(board, from, pendingTile)) return false;
+				if(!rule.complies(board, from, pendingTile)) return false;
 			}
 
 			return true;
 		}).toList();
+	}
+
+	public GameStatus getGameStatus() {
+		return GameStatus.ACTIVE;
+	}
+
+	public PieceColor turn() {
+		return turn;
+	}
+
+	public void nextTurn() {
+		turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
 	}
 }

@@ -1,17 +1,18 @@
 package reivajh06.game_logic;
 
 import reivajh06.model.*;
+import reivajh06.model.movement.Move;
+import reivajh06.model.movement.MovesetRegistry;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GameSession {
 
     private final GameController controller;
-    private final RulesValidator rulesValidator;
-    private Gamemode gamemode;
+    private final RulesValidator validator;
+    private final MovesetRegistry movesetRegistry;
+
+    private final Gamemode gamemode;
     private final Board board;
     private GameStatus status;
     private Difficulty difficulty;
@@ -34,25 +35,45 @@ public class GameSession {
 
         board = new Board();
         controller = new GameController(board);
-        rulesValidator = new RulesValidator(board);
+        validator = new RulesValidator(board);
+        movesetRegistry = new MovesetRegistry();
 
         controller.setupBoard();
     }
 
-    public boolean move(Tile from, Tile to) {
-        boolean moveMade = controller.movePiece(from, to, this::registerMove);
+    public List<Tile> pieceMovesetTiles(Tile location) {
+        Piece piece = board.pieceAt(location);
+
+        if(validator.turn() != piece.color()) return new ArrayList<>();
+
+        Set<Move> pieceMoveset = movesetRegistry.getMoveset(piece.typeName());
+
+        List<Tile> movesetTiles = new ArrayList<>();
+
+        for(Move move : pieceMoveset) {
+            movesetTiles.addAll(validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move)));
+        }
+
+        return movesetTiles;
+    }
+
+    public void move(Tile from, Tile to) {
+        Piece pieceEaten = controller.movePiece(from, to);
+
+        //register and add to pieces eaten
+        registerMove(from, to, pieceEaten);
 
         if(debug) printBoard();
 
-        return moveMade;
+        validator.nextTurn();
+    }
+
+    public void updateGameStatus() {
+        status = validator.getGameStatus();
     }
 
     public void setDebug(boolean debug) {
         this.debug = debug;
-    }
-
-    public void registerMove(Tile from, Tile to) {
-        movesHistory.add(new MoveData(board.pieceAt(from), from, to, board.removeFromTile(to)));
     }
 
     public List<MoveData> movesHistory() {
@@ -60,7 +81,12 @@ public class GameSession {
     }
 
     public PieceColor colorTurn() {
-        return controller.colorTurn();
+        return validator.turn();
+    }
+
+    public void registerMove(Tile from, Tile to, Piece eaten) {
+        movesHistory.add(new MoveData(board.pieceAt(from), from, to, eaten));
+        piecesEaten.get(eaten.color()).add(eaten);
     }
 
     public void printBoard() {
