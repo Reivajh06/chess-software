@@ -2,6 +2,7 @@ package reivajh06.game_logic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
+import reivajh06.model.movement.MoveBuilder;
 import reivajh06.model.movement.MovesetRegistry;
 
 import java.util.*;
@@ -17,8 +18,10 @@ public class GameSession {
     private GameStatus status;
     private Difficulty difficulty;
     private final List<MoveData> movesHistory;
-    private final Map<PieceColor, List<Piece>> piecesEaten;
+    private final Map<PieceColor, List<Piece>> capturedPieces;
     private boolean debug = false;
+
+    //Change from moveRegistry to PieceRegistry? Give the piece the moveset it has
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
@@ -26,7 +29,7 @@ public class GameSession {
 
         status = GameStatus.ACTIVE;
         movesHistory = new ArrayList<>();
-        piecesEaten = new HashMap<>(
+        capturedPieces = new HashMap<>(
                 Map.of(
                         PieceColor.WHITE, new ArrayList<>(),
                         PieceColor.BLACK, new ArrayList<>()
@@ -38,15 +41,21 @@ public class GameSession {
         validator = new RulesValidator(board);
         movesetRegistry = new MovesetRegistry();
 
+        addConditionalMoves();
+
         controller.setupBoard();
     }
 
     public List<Tile> pieceMovesetTiles(Tile location) {
+
+        if(location.equals(new Tile("G8"))) {
+            System.out.println("SOFJKSOF");
+        }
         Piece piece = board.pieceAt(location);
 
         if(validator.turn() != piece.color()) return new ArrayList<>();
 
-        Set<Move> pieceMoveset = movesetRegistry.getMoveset(piece.typeName());
+        List<Move> pieceMoveset = movesetRegistry.getMoveset(piece.typeName());
 
         List<Tile> movesetTiles = new ArrayList<>();
 
@@ -59,8 +68,8 @@ public class GameSession {
 
     public void move(Tile from, Tile to) {
         Piece pieceEaten = controller.movePiece(from, to);
+        board.pieceAt(to).moved();
 
-        //register and add to pieces eaten
         registerMove(from, to, pieceEaten);
 
         if(debug) printBoard();
@@ -84,13 +93,31 @@ public class GameSession {
         return validator.turn();
     }
 
-    public void registerMove(Tile from, Tile to, Piece eaten) {
-        movesHistory.add(new MoveData(board.pieceAt(from), from, to, eaten));
-        piecesEaten.get(eaten.color()).add(eaten);
+    public void registerMove(Tile from, Tile to, Piece capturedPiece) {
+        movesHistory.add(new MoveData(board.pieceAt(from), from, to, capturedPiece));
+
+        if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
     }
 
     public void printBoard() {
         board.printBoard();
         System.out.println();
+    }
+
+    private void addConditionalMoves() {
+        Move pawnStartMove = new MoveBuilder().forward().forward().build();
+        Move pawnLeftDiagonal = new MoveBuilder().forwardLeft().build();
+        Move pawnRightDiagonal = new MoveBuilder().forwardRight().build();
+
+        List<Move> conditionalMoveset = new ArrayList<>();
+        conditionalMoveset.add(pawnStartMove);
+        conditionalMoveset.add(pawnLeftDiagonal);
+        conditionalMoveset.add(pawnRightDiagonal);
+
+        movesetRegistry.updateMoveset(PieceType.PAWN.name(), conditionalMoveset);
+
+        validator.addMoveRules(pawnStartMove, new HashSet<>(Set.of(RulesValidator.START_TWO_FORWARD)));
+        validator.addMoveRules(pawnLeftDiagonal, new HashSet<>(Set.of(RulesValidator.DIAGONAL_CAPTURE, RulesValidator.EN_PASSANT)));
+        validator.addMoveRules(pawnRightDiagonal, new HashSet<>(Set.of(RulesValidator.DIAGONAL_CAPTURE, RulesValidator.EN_PASSANT)));
     }
 }

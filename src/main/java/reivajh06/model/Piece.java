@@ -7,6 +7,7 @@ public class Piece {
 	private PieceColor color;
 	private final String typeName;
 	private final String name;
+	private int timesMoved;
 
 	public Piece(String typeName, PieceColor color) {
 		this.typeName = typeName.trim().toUpperCase();
@@ -32,6 +33,14 @@ public class Piece {
 
 	public String typeName() {
 		return typeName;
+	}
+
+	public void moved() {
+		timesMoved++;
+	}
+
+	public int timesMoved() {
+		return timesMoved;
 	}
 
 	@NotNull

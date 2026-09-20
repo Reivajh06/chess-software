@@ -45,13 +45,14 @@ public class GameController {
 	public Piece movePiece(Tile from, Tile to) {
 		if(!board.hasPiece(from)) return null;
 
-		Piece eaten = board.removeFromTile(to);
+		Piece capturedPiece = board.removeFromTile(to);
 		board.addPiece(to, board.removeFromTile(from));
 
-		return eaten;
+		return capturedPiece;
 	}
 
 	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {
+
 		List<Tile> tiles = new ArrayList<>();
 		Tile t = start;
 		int movementFactor = color == PieceColor.BLACK ? -1 : 1;
@@ -68,6 +69,8 @@ public class GameController {
 			);
 
 			tiles.add(t);
+
+			if(board.pieceAt(t) != null) break;
 		}
 
 		return tiles;
@@ -76,19 +79,5 @@ public class GameController {
 	private boolean outOfBounds(int fileIndex, int rankIndex) {
 		return (fileIndex < 0 || fileIndex >= File.values().length) ||
 				(rankIndex < 0 || rankIndex >= Rank.values().length);
-	}
-
-	private boolean isDiagonalMove(Tile from, Tile to) {
-		int xOffset = Math.abs(from.rank().number - to.rank().number);
-		int yOffset = Math.abs(from.file().code - to.file().code);
-
-		return (xOffset == 1) && (yOffset == 1);
-	}
-
-	private boolean validTile(Tile t) {
-		return t.file().code <= File.H.code &&
-				t.file().code >= File.A.code &&
-				t.rank().number <= 8 &&
-				t.rank().number > 0;
 	}
 }
