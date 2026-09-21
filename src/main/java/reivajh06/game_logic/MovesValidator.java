@@ -42,9 +42,6 @@ public class MovesValidator {
 
 	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
 		return pendingTiles.stream().filter(pendingTile -> {
-			if(pendingTile.name().equalsIgnoreCase("d3") || pendingTile.name().equalsIgnoreCase("f3")) {
-				System.out.println("OUU");
-			}
 			Piece p = board.pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();
 
