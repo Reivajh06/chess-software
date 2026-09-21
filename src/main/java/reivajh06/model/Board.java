@@ -22,7 +22,7 @@ public class Board {
 		}
 	}
 
-	public Piece removeFromTile(Tile t) {
+	public Piece removePieceIn(Tile t) {
 		return tiles.remove(t);
 	}
 

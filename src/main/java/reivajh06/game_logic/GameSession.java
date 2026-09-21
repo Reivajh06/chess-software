@@ -2,16 +2,16 @@ package reivajh06.game_logic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.MoveBuilder;
-import reivajh06.model.movement.MovesetRegistry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GameSession {
 
     private final GameController controller;
-    private final RulesValidator validator;
-    private final MovesetRegistry movesetRegistry;
+    private final MovesValidator validator;
 
     private final Gamemode gamemode;
     private final Board board;
@@ -38,24 +38,19 @@ public class GameSession {
 
         board = new Board();
         controller = new GameController(board);
-        validator = new RulesValidator(board);
-        movesetRegistry = new MovesetRegistry();
-
-        addConditionalMoves();
+        validator = new MovesValidator(board);
 
         controller.setupBoard();
     }
 
     public List<Tile> pieceMovesetTiles(Tile location) {
-
-        if(location.equals(new Tile("G8"))) {
-            System.out.println("SOFJKSOF");
-        }
         Piece piece = board.pieceAt(location);
+
+        if(piece == null) return new ArrayList<>();
 
         if(validator.turn() != piece.color()) return new ArrayList<>();
 
-        List<Move> pieceMoveset = movesetRegistry.getMoveset(piece.typeName());
+        List<Move> pieceMoveset = piece.moveset();
 
         List<Tile> movesetTiles = new ArrayList<>();
 
@@ -102,22 +97,5 @@ public class GameSession {
     public void printBoard() {
         board.printBoard();
         System.out.println();
-    }
-
-    private void addConditionalMoves() {
-        Move pawnStartMove = new MoveBuilder().forward().forward().build();
-        Move pawnLeftDiagonal = new MoveBuilder().forwardLeft().build();
-        Move pawnRightDiagonal = new MoveBuilder().forwardRight().build();
-
-        List<Move> conditionalMoveset = new ArrayList<>();
-        conditionalMoveset.add(pawnStartMove);
-        conditionalMoveset.add(pawnLeftDiagonal);
-        conditionalMoveset.add(pawnRightDiagonal);
-
-        movesetRegistry.updateMoveset(PieceType.PAWN.name(), conditionalMoveset);
-
-        validator.addMoveRules(pawnStartMove, new HashSet<>(Set.of(RulesValidator.START_TWO_FORWARD)));
-        validator.addMoveRules(pawnLeftDiagonal, new HashSet<>(Set.of(RulesValidator.DIAGONAL_CAPTURE, RulesValidator.EN_PASSANT)));
-        validator.addMoveRules(pawnRightDiagonal, new HashSet<>(Set.of(RulesValidator.DIAGONAL_CAPTURE, RulesValidator.EN_PASSANT)));
     }
 }

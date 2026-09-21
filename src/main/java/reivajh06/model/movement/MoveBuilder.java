@@ -1,11 +1,17 @@
 package reivajh06.model.movement;
 
+import reivajh06.game_logic.MovesValidator;
+
+import java.util.List;
+
 public class MoveBuilder {
+
+	private static final int MAX_POSSIBLE_REPETITIONS = -1;
 
 	private int x;
 	private int y;
 	private int nRepetitions = 1;
-	private static final int MAX_POSSIBLE_REPETITIONS = -1;
+	private List<MoveCondition> conditions;
 
 	public MoveBuilder forward() {
 		y += 1;
@@ -60,7 +66,12 @@ public class MoveBuilder {
 		return repetitions(MAX_POSSIBLE_REPETITIONS);
 	}
 
+	public MoveBuilder conditions(MoveCondition... conditions) {
+		this.conditions = List.of(conditions);
+		return this;
+	}
+
 	public Move build() {
-		return new Move(x, y, nRepetitions);
+		return new Move(x, y, nRepetitions, conditions == null ? MoveCondition.NO_CONDITIONS : conditions);
 	}
 }

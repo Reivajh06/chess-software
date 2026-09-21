@@ -2,16 +2,13 @@ package reivajh06.game_logic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.MoveRule;
+import reivajh06.model.movement.MoveCondition;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-public class RulesValidator {
+public class MovesValidator {
 
-	public static final MoveRule EN_PASSANT = (board, from, to) -> {
+	public static final MoveCondition EN_PASSANT = (board, from, to) -> {
 		if(!isDiagonalMove(from, to)) return false;
 
 		Piece p = board.pieceAt(from);
@@ -21,13 +18,13 @@ public class RulesValidator {
 		return adjacentPiece != null && adjacentPiece.color() != p.color();
 	};
 
-	public static final MoveRule DIAGONAL_CAPTURE = (board, from, to) -> {
+	public static final MoveCondition DIAGONAL_CAPTURE = (board, from, to) -> {
 		Piece pieceToCapture = board.pieceAt(to);
 
 		return isDiagonalMove(from, to) && pieceToCapture != null;
 	};
 
-	public static final MoveRule START_TWO_FORWARD = (board, from, to) -> {
+	public static final MoveCondition START_TWO_FORWARD = (board, from, to) -> {
 		Piece p = board.pieceAt(from);
 
 		return p.timesMoved() == 0 && isHorizontalMove(from, to);
@@ -35,43 +32,26 @@ public class RulesValidator {
 
 
 	private final Board board;
-	private final Map<Move, Set<MoveRule>> movementRules;
 	private PieceColor turn;
 
-	public RulesValidator(Board board) {
+	public MovesValidator(Board board) {
 		this.board = board;
-		movementRules = new HashMap<>();
 		turn = PieceColor.WHITE;
 	}
 
-	public void addMoveRules(Move move, Set<MoveRule> rules) {
-		movementRules.put(move, rules);
-	}
-
-	public Set<MoveRule> getMoveRules(Move move) {
-		return movementRules.get(move);
-	}
-
-	public void updateMoveRules(Move move, Set<MoveRule> additionalRules) {
-		Set<MoveRule> rules = movementRules.get(move);
-
-		if(rules == null) return;
-
-		rules.addAll(additionalRules);
-	}
 
 	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
-		Set<MoveRule> moveRules = movementRules.get(move);
-
 		return pendingTiles.stream().filter(pendingTile -> {
+			if(pendingTile.name().equalsIgnoreCase("d3") || pendingTile.name().equalsIgnoreCase("f3")) {
+				System.out.println("OUU");
+			}
 			Piece p = board.pieceAt(pendingTile);
+			List<MoveCondition> conditions = move.conditions();
 
 			if(p != null && p.color() == board.pieceAt(from).color()) return false;
 
-			if(moveRules == null) return true;
-
-			for(MoveRule rule : moveRules) {
-				if(rule.complies(board, from, pendingTile)) return true;
+			for(MoveCondition condition : conditions) {
+				if(condition.satisfies(board, from, pendingTile)) return true;
 			}
 
 			return false;
