@@ -1,12 +1,10 @@
 package reivajh06.model.movement;
 
-import reivajh06.game_logic.MovesValidator;
-
 import java.util.List;
 
 public class MoveBuilder {
 
-	private static final int MAX_POSSIBLE_REPETITIONS = -1;
+	private static final int MAX_POSSIBLE_REPETITIONS = 8;
 
 	private int x;
 	private int y;

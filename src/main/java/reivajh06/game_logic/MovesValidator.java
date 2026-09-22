@@ -30,15 +30,16 @@ public class MovesValidator {
 		return p.timesMoved() == 0 && isHorizontalMove(from, to);
 	};
 
-
 	private final Board board;
 	private PieceColor turn;
+	private boolean onCheck = false;
+	private final GameController controller;
 
-	public MovesValidator(Board board) {
+	public MovesValidator(Board board, GameController controller) {
+		this.controller = controller;
 		this.board = board;
 		turn = PieceColor.WHITE;
 	}
-
 
 	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
 		return pendingTiles.stream().filter(pendingTile -> {
@@ -65,6 +66,29 @@ public class MovesValidator {
 
 	public void nextTurn() {
 		turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
+	}
+
+	public boolean onCheck() {
+		return onCheck;
+	}
+
+	public GameStatus updateGameStatus(List<Tile> nextMoveTiles) {
+		GameStatus status = GameStatus.ACTIVE;
+
+		Tile kingTile = nextMoveTiles.stream().filter(t -> {
+				Piece king = board.pieceAt(t);
+
+					return king != null && king.type() == PieceType.KING;
+				})
+				.findFirst()
+				.orElse(null);
+
+		Piece checkedKing = board.pieceAt(kingTile);
+
+		onCheck = checkedKing != null;
+
+
+		return status;
 	}
 
 	private static boolean isDiagonalMove(Tile from, Tile to) {

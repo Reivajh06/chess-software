@@ -8,24 +8,20 @@ import java.util.List;
 public class Piece {
 
 	private PieceColor color;
-	private final String typeName;
+	private final PieceType type;
 	private final String name;
 	private List<Move> moveset;
 	private int timesMoved;
 
-	public Piece(String typeName, PieceColor color, List<Move> moveset) {
-		this.typeName = typeName.trim().toUpperCase();
+	public Piece(PieceType type, PieceColor color, List<Move> moveset) {
+		this.type = type;
 		this.color = color;
-		name = color.name().charAt(0) + typeName.substring(0, 1);
+		name = color.name().charAt(0) + type.name().substring(0, 1);
 		this.moveset = moveset;
 	}
 
-	public Piece(PieceType type, PieceColor color, List<Move> moveset) {
-		this(type.name().toLowerCase(), color, moveset);
-	}
-
 	public String getCode() {
-		return color.name().charAt(0) + typeName.substring(0, 2);
+		return color.name().charAt(0) + type.name().substring(0, 2);
 	}
 
 	public PieceColor color() {
@@ -36,8 +32,8 @@ public class Piece {
 		return name;
 	}
 
-	public String typeName() {
-		return typeName;
+	public PieceType type() {
+		return type;
 	}
 
 	public List<Move> moveset() {

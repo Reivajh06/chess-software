@@ -21,8 +21,6 @@ public class GameSession {
     private final Map<PieceColor, List<Piece>> capturedPieces;
     private boolean debug = false;
 
-    //Change from moveRegistry to PieceRegistry? Give the piece the moveset it has
-
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
         this.gamemode = gamemode;
@@ -44,6 +42,10 @@ public class GameSession {
     }
 
     public List<Tile> pieceMovesetTiles(Tile location) {
+        if(status != GameStatus.ACTIVE) return new ArrayList<>();
+
+        if(validator.onCheck()) return new ArrayList<>();
+
         Piece piece = board.pieceAt(location);
 
         if(piece == null) return new ArrayList<>();
@@ -62,6 +64,9 @@ public class GameSession {
     }
 
     public void move(Tile from, Tile to) {
+        if(status != GameStatus.ACTIVE) return;
+        if(validator.onCheck() && board.pieceAt(from).type() != PieceType.KING) return;
+
         Piece pieceEaten = controller.movePiece(from, to);
         board.pieceAt(to).moved();
 
@@ -69,6 +74,9 @@ public class GameSession {
 
         if(debug) printBoard();
 
+        status = validator.updateGameStatus(pieceMovesetTiles(to), status);
+
+        if(validator.onCheck()) System.out.println("CHECK");
         validator.nextTurn();
     }
 

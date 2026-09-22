@@ -58,7 +58,6 @@ public class GameController {
 	}
 
 	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {
-
 		List<Tile> tiles = new ArrayList<>();
 		Tile t = start;
 		int movementFactor = color == PieceColor.BLACK ? -1 : 1;
