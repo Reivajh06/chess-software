@@ -1,4 +1,4 @@
-package reivajh06.model.pieces;
+package reivajh06.model;
 
 public enum PieceColor {
 

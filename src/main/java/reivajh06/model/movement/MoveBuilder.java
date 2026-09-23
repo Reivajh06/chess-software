@@ -1,12 +1,15 @@
 package reivajh06.model.movement;
 
+import java.util.List;
+
 public class MoveBuilder {
 
-	public static final int ALL_TILES = 8;
+	private static final int MAX_POSSIBLE_REPETITIONS = 8;
 
 	private int x;
 	private int y;
-	private int nRepetitions;
+	private int nRepetitions = 1;
+	private List<MoveCondition> conditions;
 
 	public MoveBuilder forward() {
 		y += 1;
@@ -58,10 +61,15 @@ public class MoveBuilder {
 	}
 
 	public MoveBuilder allRepetitions() {
-		return repetitions(ALL_TILES);
+		return repetitions(MAX_POSSIBLE_REPETITIONS);
+	}
+
+	public MoveBuilder conditions(MoveCondition... conditions) {
+		this.conditions = List.of(conditions);
+		return this;
 	}
 
 	public Move build() {
-		return new Move(x, y, nRepetitions);
+		return new Move(x, y, nRepetitions, conditions == null ? MoveCondition.NO_CONDITIONS : conditions);
 	}
 }
