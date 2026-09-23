@@ -51,6 +51,6 @@ public class Piece {
 	@NotNull
 	@Override
 	public String toString() {
-		return getCode();
+		return type().sprite;
 	}
 }

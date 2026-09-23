@@ -4,6 +4,7 @@ import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveCondition;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MovesValidator {
@@ -32,8 +33,8 @@ public class MovesValidator {
 
 	private final Board board;
 	private PieceColor turn;
-	private boolean onCheck = false;
 	private final GameController controller;
+	private boolean onCheck = false;
 
 	public MovesValidator(Board board, GameController controller) {
 		this.controller = controller;
@@ -42,6 +43,8 @@ public class MovesValidator {
 	}
 
 	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
+		if(onCheck && board.pieceAt(from).type() != PieceType.KING) return new ArrayList<>();
+
 		return pendingTiles.stream().filter(pendingTile -> {
 			Piece p = board.pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();
@@ -56,10 +59,6 @@ public class MovesValidator {
 		}).toList();
 	}
 
-	public GameStatus getGameStatus() {
-		return GameStatus.ACTIVE;
-	}
-
 	public PieceColor turn() {
 		return turn;
 	}
@@ -68,27 +67,8 @@ public class MovesValidator {
 		turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
 	}
 
-	public boolean onCheck() {
-		return onCheck;
-	}
-
-	public GameStatus updateGameStatus(List<Tile> nextMoveTiles) {
-		GameStatus status = GameStatus.ACTIVE;
-
-		Tile kingTile = nextMoveTiles.stream().filter(t -> {
-				Piece king = board.pieceAt(t);
-
-					return king != null && king.type() == PieceType.KING;
-				})
-				.findFirst()
-				.orElse(null);
-
-		Piece checkedKing = board.pieceAt(kingTile);
-
-		onCheck = checkedKing != null;
-
-
-		return status;
+	public void onCheck(boolean onCheck) {
+		this.onCheck = onCheck;
 	}
 
 	private static boolean isDiagonalMove(Tile from, Tile to) {

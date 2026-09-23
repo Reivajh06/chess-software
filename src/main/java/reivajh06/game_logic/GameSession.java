@@ -36,15 +36,13 @@ public class GameSession {
 
         board = new Board();
         controller = new GameController(board);
-        validator = new MovesValidator(board);
+        validator = new MovesValidator(board, controller);
 
         controller.setupBoard();
     }
 
     public List<Tile> pieceMovesetTiles(Tile location) {
         if(status != GameStatus.ACTIVE) return new ArrayList<>();
-
-        if(validator.onCheck()) return new ArrayList<>();
 
         Piece piece = board.pieceAt(location);
 
@@ -65,7 +63,6 @@ public class GameSession {
 
     public void move(Tile from, Tile to) {
         if(status != GameStatus.ACTIVE) return;
-        if(validator.onCheck() && board.pieceAt(from).type() != PieceType.KING) return;
 
         Piece pieceEaten = controller.movePiece(from, to);
         board.pieceAt(to).moved();
@@ -74,14 +71,9 @@ public class GameSession {
 
         if(debug) printBoard();
 
-        status = validator.updateGameStatus(pieceMovesetTiles(to), status);
+        updateGameStatus(to);
 
-        if(validator.onCheck()) System.out.println("CHECK");
         validator.nextTurn();
-    }
-
-    public void updateGameStatus() {
-        status = validator.getGameStatus();
     }
 
     public void setDebug(boolean debug) {
@@ -105,5 +97,36 @@ public class GameSession {
     public void printBoard() {
         board.printBoard();
         System.out.println();
+    }
+
+    private void updateGameStatus(Tile pieceLocation) {
+        Tile kingTile = getKingThreatenedTile(pieceLocation);
+
+        if(kingTile == null) {
+            status = GameStatus.ACTIVE;
+            validator.onCheck(false);
+            return;
+        }
+
+        validator.onCheck(true);
+
+        if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
+    }
+
+    private Tile getKingThreatenedTile(Tile pieceLocation) {
+        List<Tile> nextMovesetTiles = pieceMovesetTiles(pieceLocation);
+
+        return nextMovesetTiles.stream()
+                .filter(t -> {
+                    Piece p = board.pieceAt(t);
+
+                    return p != null && p.type() == PieceType.KING;
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isCheckMate(Tile kingTile) {
+        return pieceMovesetTiles(kingTile) == null;
     }
 }

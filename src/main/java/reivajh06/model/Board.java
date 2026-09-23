@@ -51,8 +51,8 @@ public class Board {
 
 			for(int j = 0; j < 8; j++) {
 				Piece p = tiles.get(new Tile(File.values()[j], Rank.values()[i]));
-				row.append(p == null ? "..." : p.toString());
-				row.append(" ");
+				row.append(p == null ? "\uD81A\uDCEF" : p.toString());
+				row.append("  ");
 			}
 
 			System.out.println(row);
