@@ -22,6 +22,9 @@ public class GameSession {
     private final Map<PieceColor, List<Piece>> capturedPieces;
     private boolean debug = false;
 
+    private boolean onCheck = false;
+    private PieceColor turn = PieceColor.WHITE;
+
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
         this.gamemode = gamemode;
@@ -37,7 +40,7 @@ public class GameSession {
 
         board = new Board();
         controller = new GameController(board);
-        validator = new MovesValidator(board);
+        validator = new MovesValidator(board, controller);
 
         controller.setupBoard();
     }
@@ -48,8 +51,9 @@ public class GameSession {
         Piece piece = board.pieceAt(location);
 
         if(piece == null) return new HashMap<>();
+        if(onCheck && piece.type() != PieceType.KING) return new HashMap<>();
 
-        if(validator.turn() != piece.color()) return new HashMap<>();
+        if(turn != piece.color()) return new HashMap<>();
 
         List<Move> pieceMoveset = piece.moveset();
 
@@ -80,7 +84,7 @@ public class GameSession {
 
         updateGameStatus(to);
 
-        validator.nextTurn();
+        turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
     }
 
     public void setDebug(boolean debug) {
@@ -92,7 +96,7 @@ public class GameSession {
     }
 
     public PieceColor colorTurn() {
-        return validator.turn();
+        return turn;
     }
 
     public void registerMove(Tile from, Tile to, Piece capturedPiece) {
@@ -111,11 +115,11 @@ public class GameSession {
 
         if(kingTile == null) {
             status = GameStatus.ACTIVE;
-            validator.onCheck(false);
+            onCheck = false;
             return;
         }
 
-        validator.onCheck(true);
+        onCheck = true;
 
         if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
     }

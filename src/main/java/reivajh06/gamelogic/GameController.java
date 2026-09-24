@@ -70,6 +70,12 @@ public class GameController {
 		return tiles;
 	}
 
+	public List<Tile> getPiecesTilesByColor(PieceColor color) {
+		return board.asStream()
+				.filter(t -> board.pieceAt(t) != null && board.pieceAt(t).color() == color)
+				.toList();
+	}
+
 	private boolean outOfBounds(int fileIndex, int rankIndex) {
 		return (fileIndex < 0 || fileIndex >= File.values().length) ||
 				(rankIndex < 0 || rankIndex >= Rank.values().length);

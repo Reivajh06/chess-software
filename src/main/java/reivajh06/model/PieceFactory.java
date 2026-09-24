@@ -38,14 +38,14 @@ public class PieceFactory {
 
 	public static Piece createKing(PieceColor color) {
 		return new Piece(PieceType.KING, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().build(),
-				new MoveBuilder().left().build(),
-				new MoveBuilder().right().build(),
-				new MoveBuilder().backward().build(),
-				new MoveBuilder().forwardLeft().build(),
-				new MoveBuilder().forwardRight().build(),
-				new MoveBuilder().backwardLeft().build(),
-				new MoveBuilder().backwardRight().build()
+				new MoveBuilder().forward().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().left().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().right().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().backward().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().forwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().forwardRight().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().backwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().backwardRight().conditions(MovesValidator.SAFE_MOVE).build()
 		)));
 	}
 

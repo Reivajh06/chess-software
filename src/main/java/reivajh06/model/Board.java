@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Board {
 
@@ -42,8 +43,12 @@ public class Board {
 		return tiles.replace(tile, piece);
 	}
 
+	public Stream<Tile> asStream() {
+		return tiles.keySet().stream();
+	}
+
 	public void printBoard() {
-		System.out.println(new StringBuilder().append("   ").append(Arrays.stream(File.values()).map(File::name).collect(Collectors.joining("	"))));
+		System.out.println("   " + Arrays.stream(File.values()).map(File::name).collect(Collectors.joining("	")));
 
 		for(int i = 7; i >= 0; i--) {
 			StringBuilder row = new StringBuilder();
