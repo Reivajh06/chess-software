@@ -1,4 +1,4 @@
-package reivajh06.game_logic;
+package reivajh06.gamelogic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
@@ -42,19 +42,8 @@ public class GameController {
 		board.addPiece(new Tile(File.H, Rank.values()[kingRow - 1]), PieceFactory.createRook(color));
 	}
 
-	public Piece movePiece(Tile from, Tile to) {
-		Piece captured;
-
-		if(!board.hasPiece(from)) return null;
-
-		if(!isEnPassant(from, to)) captured = board.removePieceIn(to);
-
-		else captured = board.removePieceIn(new Tile(to.file(), from.rank()));
-
-		board.addPiece(to, board.removePieceIn(from));
-
-
-		return captured;
+	public Piece movePiece(Move move, Tile from, Tile to) {
+		return move.effect().apply(board, from, to);
 	}
 
 	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {
@@ -84,9 +73,5 @@ public class GameController {
 	private boolean outOfBounds(int fileIndex, int rankIndex) {
 		return (fileIndex < 0 || fileIndex >= File.values().length) ||
 				(rankIndex < 0 || rankIndex >= Rank.values().length);
-	}
-
-	private boolean isEnPassant(Tile from, Tile to) {
-		return MovesValidator.EN_PASSANT.satisfies(board, from, to);
 	}
 }

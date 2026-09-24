@@ -1,4 +1,4 @@
-package reivajh06.game_logic;
+package reivajh06.gamelogic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GameSession {
 
@@ -36,35 +37,41 @@ public class GameSession {
 
         board = new Board();
         controller = new GameController(board);
-        validator = new MovesValidator(board, controller);
+        validator = new MovesValidator(board);
 
         controller.setupBoard();
     }
 
-    public List<Tile> pieceMovesetTiles(Tile location) {
-        if(status != GameStatus.ACTIVE) return new ArrayList<>();
+    public Map<Move, List<Tile>> pieceMovesetTiles(Tile location) {
+        if(status != GameStatus.ACTIVE) return new HashMap<>();
 
         Piece piece = board.pieceAt(location);
 
-        if(piece == null) return new ArrayList<>();
+        if(piece == null) return new HashMap<>();
 
-        if(validator.turn() != piece.color()) return new ArrayList<>();
+        if(validator.turn() != piece.color()) return new HashMap<>();
 
         List<Move> pieceMoveset = piece.moveset();
 
-        List<Tile> movesetTiles = new ArrayList<>();
+        Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
         for(Move move : pieceMoveset) {
-            movesetTiles.addAll(validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move)));
+            movesetTiles.put(move, validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move)));
         }
 
         return movesetTiles;
     }
 
-    public void move(Tile from, Tile to) {
+    public void move(Move move, Tile from, Tile to) {
         if(status != GameStatus.ACTIVE) return;
+        if(board.pieceAt(from) == null) return;
 
-        Piece pieceEaten = controller.movePiece(from, to);
+        Piece pieceEaten = controller.movePiece(
+                move,
+                from,
+                to
+        );
+
         board.pieceAt(to).moved();
 
         registerMove(from, to, pieceEaten);
@@ -114,7 +121,7 @@ public class GameSession {
     }
 
     private Tile getKingThreatenedTile(Tile pieceLocation) {
-        List<Tile> nextMovesetTiles = pieceMovesetTiles(pieceLocation);
+        List<Tile> nextMovesetTiles = pieceMovesetTiles(pieceLocation).values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         return nextMovesetTiles.stream()
                 .filter(t -> {

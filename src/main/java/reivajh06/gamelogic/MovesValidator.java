@@ -1,4 +1,4 @@
-package reivajh06.game_logic;
+package reivajh06.gamelogic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
@@ -33,11 +33,9 @@ public class MovesValidator {
 
 	private final Board board;
 	private PieceColor turn;
-	private final GameController controller;
 	private boolean onCheck = false;
 
-	public MovesValidator(Board board, GameController controller) {
-		this.controller = controller;
+	public MovesValidator(Board board) {
 		this.board = board;
 		turn = PieceColor.WHITE;
 	}

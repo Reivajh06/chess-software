@@ -1,6 +1,6 @@
-import reivajh06.game_logic.Difficulty;
-import reivajh06.game_logic.GameSession;
-import reivajh06.game_logic.Gamemode;
+import reivajh06.gamelogic.Difficulty;
+import reivajh06.gamelogic.GameSession;
+import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Tile;
 
 void main() {
