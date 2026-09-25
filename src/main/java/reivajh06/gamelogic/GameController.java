@@ -8,6 +8,11 @@ import java.util.List;
 
 public class GameController {
 
+	private static final int WHITE_PAWN_START_RANK = 2;
+	private static final int WHITE_KING_START_RANK = 1;
+	private static final int BLACK_PAWN_START_RANK = 7;
+	private static final int BLACK_KING_START_RANK = 8;
+
 	private final Board board;
 
 	public GameController(Board board) {
@@ -20,26 +25,26 @@ public class GameController {
 	}
 
 	private void allocatePieces(Board board, PieceColor color) {
-		int pawnRow = 2;
-		int kingRow = 1;
+		int pawnRank = WHITE_PAWN_START_RANK;
+		int kingRank = WHITE_KING_START_RANK;
 
 		if(color == PieceColor.BLACK) {
-			pawnRow = 7;
-			kingRow = 8;
+			pawnRank = BLACK_PAWN_START_RANK;
+			kingRank = BLACK_KING_START_RANK;
 		}
 
 		for(int i = 0; i < 8; i++) {
-			board.addPiece(new Tile(File.values()[i], Rank.values()[pawnRow - 1]), PieceFactory.createPawn(color));
+			board.addPiece(new Tile(File.values()[i], Rank.values()[pawnRank - 1]), PieceFactory.createPawn(color));
 		}
 
-		board.addPiece(new Tile(File.A, Rank.values()[kingRow - 1]), PieceFactory.createRook(color));
-		board.addPiece(new Tile(File.B, Rank.values()[kingRow - 1]), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.C, Rank.values()[kingRow - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.D, Rank.values()[kingRow - 1]), PieceFactory.createQueen(color));
-		board.addPiece(new Tile(File.E, Rank.values()[kingRow - 1]), PieceFactory.createKing(color));
-		board.addPiece(new Tile(File.F, Rank.values()[kingRow - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.G, Rank.values()[kingRow - 1]), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.H, Rank.values()[kingRow - 1]), PieceFactory.createRook(color));
+		board.addPiece(new Tile(File.A, Rank.values()[kingRank - 1]), PieceFactory.createRook(color));
+		board.addPiece(new Tile(File.B, Rank.values()[kingRank - 1]), PieceFactory.createKnight(color));
+		board.addPiece(new Tile(File.C, Rank.values()[kingRank - 1]), PieceFactory.createBishop(color));
+		board.addPiece(new Tile(File.D, Rank.values()[kingRank - 1]), PieceFactory.createQueen(color));
+		board.addPiece(new Tile(File.E, Rank.values()[kingRank - 1]), PieceFactory.createKing(color));
+		board.addPiece(new Tile(File.F, Rank.values()[kingRank - 1]), PieceFactory.createBishop(color));
+		board.addPiece(new Tile(File.G, Rank.values()[kingRank - 1]), PieceFactory.createKnight(color));
+		board.addPiece(new Tile(File.H, Rank.values()[kingRank - 1]), PieceFactory.createRook(color));
 	}
 
 	public Piece movePiece(Move move, Tile from, Tile to) {
