@@ -10,6 +10,7 @@ public class MoveBuilder {
 	private int y;
 	private int nRepetitions = 1;
 	private List<MoveCondition> conditions;
+	private MoveEffect effect = MoveEffect.DIRECT_CAPTURE;
 
 	public MoveBuilder forward() {
 		y += 1;
@@ -69,7 +70,12 @@ public class MoveBuilder {
 		return this;
 	}
 
+	public MoveBuilder effect(MoveEffect effect) {
+		this.effect = effect;
+		return this;
+	}
+
 	public Move build() {
-		return new Move(x, y, nRepetitions, conditions == null ? MoveCondition.NO_CONDITIONS : conditions);
+		return new Move(x, y, nRepetitions, conditions == null ? MoveCondition.NO_CONDITIONS : conditions, effect);
 	}
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GameSession {
 
@@ -20,6 +21,9 @@ public class GameSession {
     private final List<MoveData> movesHistory;
     private final Map<PieceColor, List<Piece>> capturedPieces;
     private boolean debug = false;
+
+    private boolean onCheck = false;
+    private PieceColor turn = PieceColor.WHITE;
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
@@ -41,30 +45,37 @@ public class GameSession {
         controller.setupBoard();
     }
 
-    public List<Tile> pieceMovesetTiles(Tile location) {
-        if(status != GameStatus.ACTIVE) return new ArrayList<>();
+    public Map<Move, List<Tile>> pieceMovesetTiles(Tile location) {
+        if(status != GameStatus.ACTIVE) return new HashMap<>();
 
         Piece piece = board.pieceAt(location);
 
-        if(piece == null) return new ArrayList<>();
+        if(piece == null) return new HashMap<>();
+        if(onCheck && piece.type() != PieceType.KING) return new HashMap<>();
 
-        if(validator.turn() != piece.color()) return new ArrayList<>();
+        if(turn != piece.color()) return new HashMap<>();
 
         List<Move> pieceMoveset = piece.moveset();
 
-        List<Tile> movesetTiles = new ArrayList<>();
+        Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
         for(Move move : pieceMoveset) {
-            movesetTiles.addAll(validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move)));
+            movesetTiles.put(move, validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move)));
         }
 
         return movesetTiles;
     }
 
-    public void move(Tile from, Tile to) {
+    public void move(Move move, Tile from, Tile to) {
         if(status != GameStatus.ACTIVE) return;
+        if(board.pieceAt(from) == null) return;
 
-        Piece pieceEaten = controller.movePiece(from, to);
+        Piece pieceEaten = controller.movePiece(
+                move,
+                from,
+                to
+        );
+
         board.pieceAt(to).moved();
 
         registerMove(from, to, pieceEaten);
@@ -73,7 +84,7 @@ public class GameSession {
 
         updateGameStatus(to);
 
-        validator.nextTurn();
+        turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
     }
 
     public void setDebug(boolean debug) {
@@ -85,7 +96,7 @@ public class GameSession {
     }
 
     public PieceColor colorTurn() {
-        return validator.turn();
+        return turn;
     }
 
     public void registerMove(Tile from, Tile to, Piece capturedPiece) {
@@ -104,17 +115,17 @@ public class GameSession {
 
         if(kingTile == null) {
             status = GameStatus.ACTIVE;
-            validator.onCheck(false);
+            onCheck = false;
             return;
         }
 
-        validator.onCheck(true);
+        onCheck = true;
 
         if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
     }
 
     private Tile getKingThreatenedTile(Tile pieceLocation) {
-        List<Tile> nextMovesetTiles = pieceMovesetTiles(pieceLocation);
+        List<Tile> nextMovesetTiles = pieceMovesetTiles(pieceLocation).values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         return nextMovesetTiles.stream()
                 .filter(t -> {

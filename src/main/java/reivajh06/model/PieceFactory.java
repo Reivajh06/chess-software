@@ -2,6 +2,7 @@ package reivajh06.model;
 
 import reivajh06.gamelogic.MovesValidator;
 import reivajh06.model.movement.MoveBuilder;
+import reivajh06.model.movement.MoveEffect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +13,8 @@ public class PieceFactory {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
 				new MoveBuilder().forward().build(),
 				new MoveBuilder().forward().forward().conditions(MovesValidator.START_TWO_FORWARD).build(),
-				new MoveBuilder().forwardLeft().conditions(MovesValidator.DIAGONAL_CAPTURE, MovesValidator.EN_PASSANT).build(),
-				new MoveBuilder().forwardRight().conditions(MovesValidator.DIAGONAL_CAPTURE, MovesValidator.EN_PASSANT).build()
+				new MoveBuilder().forwardLeft().conditions(MovesValidator.DIAGONAL_CAPTURE, MovesValidator.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build(),
+				new MoveBuilder().forwardRight().conditions(MovesValidator.DIAGONAL_CAPTURE, MovesValidator.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build()
 		)));
 	}
 
@@ -37,14 +38,14 @@ public class PieceFactory {
 
 	public static Piece createKing(PieceColor color) {
 		return new Piece(PieceType.KING, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().build(),
-				new MoveBuilder().left().build(),
-				new MoveBuilder().right().build(),
-				new MoveBuilder().backward().build(),
-				new MoveBuilder().forwardLeft().build(),
-				new MoveBuilder().forwardRight().build(),
-				new MoveBuilder().backwardLeft().build(),
-				new MoveBuilder().backwardRight().build()
+				new MoveBuilder().forward().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().left().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().right().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().backward().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().forwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().forwardRight().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().backwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().backwardRight().conditions(MovesValidator.SAFE_MOVE).build()
 		)));
 	}
 

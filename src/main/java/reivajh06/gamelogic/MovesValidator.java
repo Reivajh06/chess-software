@@ -9,7 +9,7 @@ import java.util.List;
 
 public class MovesValidator {
 
-	public static final MoveCondition EN_PASSANT = (board, from, to) -> {
+	public static final MoveCondition EN_PASSANT = (_, board, from, to) -> {
 		if(!isDiagonalMove(from, to)) return false;
 
 		Piece p = board.pieceAt(from);
@@ -19,16 +19,37 @@ public class MovesValidator {
 		return adjacentPiece != null && adjacentPiece.color() != p.color();
 	};
 
-	public static final MoveCondition DIAGONAL_CAPTURE = (board, from, to) -> {
+	public static final MoveCondition DIAGONAL_CAPTURE = (_, board, from, to) -> {
 		Piece pieceToCapture = board.pieceAt(to);
 
 		return isDiagonalMove(from, to) && pieceToCapture != null;
 	};
 
-	public static final MoveCondition START_TWO_FORWARD = (board, from, to) -> {
+	public static final MoveCondition START_TWO_FORWARD = (_, board, from, to) -> {
 		Piece p = board.pieceAt(from);
 
 		return p.timesMoved() == 0 && isHorizontalMove(from, to);
+	};
+
+	public static final MoveCondition SAFE_MOVE = (controller, board, from, to) -> {
+		Piece piece = board.pieceAt(from);
+		List<Tile> rivalTiles = controller.getPiecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
+
+		for(Tile rivalTile : rivalTiles) {
+			Piece rivalPiece = board.pieceAt(rivalTile);
+			List<Move> moveset = rivalPiece.moveset();
+
+			for(Move move : moveset) {
+				boolean isTileCompromised = controller.calculateMoveTiles(rivalPiece.color(), rivalTile, move).stream()
+						.filter(t -> t == to)
+						.findFirst()
+						.orElse(null) != null;
+
+				if(isTileCompromised) return false;
+			}
+		}
+
+		return true;
 	};
 
 	private final Board board;
@@ -52,23 +73,11 @@ public class MovesValidator {
 			if(p != null && p.color() == board.pieceAt(from).color()) return false;
 
 			for(MoveCondition condition : conditions) {
-				if(condition.satisfies(board, from, pendingTile)) return true;
+				if(condition.satisfies(controller, board, from, pendingTile)) return true;
 			}
 
 			return false;
 		}).toList();
-	}
-
-	public PieceColor turn() {
-		return turn;
-	}
-
-	public void nextTurn() {
-		turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
-	}
-
-	public void onCheck(boolean onCheck) {
-		this.onCheck = onCheck;
 	}
 
 	private static boolean isDiagonalMove(Tile from, Tile to) {
