@@ -3,11 +3,7 @@ package reivajh06.gamelogic;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class GameSession {
 
@@ -18,7 +14,7 @@ public class GameSession {
     private final Board board;
     private GameStatus status;
     private Difficulty difficulty;
-    private final List<MoveData> movesHistory;
+    private final Stack<MoveData> movesHistory;
     private final Map<PieceColor, List<Piece>> capturedPieces;
     private boolean debug = false;
 
@@ -30,7 +26,7 @@ public class GameSession {
         this.gamemode = gamemode;
 
         status = GameStatus.ACTIVE;
-        movesHistory = new ArrayList<>();
+        movesHistory = new Stack<>();
         capturedPieces = new HashMap<>(
                 Map.of(
                         PieceColor.WHITE, new ArrayList<>(),
@@ -50,17 +46,18 @@ public class GameSession {
 
         Piece piece = board.pieceAt(location);
 
-        if(piece == null) return new HashMap<>();
-        if(onCheck && piece.type() != PieceType.KING) return new HashMap<>();
+		if(onCheck && piece.type() != PieceType.KING) return new HashMap<>();
 
-        if(turn != piece.color()) return new HashMap<>();
+        if(isAbsolutelyPinned(location)) return new HashMap<>();
 
         List<Move> pieceMoveset = piece.moveset();
 
         Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
         for(Move move : pieceMoveset) {
-            movesetTiles.put(move, validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move)));
+            List<Tile> filterMoveTiles = validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move));
+
+            movesetTiles.put(move, filterMoveTiles);
         }
 
         return movesetTiles;
@@ -76,9 +73,9 @@ public class GameSession {
                 to
         );
 
-        board.pieceAt(to).moved();
-
         registerMove(from, to, pieceEaten);
+
+        board.pieceAt(to).moved();
 
         if(debug) printBoard();
 
@@ -87,11 +84,60 @@ public class GameSession {
         turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
     }
 
+    private boolean isAbsolutelyPinned(Tile location) {
+        Piece piece = controller.removePieceAt(location);
+
+        if(piece == null) return false;
+        if(piece.type() == PieceType.KING) return false;
+
+        Tile kingTile = controller.kingTile(piece.color());
+
+        boolean isPinned = controller.getPiecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK).stream()
+                .filter(t -> {
+                    Piece p = board.pieceAt(t);
+
+                    if(p == null) return false;
+
+                    PieceType type = p.type();
+
+                    return type == PieceType.BISHOP || type == PieceType.QUEEN || type == PieceType.ROOK;
+                })
+                .filter(t -> {
+                    Map<Move, List<Tile>> movesetTiles = pieceMovesetTiles(t);
+
+                    for(List<Tile> moveTiles : movesetTiles.values()) {
+                        if(moveTiles.contains(kingTile)) return true;
+                    }
+
+                    return false;
+                })
+                .findFirst()
+                .orElse(null) != null;
+
+
+        controller.addPiece(piece, location);
+
+        return isPinned;
+    }
+
+    private boolean isKingExposed(PieceColor color) {
+        Tile kingTile = controller.kingTile(color);
+
+		return controller.getPiecesTilesByColor(color == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK).stream()
+				.filter(t -> {
+                    Tile kingCheckedTile = kingCheckedTile(t);
+
+                    return kingCheckedTile != null && kingCheckedTile.equals(kingTile);
+                })
+				.findFirst()
+				.orElse(null) != null;
+    }
+
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
 
-    public List<MoveData> movesHistory() {
+    public Stack<MoveData> movesHistory() {
         return movesHistory;
     }
 
@@ -100,9 +146,13 @@ public class GameSession {
     }
 
     public void registerMove(Tile from, Tile to, Piece capturedPiece) {
-        movesHistory.add(new MoveData(board.pieceAt(from), from, to, capturedPiece));
+        movesHistory.push(new MoveData(board.pieceAt(from), from, to, capturedPiece));
 
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
+    }
+
+    public GameStatus status() {
+        return status;
     }
 
     public void printBoard() {
@@ -111,7 +161,7 @@ public class GameSession {
     }
 
     private void updateGameStatus(Tile pieceLocation) {
-        Tile kingTile = getKingThreatenedTile(pieceLocation);
+        Tile kingTile = kingCheckedTile(pieceLocation);
 
         if(kingTile == null) {
             status = GameStatus.ACTIVE;
@@ -124,20 +174,18 @@ public class GameSession {
         if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
     }
 
-    private Tile getKingThreatenedTile(Tile pieceLocation) {
-        List<Tile> nextMovesetTiles = pieceMovesetTiles(pieceLocation).values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableList());
+    private Tile kingCheckedTile(Tile pieceLocation) {
+        Piece piece = board.pieceAt(pieceLocation);
+        Tile rivalKingTile = piece.color() == PieceColor.WHITE ? controller.blackKingTile() : controller.whiteKingTile();
 
-        return nextMovesetTiles.stream()
-                .filter(t -> {
-                    Piece p = board.pieceAt(t);
-
-                    return p != null && p.type() == PieceType.KING;
-                })
+        return pieceMovesetTiles(pieceLocation).values().stream()
+                .flatMap(List::stream)
+                .filter(t -> t.equals(rivalKingTile))
                 .findFirst()
                 .orElse(null);
     }
 
     private boolean isCheckMate(Tile kingTile) {
-        return pieceMovesetTiles(kingTile) == null;
+        return pieceMovesetTiles(kingTile).isEmpty();
     }
 }

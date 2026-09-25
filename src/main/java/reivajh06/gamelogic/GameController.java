@@ -8,12 +8,14 @@ import java.util.List;
 
 public class GameController {
 
-	private static final int WHITE_PAWN_START_RANK = 2;
-	private static final int WHITE_KING_START_RANK = 1;
-	private static final int BLACK_PAWN_START_RANK = 7;
-	private static final int BLACK_KING_START_RANK = 8;
+	private static final Rank WHITE_PAWN_START_RANK = Rank.TWO;
+	private static final Rank WHITE_KING_START_RANK = Rank.ONE;
+	private static final Rank BLACK_PAWN_START_RANK = Rank.SEVEN;
+	private static final Rank BLACK_KING_START_RANK = Rank.EIGHT;
 
 	private final Board board;
+	private Tile whiteKingTile;
+	private Tile blackKingTile;
 
 	public GameController(Board board) {
 		this.board = board;
@@ -22,11 +24,14 @@ public class GameController {
 	public void setupBoard() {
 		allocatePieces(board, PieceColor.BLACK);
 		allocatePieces(board, PieceColor.WHITE);
+
+		blackKingTile = new Tile(File.E, BLACK_KING_START_RANK);
+		whiteKingTile = new Tile(File.E, WHITE_KING_START_RANK);
 	}
 
 	private void allocatePieces(Board board, PieceColor color) {
-		int pawnRank = WHITE_PAWN_START_RANK;
-		int kingRank = WHITE_KING_START_RANK;
+		Rank pawnRank = WHITE_PAWN_START_RANK;
+		Rank kingRank = WHITE_KING_START_RANK;
 
 		if(color == PieceColor.BLACK) {
 			pawnRank = BLACK_PAWN_START_RANK;
@@ -34,21 +39,43 @@ public class GameController {
 		}
 
 		for(int i = 0; i < 8; i++) {
-			board.addPiece(new Tile(File.values()[i], Rank.values()[pawnRank - 1]), PieceFactory.createPawn(color));
+			board.addPiece(new Tile(File.values()[i], Rank.values()[pawnRank.number - 1]), PieceFactory.createPawn(color));
 		}
 
-		board.addPiece(new Tile(File.A, Rank.values()[kingRank - 1]), PieceFactory.createRook(color));
-		board.addPiece(new Tile(File.B, Rank.values()[kingRank - 1]), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.C, Rank.values()[kingRank - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.D, Rank.values()[kingRank - 1]), PieceFactory.createQueen(color));
-		board.addPiece(new Tile(File.E, Rank.values()[kingRank - 1]), PieceFactory.createKing(color));
-		board.addPiece(new Tile(File.F, Rank.values()[kingRank - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.G, Rank.values()[kingRank - 1]), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.H, Rank.values()[kingRank - 1]), PieceFactory.createRook(color));
+		board.addPiece(new Tile(File.A, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
+		board.addPiece(new Tile(File.B, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
+		board.addPiece(new Tile(File.C, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
+		board.addPiece(new Tile(File.D, Rank.values()[kingRank.number - 1]), PieceFactory.createQueen(color));
+		board.addPiece(new Tile(File.E, Rank.values()[kingRank.number - 1]), PieceFactory.createKing(color));
+		board.addPiece(new Tile(File.F, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
+		board.addPiece(new Tile(File.G, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
+		board.addPiece(new Tile(File.H, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
+
 	}
 
 	public Piece movePiece(Move move, Tile from, Tile to) {
+		Piece p = board.pieceAt(from);
+
+		if(p.type() == PieceType.KING) {
+			if(p.color() == PieceColor.BLACK) blackKingTile = from;
+			else whiteKingTile = from;
+		}
+
 		return move.effect().apply(board, from, to);
+	}
+
+	public void addPiece(Piece piece, Tile tile) {
+		board.addPiece(tile, piece);
+	}
+
+	public Piece removePieceAt(Tile tile) {
+		return board.removePieceIn(tile);
+	}
+
+	public void undoMove(MoveData moveData) {
+		Piece movedPiece = board.removePieceIn(moveData.to());
+		addPiece(movedPiece, moveData.from());
+		addPiece(moveData.pieceEaten(), moveData.to());
 	}
 
 	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {
@@ -79,6 +106,18 @@ public class GameController {
 		return board.asStream()
 				.filter(t -> board.pieceAt(t) != null && board.pieceAt(t).color() == color)
 				.toList();
+	}
+
+	public Tile blackKingTile() {
+		return blackKingTile;
+	}
+
+	public Tile whiteKingTile() {
+		return whiteKingTile;
+	}
+
+	public Tile kingTile(PieceColor kingColor) {
+		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
 	}
 
 	private boolean outOfBounds(int fileIndex, int rankIndex) {
