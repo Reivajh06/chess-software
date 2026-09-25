@@ -1,4 +1,4 @@
-package reivajh06.game_logic;
+package reivajh06.gamelogic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
@@ -127,6 +127,6 @@ public class GameSession {
     }
 
     private boolean isCheckMate(Tile kingTile) {
-        return pieceMovesetTiles(kingTile) == null;
+        return pieceMovesetTiles(kingTile).isEmpty();
     }
 }

@@ -1,4 +1,4 @@
-package reivajh06.game_logic;
+package reivajh06.gamelogic;
 
 public enum Difficulty {
 

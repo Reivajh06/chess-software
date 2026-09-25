@@ -1,6 +1,6 @@
 package reivajh06.model;
 
-import reivajh06.game_logic.MovesValidator;
+import reivajh06.gamelogic.MovesValidator;
 import reivajh06.model.movement.MoveBuilder;
 
 import java.util.ArrayList;
