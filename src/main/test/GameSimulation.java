@@ -1,9 +1,9 @@
-import reivajh06.gamelogic.Difficulty;
-import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameStatus;
-import reivajh06.gamelogic.Gamemode;
-import reivajh06.model.Tile;
-import reivajh06.model.movement.Move;
+import software.ulpgc.gamelogic.Difficulty;
+import software.ulpgc.gamelogic.GameSession;
+import software.ulpgc.gamelogic.GameStatus;
+import software.ulpgc.gamelogic.Gamemode;
+import software.ulpgc.model.Tile;
+import software.ulpgc.model.movement.Move;
 
 void main() {
 	Scanner scanner = new Scanner(System.in);
