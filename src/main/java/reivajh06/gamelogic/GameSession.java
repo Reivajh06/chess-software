@@ -16,10 +16,11 @@ public class GameSession {
     private Difficulty difficulty;
     private final Stack<MoveData> movesHistory;
     private final Map<PieceColor, List<Piece>> capturedPieces;
-    private boolean debug = false;
 
     private boolean onCheck = false;
     private PieceColor turn = PieceColor.WHITE;
+
+    private boolean debug = false;
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         this.difficulty = difficulty;
@@ -104,6 +105,19 @@ public class GameSession {
         movesHistory.push(new MoveData(board.pieceAt(from), from, to, capturedPiece));
 
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
+    }
+
+    private boolean isPromotable(Tile location) {
+        final Rank WHITE_PROMOTION_RANK = Rank.EIGHT;
+        final Rank BLACK_PROMOTION_RANK = Rank.ONE;
+
+        Piece p = board.pieceAt(location);
+
+        if(p.type() != PieceType.PAWN) return false;
+
+        if(p.color() == PieceColor.WHITE) return location.rank().equals(WHITE_PROMOTION_RANK);
+
+        else return location.rank().equals(BLACK_PROMOTION_RANK);
     }
 
     private boolean isAbsolutelyPinned(Tile location) {

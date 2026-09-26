@@ -4,7 +4,6 @@ import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveCondition;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MovesValidator {
