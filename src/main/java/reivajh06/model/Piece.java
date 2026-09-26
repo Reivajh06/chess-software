@@ -1,16 +1,17 @@
 package reivajh06.model;
 
 import org.jetbrains.annotations.NotNull;
+import reivajh06.SpritesRepository;
 import reivajh06.model.movement.Move;
 
 import java.util.List;
 
 public class Piece {
 
-	private PieceColor color;
+	private final PieceColor color;
 	private final PieceType type;
 	private final String name;
-	private List<Move> moveset;
+	private final List<Move> moveset;
 	private int timesMoved;
 
 	public Piece(PieceType type, PieceColor color, List<Move> moveset) {
@@ -20,7 +21,7 @@ public class Piece {
 		this.moveset = moveset;
 	}
 
-	public String getCode() {
+	public String code() {
 		return color.name().charAt(0) + type.name().substring(0, 2);
 	}
 
@@ -51,6 +52,6 @@ public class Piece {
 	@NotNull
 	@Override
 	public String toString() {
-		return type().sprite;
+		return SpritesRepository.sprite(code());
 	}
 }

@@ -1,6 +1,7 @@
 package reivajh06.model.movement;
 
 import reivajh06.model.Board;
+import reivajh06.model.File;
 import reivajh06.model.Piece;
 import reivajh06.model.Tile;
 
@@ -24,6 +25,26 @@ public interface MoveEffect {
 		board.addPiece(to, board.removePieceIn(from));
 		board.removePieceIn(adjacentTile);
 		return capturedPiece;
+	};
+
+	MoveEffect QUEENSIDE_CASTLING = (board, from, to) -> {
+		board.addPiece(to, board.removePieceIn(from));
+		board.addPiece(
+				new Tile(File.D, from.rank()),
+				board.removePieceIn(new Tile(File.A, from.rank()))
+		);
+
+		return null;
+	};
+
+	MoveEffect KINGSIDE_CASTLING = (board, from, to) -> {
+		board.addPiece(to, board.removePieceIn(from));
+		board.addPiece(
+				new Tile(File.F, from.rank()),
+				board.removePieceIn(new Tile(File.H, from.rank()))
+		);
+
+		return null;
 	};
 
 	Piece apply(Board board, Tile from, Tile to);

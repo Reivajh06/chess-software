@@ -4,7 +4,6 @@ import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveCondition;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MovesValidator {
@@ -33,7 +32,7 @@ public class MovesValidator {
 
 	public static final MoveCondition SAFE_MOVE = (controller, board, from, to) -> {
 		Piece piece = board.pieceAt(from);
-		List<Tile> rivalTiles = controller.getPiecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
+		List<Tile> rivalTiles = controller.piecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
 
 		for(Tile rivalTile : rivalTiles) {
 			Piece rivalPiece = board.pieceAt(rivalTile);
@@ -41,7 +40,7 @@ public class MovesValidator {
 
 			for(Move move : moveset) {
 				boolean isTileCompromised = controller.calculateMoveTiles(rivalPiece.color(), rivalTile, move).stream()
-						.filter(t -> t == to)
+						.filter(t -> t.equals(to))
 						.findFirst()
 						.orElse(null) != null;
 
@@ -52,20 +51,56 @@ public class MovesValidator {
 		return true;
 	};
 
+	public static final MoveCondition QUEENSIDE_CASTLING = (controller, board, from, to) -> {
+		Piece king = board.pieceAt(from);
+
+		if(king.timesMoved() != 0) return false;
+
+		Tile leftRookTile = controller.tilesByRank(from.rank()).getFirst();
+		Piece rook = board.pieceAt(leftRookTile);
+
+		if(rook == null) return false;
+		if(rook.type() != PieceType.ROOK) return false;
+		if(rook.timesMoved() != 0) return false;
+
+		for(File file = File.B; file != null && file.compareTo(from.file()) < 0; file = File.next(file)) {
+			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
+			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
+		}
+
+		return true;
+	};
+
+	public static final MoveCondition KINGSIDE_CASTLING = (controller, board, from, to) -> {
+		Piece king = board.pieceAt(from);
+
+		if(king.timesMoved() != 0) return false;
+
+		Tile rightRookTile = controller.tilesByRank(from.rank()).getLast();
+
+		Piece rook = board.pieceAt(rightRookTile);
+
+		if(rook == null) return false;
+		if(rook.type() != PieceType.ROOK) return false;
+		if(rook.timesMoved() != 0) return false;
+
+		for(File file = File.next(from.file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
+			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
+			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
+		}
+
+		return true;
+	};
+
 	private final Board board;
-	private PieceColor turn;
 	private final GameController controller;
-	private boolean onCheck = false;
 
 	public MovesValidator(Board board, GameController controller) {
 		this.controller = controller;
 		this.board = board;
-		turn = PieceColor.WHITE;
 	}
 
 	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
-		if(onCheck && board.pieceAt(from).type() != PieceType.KING) return new ArrayList<>();
-
 		return pendingTiles.stream().filter(pendingTile -> {
 			Piece p = board.pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();

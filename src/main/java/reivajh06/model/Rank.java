@@ -16,4 +16,14 @@ public enum Rank {
 	Rank(int number) {
 		this.number = number;
 	}
+
+	public static Rank next(Rank currentFile) {
+		if(currentFile.equals(Rank.EIGHT)) return null;
+		return Rank.values()[currentFile.number - Rank.EIGHT.number + 1];
+	}
+
+	public static Rank previous(Rank currentFile) {
+		if(currentFile.equals(Rank.ONE)) return null;
+		return Rank.values()[currentFile.number - Rank.ONE.number - 1];
+	}
 }
