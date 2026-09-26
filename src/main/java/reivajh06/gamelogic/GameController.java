@@ -58,8 +58,8 @@ public class GameController {
 		Piece p = board.pieceAt(from);
 
 		if(p.type() == PieceType.KING) {
-			if(p.color() == PieceColor.BLACK) blackKingTile = from;
-			else whiteKingTile = from;
+			if(p.color() == PieceColor.BLACK) blackKingTile = to;
+			else whiteKingTile = to;
 		}
 
 		return move.effect().apply(board, from, to);

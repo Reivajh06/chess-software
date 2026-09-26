@@ -124,7 +124,11 @@ public class GameSession {
         Piece piece = controller.removePieceAt(location);
 
         if(piece == null) return false;
-        if(piece.type() == PieceType.KING) return false;
+
+        if(piece.type() == PieceType.KING) {
+            controller.addPiece(piece, location);
+            return false;
+        }
 
         Tile kingTile = controller.kingTile(piece.color());
 
@@ -182,7 +186,7 @@ public class GameSession {
     }
 
     private boolean isCheckMate(Tile kingTile) {
-        return pieceMovesetTiles(kingTile).isEmpty();
+        return pieceMovesetTiles(kingTile).values().stream().allMatch(List::isEmpty);
     }
 
     public void printBoard() {

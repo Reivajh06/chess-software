@@ -40,7 +40,7 @@ public class MovesValidator {
 
 			for(Move move : moveset) {
 				boolean isTileCompromised = controller.calculateMoveTiles(rivalPiece.color(), rivalTile, move).stream()
-						.filter(t -> t == to)
+						.filter(t -> t.equals(to))
 						.findFirst()
 						.orElse(null) != null;
 
@@ -57,8 +57,11 @@ public class MovesValidator {
 		if(king.timesMoved() != 0) return false;
 
 		Tile leftRookTile = controller.tilesByRank(from.rank()).getFirst();
+		Piece rook = board.pieceAt(leftRookTile);
 
-		if(board.pieceAt(leftRookTile).timesMoved() != 0) return false;
+		if(rook == null) return false;
+		if(rook.type() != PieceType.ROOK) return false;
+		if(rook.timesMoved() != 0) return false;
 
 		for(File file = File.B; file != null && file.compareTo(from.file()) < 0; file = File.next(file)) {
 			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
@@ -73,11 +76,15 @@ public class MovesValidator {
 
 		if(king.timesMoved() != 0) return false;
 
-		Tile leftRookTile = controller.tilesByRank(from.rank()).getLast();
+		Tile rightRookTile = controller.tilesByRank(from.rank()).getLast();
 
-		if(board.pieceAt(leftRookTile).timesMoved() != 0) return false;
+		Piece rook = board.pieceAt(rightRookTile);
 
-		for(File file = from.file(); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
+		if(rook == null) return false;
+		if(rook.type() != PieceType.ROOK) return false;
+		if(rook.timesMoved() != 0) return false;
+
+		for(File file = File.next(from.file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
 			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
 		}
