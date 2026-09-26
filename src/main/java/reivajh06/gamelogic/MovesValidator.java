@@ -60,7 +60,7 @@ public class MovesValidator {
 
 		if(board.pieceAt(leftRookTile).timesMoved() != 0) return false;
 
-		for(File file = File.B; file.compareTo(from.file()) < 0; file = File.next(file)) {
+		for(File file = File.B; file != null && file.compareTo(from.file()) < 0; file = File.next(file)) {
 			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
 			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
 		}
@@ -77,7 +77,7 @@ public class MovesValidator {
 
 		if(board.pieceAt(leftRookTile).timesMoved() != 0) return false;
 
-		for(File file = from.file(); file.compareTo(File.H) < 0; file = File.next(file)) {
+		for(File file = from.file(); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
 			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
 		}

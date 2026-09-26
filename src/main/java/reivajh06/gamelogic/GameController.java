@@ -39,18 +39,18 @@ public class GameController {
 			kingRank = BLACK_KING_START_RANK;
 		}
 
-		for(int i = 0; i < 8; i++) {
-			board.addPiece(new Tile(File.values()[i], Rank.values()[pawnRank.number - 1]), PieceFactory.createPawn(color));
+		for(File file = File.A; file != null && file.compareTo(File.H) <= 0; file = File.next(file)) {
+			board.addPiece(new Tile(file, pawnRank), PieceFactory.createPawn(color));
 		}
 
-		board.addPiece(new Tile(File.A, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
-		board.addPiece(new Tile(File.B, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.C, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.D, Rank.values()[kingRank.number - 1]), PieceFactory.createQueen(color));
-		board.addPiece(new Tile(File.E, Rank.values()[kingRank.number - 1]), PieceFactory.createKing(color) );
-		board.addPiece(new Tile(File.F, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.G, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.H, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
+		board.addPiece(new Tile(File.A, kingRank), PieceFactory.createRook(color));
+		board.addPiece(new Tile(File.B, kingRank), PieceFactory.createKnight(color));
+		board.addPiece(new Tile(File.C, kingRank), PieceFactory.createBishop(color));
+		board.addPiece(new Tile(File.D, kingRank), PieceFactory.createQueen(color));
+		board.addPiece(new Tile(File.E, kingRank), PieceFactory.createKing(color) );
+		board.addPiece(new Tile(File.F, kingRank), PieceFactory.createBishop(color));
+		board.addPiece(new Tile(File.G, kingRank), PieceFactory.createKnight(color));
+		board.addPiece(new Tile(File.H, kingRank), PieceFactory.createRook(color));
 
 	}
 
