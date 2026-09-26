@@ -4,6 +4,7 @@ import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class GameController {
@@ -45,8 +46,8 @@ public class GameController {
 		board.addPiece(new Tile(File.A, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
 		board.addPiece(new Tile(File.B, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
 		board.addPiece(new Tile(File.C, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.D, Rank.values()[kingRank.number - 1]), PieceFactory.createKing(color) );
-		board.addPiece(new Tile(File.E, Rank.values()[kingRank.number - 1]), PieceFactory.createQueen(color));
+		board.addPiece(new Tile(File.D, Rank.values()[kingRank.number - 1]), PieceFactory.createQueen(color));
+		board.addPiece(new Tile(File.E, Rank.values()[kingRank.number - 1]), PieceFactory.createKing(color) );
 		board.addPiece(new Tile(File.F, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
 		board.addPiece(new Tile(File.G, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
 		board.addPiece(new Tile(File.H, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
@@ -102,9 +103,16 @@ public class GameController {
 		return tiles;
 	}
 
-	public List<Tile> getPiecesTilesByColor(PieceColor color) {
+	public List<Tile> piecesTilesByColor(PieceColor color) {
 		return board.asStream()
 				.filter(t -> board.pieceAt(t) != null && board.pieceAt(t).color() == color)
+				.toList();
+	}
+
+	public List<Tile> tilesByRank(Rank rank) {
+		return board.asStream()
+				.filter(t -> t.rank().equals(rank))
+				.sorted(Comparator.comparing(Tile::file))
 				.toList();
 	}
 

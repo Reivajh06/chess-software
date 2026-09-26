@@ -45,7 +45,9 @@ public class PieceFactory {
 				new MoveBuilder().forwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
 				new MoveBuilder().forwardRight().conditions(MovesValidator.SAFE_MOVE).build(),
 				new MoveBuilder().backwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().backwardRight().conditions(MovesValidator.SAFE_MOVE).build()
+				new MoveBuilder().backwardRight().conditions(MovesValidator.SAFE_MOVE).build(),
+				new MoveBuilder().left().left().conditions(MovesValidator.QUEENSIDE_CASTLING).effect(MoveEffect.QUEENSIDE_CASTLING).build(),
+				new MoveBuilder().right().right().conditions(MovesValidator.KINGSIDE_CASTLING).effect(MoveEffect.KINGSIDE_CASTLING).build()
 		)));
 	}
 

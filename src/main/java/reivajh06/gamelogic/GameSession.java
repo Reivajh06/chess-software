@@ -128,7 +128,7 @@ public class GameSession {
 
         Tile kingTile = controller.kingTile(piece.color());
 
-        boolean isPinned = controller.getPiecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK).stream()
+        boolean isPinned = controller.piecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK).stream()
                 .filter(t -> {
                     Piece p = board.pieceAt(t);
 

@@ -32,7 +32,7 @@ public class MovesValidator {
 
 	public static final MoveCondition SAFE_MOVE = (controller, board, from, to) -> {
 		Piece piece = board.pieceAt(from);
-		List<Tile> rivalTiles = controller.getPiecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
+		List<Tile> rivalTiles = controller.piecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
 
 		for(Tile rivalTile : rivalTiles) {
 			Piece rivalPiece = board.pieceAt(rivalTile);
@@ -51,6 +51,39 @@ public class MovesValidator {
 		return true;
 	};
 
+	public static final MoveCondition QUEENSIDE_CASTLING = (controller, board, from, to) -> {
+		Piece king = board.pieceAt(from);
+
+		if(king.timesMoved() != 0) return false;
+
+		Tile leftRookTile = controller.tilesByRank(from.rank()).getFirst();
+
+		if(board.pieceAt(leftRookTile).timesMoved() != 0) return false;
+
+		for(File file = File.B; file.compareTo(from.file()) < 0; file = File.next(file)) {
+			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
+			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
+		}
+
+		return true;
+	};
+
+	public static final MoveCondition KINGSIDE_CASTLING = (controller, board, from, to) -> {
+		Piece king = board.pieceAt(from);
+
+		if(king.timesMoved() != 0) return false;
+
+		Tile leftRookTile = controller.tilesByRank(from.rank()).getLast();
+
+		if(board.pieceAt(leftRookTile).timesMoved() != 0) return false;
+
+		for(File file = from.file(); file.compareTo(File.H) < 0; file = File.next(file)) {
+			if(board.pieceAt(new Tile(file, from.rank())) != null) return false;
+			if(!SAFE_MOVE.satisfies(controller, board, from, new Tile(file, from.rank()))) return false;
+		}
+
+		return true;
+	};
 
 	private final Board board;
 	private final GameController controller;
