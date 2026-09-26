@@ -45,8 +45,8 @@ public class GameController {
 		board.addPiece(new Tile(File.A, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));
 		board.addPiece(new Tile(File.B, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
 		board.addPiece(new Tile(File.C, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.D, Rank.values()[kingRank.number - 1]), PieceFactory.createQueen(color));
-		board.addPiece(new Tile(File.E, Rank.values()[kingRank.number - 1]), PieceFactory.createKing(color));
+		board.addPiece(new Tile(File.D, Rank.values()[kingRank.number - 1]), PieceFactory.createKing(color) );
+		board.addPiece(new Tile(File.E, Rank.values()[kingRank.number - 1]), PieceFactory.createQueen(color));
 		board.addPiece(new Tile(File.F, Rank.values()[kingRank.number - 1]), PieceFactory.createBishop(color));
 		board.addPiece(new Tile(File.G, Rank.values()[kingRank.number - 1]), PieceFactory.createKnight(color));
 		board.addPiece(new Tile(File.H, Rank.values()[kingRank.number - 1]), PieceFactory.createRook(color));

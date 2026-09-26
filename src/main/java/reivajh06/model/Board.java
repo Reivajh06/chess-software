@@ -48,7 +48,7 @@ public class Board {
 	}
 
 	public void printBoard() {
-		System.out.println("   " + Arrays.stream(File.values()).map(File::name).collect(Collectors.joining("	")));
+		System.out.println("  " + Arrays.stream(File.values()).map(File::name).collect(Collectors.joining("   ")));
 
 		for(int i = 7; i >= 0; i--) {
 			StringBuilder row = new StringBuilder();
@@ -56,7 +56,7 @@ public class Board {
 
 			for(int j = 0; j < 8; j++) {
 				Piece p = tiles.get(new Tile(File.values()[j], Rank.values()[i]));
-				row.append(p == null ? "\uD81A\uDCEF" : p.toString());
+				row.append(p == null ? ". " : p.toString());
 				row.append("  ");
 			}
 
