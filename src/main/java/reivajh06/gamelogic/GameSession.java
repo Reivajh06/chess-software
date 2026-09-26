@@ -84,6 +84,28 @@ public class GameSession {
         turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
     }
 
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
+    public Stack<MoveData> movesHistory() {
+        return movesHistory;
+    }
+
+    public PieceColor colorTurn() {
+        return turn;
+    }
+
+    public GameStatus status() {
+        return status;
+    }
+
+    public void registerMove(Tile from, Tile to, Piece capturedPiece) {
+        movesHistory.push(new MoveData(board.pieceAt(from), from, to, capturedPiece));
+
+        if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
+    }
+
     private boolean isAbsolutelyPinned(Tile location) {
         Piece piece = controller.removePieceAt(location);
 
@@ -120,46 +142,6 @@ public class GameSession {
         return isPinned;
     }
 
-    private boolean isKingExposed(PieceColor color) {
-        Tile kingTile = controller.kingTile(color);
-
-		return controller.getPiecesTilesByColor(color == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK).stream()
-				.filter(t -> {
-                    Tile kingCheckedTile = kingCheckedTile(t);
-
-                    return kingCheckedTile != null && kingCheckedTile.equals(kingTile);
-                })
-				.findFirst()
-				.orElse(null) != null;
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
-    }
-
-    public Stack<MoveData> movesHistory() {
-        return movesHistory;
-    }
-
-    public PieceColor colorTurn() {
-        return turn;
-    }
-
-    public void registerMove(Tile from, Tile to, Piece capturedPiece) {
-        movesHistory.push(new MoveData(board.pieceAt(from), from, to, capturedPiece));
-
-        if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
-    }
-
-    public GameStatus status() {
-        return status;
-    }
-
-    public void printBoard() {
-        board.printBoard();
-        System.out.println();
-    }
-
     private void updateGameStatus(Tile pieceLocation) {
         Tile kingTile = kingCheckedTile(pieceLocation);
 
@@ -187,5 +169,10 @@ public class GameSession {
 
     private boolean isCheckMate(Tile kingTile) {
         return pieceMovesetTiles(kingTile).isEmpty();
+    }
+
+    public void printBoard() {
+        board.printBoard();
+        System.out.println();
     }
 }

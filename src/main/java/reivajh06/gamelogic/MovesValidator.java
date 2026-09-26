@@ -52,20 +52,16 @@ public class MovesValidator {
 		return true;
 	};
 
+
 	private final Board board;
-	private PieceColor turn;
 	private final GameController controller;
-	private boolean onCheck = false;
 
 	public MovesValidator(Board board, GameController controller) {
 		this.controller = controller;
 		this.board = board;
-		turn = PieceColor.WHITE;
 	}
 
 	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles) {
-		if(onCheck && board.pieceAt(from).type() != PieceType.KING) return new ArrayList<>();
-
 		return pendingTiles.stream().filter(pendingTile -> {
 			Piece p = board.pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();
