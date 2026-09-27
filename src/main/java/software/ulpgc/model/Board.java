@@ -25,16 +25,12 @@ public class Board {
 
 	public Piece removePieceIn(Tile t) {
 		Piece p = tiles.get(t);
-		tiles.put(t, null);
+		replace(t, null);
 		return p;
 	}
 
 	public Piece pieceAt(Tile tile) {
 		return tiles.get(tile);
-	}
-
-	public boolean hasPiece(Tile tile) {
-		return pieceAt(tile) != null;
 	}
 
 	public void addPiece(Tile tile, Piece piece) {

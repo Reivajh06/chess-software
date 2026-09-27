@@ -414,7 +414,7 @@ class ChessGameSimulationTest {
     }
 
     @Test
-    @DisplayName("10 - Legal movement generation for every piece type and color")
+    @DisplayName("10 - Legal movement generation for every pieceMoved type and color")
     void legalMovesAreGeneratedForEveryPieceTypeAndColor() {
         MatchReport report = new MatchReport(
                 "MOVE GENERATION - ALL PIECES / BOTH COLORS",
@@ -504,7 +504,7 @@ class ChessGameSimulationTest {
         Piece piece = board.pieceAt(from);
 
         if (piece == null) {
-            return new MoveAttempt(false, "There is no piece on " + from.name() + ".");
+            return new MoveAttempt(false, "There is no pieceMoved on " + from.name() + ".");
         }
 
         if (piece.color() != game.colorTurn()) {

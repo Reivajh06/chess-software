@@ -18,7 +18,7 @@ public class GameSession {
     private final Stack<MoveData> movesHistory;
     private final Map<PieceColor, List<Piece>> capturedPieces;
 
-    private boolean onCheck = false;
+    private PieceColor checkedColor = null;
     private PieceColor turn = PieceColor.WHITE;
 
     private boolean debug = false;
@@ -48,8 +48,6 @@ public class GameSession {
 
         Piece piece = board.pieceAt(location);
 
-		if(onCheck && piece.type() != PieceType.KING) return new HashMap<>();
-
         if(isAbsolutelyPinned(location)) return new HashMap<>();
 
         List<Move> pieceMoveset = piece.moveset();
@@ -57,16 +55,17 @@ public class GameSession {
         Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
         for(Move move : pieceMoveset) {
-            List<Tile> filterMoveTiles = validator.filterMoveTiles(
+            List<Tile> filteredMoveTiles = validator.filterMoveTiles(
                     move,
                     location,
                     controller.calculateMoveTiles(
                             piece.color(),
                             location, move),
-                            movesHistory.isEmpty() ? null : movesHistory.peek()
+                    movesHistory.isEmpty() ? null : movesHistory.peek()
             );
 
-            movesetTiles.put(move, filterMoveTiles);
+            if(checkedColor != null && checkedColor == piece.color() && !moveUnchecksKing(move, location, filteredMoveTiles)) continue;
+            movesetTiles.put(move, filteredMoveTiles);
         }
 
         return movesetTiles;
@@ -88,9 +87,9 @@ public class GameSession {
 
         if(debug) printBoard();
 
-        updateGameStatus(to);
+        updateGameStatus();
 
-        turn = turn == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK;
+        turn = PieceColor.rivalColor(turn);
     }
 
     public void setDebug(boolean debug) {
@@ -110,22 +109,9 @@ public class GameSession {
     }
 
     public void registerMove(Move move, Tile from, Tile to, Piece capturedPiece) {
-        movesHistory.push(new MoveData(board.pieceAt(from), move, from, to, capturedPiece));
+        movesHistory.push(new MoveData(board.pieceAt(to), move, from, to, capturedPiece));
 
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
-    }
-
-    private boolean isPromotable(Tile location) {
-        final Rank WHITE_PROMOTION_RANK = Rank.EIGHT;
-        final Rank BLACK_PROMOTION_RANK = Rank.ONE;
-
-        Piece p = board.pieceAt(location);
-
-        if(p.type() != PieceType.PAWN) return false;
-
-        if(p.color() == PieceColor.WHITE) return location.rank().equals(WHITE_PROMOTION_RANK);
-
-        else return location.rank().equals(BLACK_PROMOTION_RANK);
     }
 
     private boolean isAbsolutelyPinned(Tile location) {
@@ -140,7 +126,7 @@ public class GameSession {
 
         Tile kingTile = controller.kingTile(piece.color());
 
-        boolean isPinned = controller.piecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK).stream()
+        boolean isPinned = controller.piecesTilesByColor(PieceColor.rivalColor(piece.color())).stream()
                 .filter(t -> {
                     Piece p = board.pieceAt(t);
 
@@ -168,29 +154,39 @@ public class GameSession {
         return isPinned;
     }
 
-    private void updateGameStatus(Tile pieceLocation) {
-        Tile kingTile = kingCheckedTile(pieceLocation);
+    private void updateGameStatus() {
+        MoveData lastMove = movesHistory.peek();
 
-        if(kingTile == null) {
-            status = GameStatus.ACTIVE;
-            onCheck = false;
-            return;
-        }
+        PieceColor kingColor = PieceColor.rivalColor(lastMove.pieceMoved().color());
 
-        onCheck = true;
+        checkedColor = isKingCheckedBy(lastMove.to()) ? kingColor : null;
+
+        if(checkedColor == null) return;
+
+        Tile kingTile = controller.kingTile(kingColor);
 
         if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
     }
 
-    private Tile kingCheckedTile(Tile pieceLocation) {
-        Piece piece = board.pieceAt(pieceLocation);
-        Tile rivalKingTile = piece.color() == PieceColor.WHITE ? controller.blackKingTile() : controller.whiteKingTile();
+    private boolean moveUnchecksKing(Move move, Tile location, List<Tile> filteredMoveTiles) {
+        Piece p = board.pieceAt(location);
 
-        return pieceMovesetTiles(pieceLocation).values().stream()
-                .flatMap(List::stream)
-                .filter(t -> t.equals(rivalKingTile))
-                .findFirst()
-                .orElse(null);
+        return filteredMoveTiles.stream().anyMatch(t -> {
+            controller.movePiece(move, location, t);
+
+            return !isKingChecked(p.color());
+        });
+    }
+
+    private boolean isKingCheckedBy(Tile tile) {
+        PieceColor color = board.pieceAt(tile).color();
+
+        return pieceMovesetTiles(tile).values().stream().anyMatch(l -> l.contains(controller.kingTile(PieceColor.rivalColor(color))));
+    }
+
+    private boolean isKingChecked(PieceColor kingColor) {
+        return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
+                .anyMatch(this::isKingCheckedBy);
     }
 
     private boolean isCheckMate(Tile kingTile) {

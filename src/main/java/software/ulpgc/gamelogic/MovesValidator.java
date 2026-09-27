@@ -44,10 +44,6 @@ public class MovesValidator {
 	};
 
 	public static final MoveCondition EN_PASSANT = ctx -> {
-		if(ctx.from().equals(new Tile("E5"))) {
-			System.out.println("sgokf");
-		}
-
 		Piece p = ctx.board().pieceAt(ctx.from());
 		Tile adjacentTile = new Tile(ctx.to().file(), ctx.from().rank());
 		Piece adjacentPiece = ctx.board().pieceAt(adjacentTile);

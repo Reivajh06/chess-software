@@ -26,7 +26,7 @@ void main() {
 	while (game.status() == GameStatus.ACTIVE) {
 		IO.println("Turn: " + game.colorTurn());
 
-		Tile from = readTile(scanner, "Select piece: ");
+		Tile from = readTile(scanner, "Select pieceMoved: ");
 
 		if (from == null)
 			break;
@@ -40,7 +40,7 @@ void main() {
 				.toList();
 
 		if (possibleTiles.isEmpty()) {
-			IO.println("That piece cannot be moved.");
+			IO.println("That pieceMoved cannot be moved.");
 			IO.println();
 			continue;
 		}
