@@ -1,8 +1,8 @@
 package software.ulpgc.gamelogic;
 
 import software.ulpgc.model.*;
-import software.ulpgc.model.*;
 import software.ulpgc.model.movement.Move;
+import software.ulpgc.model.movement.MoveData;
 
 import java.util.*;
 
@@ -57,7 +57,14 @@ public class GameSession {
         Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
         for(Move move : pieceMoveset) {
-            List<Tile> filterMoveTiles = validator.filterMoveTiles(move, location, controller.calculateMoveTiles(piece.color(), location, move));
+            List<Tile> filterMoveTiles = validator.filterMoveTiles(
+                    move,
+                    location,
+                    controller.calculateMoveTiles(
+                            piece.color(),
+                            location, move),
+                            movesHistory.isEmpty() ? null : movesHistory.peek()
+            );
 
             movesetTiles.put(move, filterMoveTiles);
         }
@@ -75,7 +82,7 @@ public class GameSession {
                 to
         );
 
-        registerMove(from, to, pieceEaten);
+        registerMove(move, from, to, pieceEaten);
 
         board.pieceAt(to).moved();
 
@@ -102,8 +109,8 @@ public class GameSession {
         return status;
     }
 
-    public void registerMove(Tile from, Tile to, Piece capturedPiece) {
-        movesHistory.push(new MoveData(board.pieceAt(from), from, to, capturedPiece));
+    public void registerMove(Move move, Tile from, Tile to, Piece capturedPiece) {
+        movesHistory.push(new MoveData(board.pieceAt(from), move, from, to, capturedPiece));
 
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
     }

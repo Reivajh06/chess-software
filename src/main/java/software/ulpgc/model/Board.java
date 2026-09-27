@@ -24,7 +24,9 @@ public class Board {
 	}
 
 	public Piece removePieceIn(Tile t) {
-		return tiles.remove(t);
+		Piece p = tiles.get(t);
+		tiles.put(t, null);
+		return p;
 	}
 
 	public Piece pieceAt(Tile tile) {

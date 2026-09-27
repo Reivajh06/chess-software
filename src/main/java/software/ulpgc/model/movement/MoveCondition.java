@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface MoveCondition {
 
-	List<MoveCondition> NO_CONDITIONS = new ArrayList<>(List.of((_, _, _, _) -> true));
+	List<MoveCondition> NO_CONDITIONS = new ArrayList<>(List.of(_ -> true));
 
-	boolean satisfies(GameController controller, Board board, Tile from, Tile to);
+	boolean satisfies(MoveContext ctx);
 }

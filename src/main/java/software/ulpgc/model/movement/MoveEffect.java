@@ -9,7 +9,6 @@ public interface MoveEffect {
 
 	MoveEffect DIRECT_CAPTURE = ((board, from, to) -> {
 		Piece movedPiece = board.removePieceIn(from);
-		movedPiece.moved();
 		Piece capturedPiece = board.removePieceIn(to);
 		board.addPiece(to, movedPiece);
 

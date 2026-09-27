@@ -1,8 +1,8 @@
 package software.ulpgc.gamelogic;
 
 import software.ulpgc.model.*;
-import software.ulpgc.model.*;
 import software.ulpgc.model.movement.Move;
+import software.ulpgc.model.movement.MoveData;
 
 import java.util.ArrayList;
 import java.util.Comparator;

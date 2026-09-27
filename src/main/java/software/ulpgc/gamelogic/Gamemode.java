@@ -6,5 +6,4 @@ public enum Gamemode {
 	PVAI,
 	PVCPU,
 	AIVAI
-	//..., could be added more later
 }
