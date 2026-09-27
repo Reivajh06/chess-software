@@ -12,6 +12,8 @@ public class Piece {
 	private final PieceType type;
 	private final String name;
 	private final List<Move> moveset;
+	private boolean isPromotable = false;
+
 	private int timesMoved;
 
 	public Piece(PieceType type, PieceColor color, List<Move> moveset) {
@@ -47,6 +49,14 @@ public class Piece {
 
 	public int timesMoved() {
 		return timesMoved;
+	}
+
+	public boolean isPromotable() {
+		return isPromotable;
+	}
+
+	public void enablePromotion() {
+		isPromotable = true;
 	}
 
 	@NotNull

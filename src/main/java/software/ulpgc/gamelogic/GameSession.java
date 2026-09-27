@@ -83,7 +83,13 @@ public class GameSession {
 
         registerMove(move, from, to, pieceEaten);
 
-        board.pieceAt(to).moved();
+        Piece movedPiece = board.pieceAt(to);
+        movedPiece.moved();
+
+        if(movedPiece.type() == PieceType.PAWN) {
+            if(movedPiece.color() == PieceColor.BLACK && to.rank() == GameController.WHITE_PAWN_START_RANK) movedPiece.enablePromotion();
+            if(movedPiece.color() == PieceColor.WHITE && to.rank() == GameController.BLACK_PAWN_START_RANK) movedPiece.enablePromotion();
+        }
 
         if(debug) printBoard();
 

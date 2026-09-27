@@ -10,10 +10,10 @@ import java.util.List;
 
 public class GameController {
 
-	private static final Rank WHITE_PAWN_START_RANK = Rank.TWO;
-	private static final Rank WHITE_KING_START_RANK = Rank.ONE;
-	private static final Rank BLACK_PAWN_START_RANK = Rank.SEVEN;
-	private static final Rank BLACK_KING_START_RANK = Rank.EIGHT;
+	protected static final Rank WHITE_PAWN_START_RANK = Rank.TWO;
+	protected static final Rank WHITE_KING_START_RANK = Rank.ONE;
+	protected static final Rank BLACK_PAWN_START_RANK = Rank.SEVEN;
+	protected static final Rank BLACK_KING_START_RANK = Rank.EIGHT;
 
 	private final Board board;
 	private Tile whiteKingTile;
