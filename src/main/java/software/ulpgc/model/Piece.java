@@ -63,6 +63,7 @@ public class Piece {
 		if(!isPromotable || newType == PieceType.KING) return;
 
 		type = newType;
+		isPromotable = false;
 	}
 
 	@NotNull
