@@ -9,7 +9,7 @@ import java.util.List;
 public class Piece {
 
 	private final PieceColor color;
-	private final PieceType type;
+	private PieceType type;
 	private final String name;
 	private final List<Move> moveset;
 	private boolean isPromotable = false;
@@ -57,6 +57,12 @@ public class Piece {
 
 	public void enablePromotion() {
 		isPromotable = true;
+	}
+
+	public void promote(PieceType newType) {
+		if(!isPromotable || newType == PieceType.KING) return;
+
+		type = newType;
 	}
 
 	@NotNull
