@@ -87,8 +87,8 @@ public class GameSession {
         movedPiece.moved();
 
         if(movedPiece.type() == PieceType.PAWN) {
-            if(movedPiece.color() == PieceColor.BLACK && to.rank() == GameController.WHITE_PAWN_START_RANK) movedPiece.enablePromotion();
-            if(movedPiece.color() == PieceColor.WHITE && to.rank() == GameController.BLACK_PAWN_START_RANK) movedPiece.enablePromotion();
+            if(movedPiece.color() == PieceColor.BLACK && to.rank() == GameController.WHITE_KING_START_RANK) movedPiece.enablePromotion();
+            if(movedPiece.color() == PieceColor.WHITE && to.rank() == GameController.BLACK_KING_START_RANK) movedPiece.enablePromotion();
         }
 
         if(debug) printBoard();
@@ -96,6 +96,12 @@ public class GameSession {
         updateGameStatus();
 
         turn = PieceColor.rivalColor(turn);
+    }
+
+    public void promotePieceIn(Tile tile, PieceType newType) {
+        if(board.pieceAt(tile) == null) return;
+
+        board.pieceAt(tile).promote(newType);
     }
 
     public void setDebug(boolean debug) {
