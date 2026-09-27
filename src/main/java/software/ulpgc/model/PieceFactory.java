@@ -1,8 +1,8 @@
 package software.ulpgc.model;
 
-import software.ulpgc.gamelogic.MovesValidator;
 import software.ulpgc.model.movement.MoveBuilder;
 import software.ulpgc.model.movement.MoveEffect;
+import software.ulpgc.model.movement.MoveRules;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +12,9 @@ public class PieceFactory {
 	public static Piece createPawn(PieceColor color) {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
 				new MoveBuilder().forward().build(),
-				new MoveBuilder().forward().forward().conditions(MovesValidator.START_TWO_FORWARD).build(),
-				new MoveBuilder().forwardLeft().conditions(MovesValidator.DIAGONAL_CAPTURE, MovesValidator.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build(),
-				new MoveBuilder().forwardRight().conditions(MovesValidator.DIAGONAL_CAPTURE, MovesValidator.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build()
+				new MoveBuilder().forward().forward().conditions(MoveRules.START_TWO_FORWARD).build(),
+				new MoveBuilder().forwardLeft().conditions(MoveRules.DIAGONAL_CAPTURE, MoveRules.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build(),
+				new MoveBuilder().forwardRight().conditions(MoveRules.DIAGONAL_CAPTURE, MoveRules.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build()
 		)));
 	}
 
@@ -38,16 +38,16 @@ public class PieceFactory {
 
 	public static Piece createKing(PieceColor color) {
 		return new Piece(PieceType.KING, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().left().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().right().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().backward().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().forwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().forwardRight().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().backwardLeft().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().backwardRight().conditions(MovesValidator.SAFE_MOVE).build(),
-				new MoveBuilder().left().left().conditions(MovesValidator.QUEENSIDE_CASTLING).effect(MoveEffect.QUEENSIDE_CASTLING).build(),
-				new MoveBuilder().right().right().conditions(MovesValidator.KINGSIDE_CASTLING).effect(MoveEffect.KINGSIDE_CASTLING).build()
+				new MoveBuilder().forward().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().left().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().right().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().backward().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().forwardLeft().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().forwardRight().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().backwardLeft().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().backwardRight().conditions(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().left().left().conditions(MoveRules.QUEENSIDE_CASTLING).effect(MoveEffect.QUEENSIDE_CASTLING).build(),
+				new MoveBuilder().right().right().conditions(MoveRules.KINGSIDE_CASTLING).effect(MoveEffect.KINGSIDE_CASTLING).build()
 		)));
 	}
 

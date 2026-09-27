@@ -19,6 +19,7 @@ public class GameController {
 	private Tile whiteKingTile;
 	private Tile blackKingTile;
 
+
 	public GameController(Board board) {
 		this.board = board;
 	}

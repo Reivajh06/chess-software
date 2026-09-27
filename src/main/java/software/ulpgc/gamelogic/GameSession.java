@@ -117,41 +117,26 @@ public class GameSession {
     private boolean isAbsolutelyPinned(Tile location) {
         Piece piece = controller.removePieceAt(location);
 
-        if(piece == null) return false;
+        try {
+            if(piece == null) return false;
 
-        if(piece.type() == PieceType.KING) {
+            if(piece.type() == PieceType.KING) return false;
+
+            return controller.piecesTilesByColor(PieceColor.rivalColor(piece.color())).stream()
+                    .filter(t -> {
+                        Piece p = board.pieceAt(t);
+
+                        if(p == null) return false;
+
+                        PieceType type = p.type();
+
+                        return type == PieceType.BISHOP || type == PieceType.QUEEN || type == PieceType.ROOK;
+                    })
+                    .anyMatch(this::isKingCheckedBy);
+
+        } finally {
             controller.addPiece(piece, location);
-            return false;
         }
-
-        Tile kingTile = controller.kingTile(piece.color());
-
-        boolean isPinned = controller.piecesTilesByColor(PieceColor.rivalColor(piece.color())).stream()
-                .filter(t -> {
-                    Piece p = board.pieceAt(t);
-
-                    if(p == null) return false;
-
-                    PieceType type = p.type();
-
-                    return type == PieceType.BISHOP || type == PieceType.QUEEN || type == PieceType.ROOK;
-                })
-                .filter(t -> {
-                    Map<Move, List<Tile>> movesetTiles = pieceMovesetTiles(t);
-
-                    for(List<Tile> moveTiles : movesetTiles.values()) {
-                        if(moveTiles.contains(kingTile)) return true;
-                    }
-
-                    return false;
-                })
-                .findFirst()
-                .orElse(null) != null;
-
-
-        controller.addPiece(piece, location);
-
-        return isPinned;
     }
 
     private void updateGameStatus() {
