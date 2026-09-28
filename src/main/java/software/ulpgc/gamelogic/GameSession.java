@@ -99,9 +99,25 @@ public class GameSession {
     }
 
     public void promotePieceIn(Tile tile, PieceType newType) {
-        if(board.pieceAt(tile) == null) return;
+        if(board.pieceAt(tile) == null || newType == PieceType.KING) return;
 
-        board.pieceAt(tile).promote(newType);
+        Piece piece = board.removePieceIn(tile);
+        Piece newPiece;
+
+        newPiece = switch(newType) {
+            case PieceType.BISHOP -> PieceFactory.createBishop(piece.color());
+            case PieceType.QUEEN ->  PieceFactory.createQueen(piece.color());
+            case PieceType.KNIGHT -> PieceFactory.createKnight(piece.color());
+            case PieceType.ROOK ->  PieceFactory.createRook(piece.color());
+            default -> null;
+        };
+
+        if(newPiece == null) {
+            board.addPiece(tile, piece);
+            return;
+        }
+
+        board.addPiece(tile, newPiece);
     }
 
     public void setDebug(boolean debug) {
