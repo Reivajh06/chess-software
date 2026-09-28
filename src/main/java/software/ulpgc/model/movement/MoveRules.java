@@ -15,9 +15,6 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition START_TWO_FORWARD = (ctx) -> {
-		if(ctx.from().equals(new Tile("g2"))) {
-			System.out.println("adoadkj");
-		}
 		Piece p = ctx.board().pieceAt(ctx.from());
 
 		if(ctx.board().pieceAt(new Tile(
