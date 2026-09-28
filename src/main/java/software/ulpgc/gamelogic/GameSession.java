@@ -182,7 +182,8 @@ public class GameSession {
                         e.getKey(),
                         location,
                         e.getValue(),
-                        movesHistory.isEmpty() ? null : movesHistory.peek()
+                        movesHistory.isEmpty() ? null : movesHistory.peek(),
+                        checkedColor
                 )));
     }
 

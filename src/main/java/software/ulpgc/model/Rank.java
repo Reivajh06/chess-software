@@ -17,13 +17,13 @@ public enum Rank {
 		this.number = number;
 	}
 
-	public static Rank next(Rank currentFile) {
-		if(currentFile.equals(Rank.EIGHT)) return null;
-		return Rank.values()[currentFile.number - Rank.EIGHT.number + 1];
+	public static Rank next(Rank currentRank) {
+		if(currentRank.equals(Rank.EIGHT)) return null;
+		return Rank.values()[currentRank.number];
 	}
 
-	public static Rank previous(Rank currentFile) {
-		if(currentFile.equals(Rank.ONE)) return null;
-		return Rank.values()[currentFile.number - Rank.ONE.number - 1];
+	public static Rank previous(Rank currentRank) {
+		if(currentRank.equals(Rank.ONE)) return null;
+		return Rank.values()[currentRank.number - Rank.ONE.number - 1];
 	}
 }

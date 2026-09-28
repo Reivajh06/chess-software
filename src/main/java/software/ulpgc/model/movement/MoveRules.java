@@ -15,7 +15,15 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition START_TWO_FORWARD = (ctx) -> {
+		if(ctx.from().equals(new Tile("g2"))) {
+			System.out.println("adoadkj");
+		}
 		Piece p = ctx.board().pieceAt(ctx.from());
+
+		if(ctx.board().pieceAt(new Tile(
+				ctx.from().file(),
+				p.color() == PieceColor.WHITE ? Rank.next(ctx.from().rank()) : Rank.previous(ctx.from().rank()))
+		) != null) return false;
 
 		return p.timesMoved() == 0 && isVerticalMove(ctx.from(), ctx.to()) && DESTINATION_EMPTY.satisfies(ctx);
 	};
@@ -64,6 +72,7 @@ public class MoveRules {
 		Piece king = ctx.board().pieceAt(ctx.from());
 
 		if(king.timesMoved() != 0) return false;
+		if(ctx.colorChecked() == king.color()) return false;
 
 		Tile leftRookTile = ctx.controller().tilesByRank(ctx.from().rank()).getFirst();
 		Piece rook = ctx.board().pieceAt(leftRookTile);
@@ -74,7 +83,13 @@ public class MoveRules {
 
 		for(File file = File.B; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
 			if(ctx.board().pieceAt(new Tile(file, ctx.from().rank())) != null) return false;
-			if(!SAFE_MOVE.satisfies(new MoveContext(ctx.lastMove(), ctx.controller(), ctx.board(), ctx.from(), new Tile(file, ctx.from().rank())))) return false;
+			if(!SAFE_MOVE.satisfies(new MoveContext(
+					ctx.lastMove(),
+					ctx.controller(),
+					ctx.board(),
+					ctx.from(),
+					new Tile(file, ctx.from().rank()), ctx.colorChecked()))
+			) return false;
 		}
 
 		return true;
@@ -84,6 +99,7 @@ public class MoveRules {
 		Piece king = ctx.board().pieceAt(ctx.from());
 
 		if(king.timesMoved() != 0) return false;
+		if(ctx.colorChecked() == king.color()) return false;
 
 		Tile rightRookTile = ctx.controller().tilesByRank(ctx.from().rank()).getLast();
 
@@ -95,7 +111,14 @@ public class MoveRules {
 
 		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			if(ctx.board().pieceAt(new Tile(file, ctx.from().rank())) != null) return false;
-			if(!SAFE_MOVE.satisfies(new MoveContext(ctx.lastMove(), ctx.controller(), ctx.board(), ctx.from(), new Tile(file, ctx.from().rank())))) return false;
+			if(!SAFE_MOVE.satisfies(new MoveContext(
+					ctx.lastMove(),
+					ctx.controller(),
+					ctx.board(),
+					ctx.from(),
+					new Tile(file, ctx.from().rank()),
+					ctx.colorChecked()))
+			) return false;
 		}
 
 		return true;

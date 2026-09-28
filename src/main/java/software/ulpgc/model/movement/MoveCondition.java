@@ -1,9 +1,5 @@
 package software.ulpgc.model.movement;
 
-import software.ulpgc.gamelogic.GameController;
-import software.ulpgc.model.Board;
-import software.ulpgc.model.Tile;
-
 import java.util.ArrayList;
 import java.util.List;
 
