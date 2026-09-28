@@ -31,7 +31,7 @@ void main() {
 		if (from == null)
 			break;
 
-		Map<Move, List<Tile>> possibleMoves = game.pieceMovesetTiles(from);
+		Map<Move, List<Tile>> possibleMoves = game.filteredPieceMovesetTiles(from);
 
 		List<Tile> possibleTiles = possibleMoves.values()
 				.stream()

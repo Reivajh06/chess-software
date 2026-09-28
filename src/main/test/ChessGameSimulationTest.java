@@ -515,7 +515,7 @@ class ChessGameSimulationTest {
         }
 
         try {
-            Map<Move, List<Tile>> possibleMoves = game.pieceMovesetTiles(from);
+            Map<Move, List<Tile>> possibleMoves = game.filteredPieceMovesetTiles(from);
             Optional<Move> selectedMove = possibleMoves.entrySet().stream()
                     .filter(entry -> entry.getValue().contains(to))
                     .map(Map.Entry::getKey)
@@ -560,7 +560,7 @@ class ChessGameSimulationTest {
         }
 
         try {
-            return targetNames(game.pieceMovesetTiles(from));
+            return targetNames(game.filteredPieceMovesetTiles(from));
         } catch (RuntimeException exception) {
             return Set.of("<EXCEPTION:" + exception.getClass().getSimpleName() + ">");
         }

@@ -44,29 +44,45 @@ public class GameSession {
     }
 
     public Map<Move, List<Tile>> pieceMovesetTiles(Tile location) {
-        if(status != GameStatus.ACTIVE) return new HashMap<>();
-
         Piece piece = board.pieceAt(location);
-
-        if(isAbsolutelyPinned(location)) return new HashMap<>();
 
         List<Move> pieceMoveset = piece.moveset();
 
         Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
         for(Move move : pieceMoveset) {
-            List<Tile> filteredMoveTiles = validator.filterMoveTiles(
+            List<Tile> filteredMoveTiles = controller.calculateMoveTiles(
+                    piece.color(),
+                    location,
+                    move
+            );
+
+            movesetTiles.put(move, filteredMoveTiles);
+        }
+
+        return movesetTiles;
+    }
+
+    public Map<Move, List<Tile>> filteredPieceMovesetTiles(Tile location) {
+        if(status != GameStatus.ACTIVE) return new HashMap<>();
+
+        Piece piece = board.pieceAt(location);
+        Map<Move, List<Tile>> movesetTiles = pieceMovesetTiles(location);
+
+        for(Map.Entry<Move, List<Tile>> moveEntry: movesetTiles.entrySet()) {
+            Move move = moveEntry.getKey();
+            List<Tile> filteredTiles = validator.filterMoveTiles(
                     move,
                     location,
-                    controller.calculateMoveTiles(
-                            piece.color(),
-                            location, move),
+                    moveEntry.getValue(),
                     movesHistory.isEmpty() ? null : movesHistory.peek()
             );
 
-            if(checkedColor != null && checkedColor == piece.color() && !moveUnchecksKing(move, location, filteredMoveTiles)) continue;
-            movesetTiles.put(move, filteredMoveTiles);
+            if(checkedColor != null && checkedColor == piece.color() && !moveUnchecksKing(move, location, filteredTiles)) continue;
+            movesetTiles.put(move, filteredTiles);
         }
+
+        if(isAbsolutelyPinned(location, movesetTiles)) return new HashMap<>();
 
         return movesetTiles;
     }
@@ -142,29 +158,39 @@ public class GameSession {
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
     }
 
-    private boolean isAbsolutelyPinned(Tile location) {
-        Piece piece = controller.removePieceAt(location);
+    public void undoMove() {
+        if(movesHistory.isEmpty()) return;
 
-        try {
-            if(piece == null) return false;
+        MoveData top = movesHistory.pop();
 
-            if(piece.type() == PieceType.KING) return false;
+        capturedPieces.get(top.pieceEaten().color()).remove(top.pieceEaten());
+    }
 
-            return controller.piecesTilesByColor(PieceColor.rivalColor(piece.color())).stream()
-                    .filter(t -> {
-                        Piece p = board.pieceAt(t);
+    private boolean isAbsolutelyPinned(Tile location, Map<Move, List<Tile>> movesetMap) {
+        Piece piece = board.pieceAt(location);
 
-                        if(p == null) return false;
+        if(piece == null) return false;
+        if(piece.type() == PieceType.KING) return false;
 
-                        PieceType type = p.type();
+        for(Map.Entry<Move, List<Tile>> moveEntry: movesetMap.entrySet()) {
+            Move move = moveEntry.getKey();
+            List<Tile> tiles = moveEntry.getValue();
 
-                        return type == PieceType.BISHOP || type == PieceType.QUEEN || type == PieceType.ROOK;
-                    })
-                    .anyMatch(this::isKingCheckedBy);
+            for(Tile tile : tiles) {
+                try {
+                    Piece capturedPiece = controller.movePiece(move, location, tile);
+                    registerMove(move, location, tile, capturedPiece);
 
-        } finally {
-            controller.addPiece(piece, location);
+                    if(!isKingChecked(piece.color())) return false;
+
+                } finally {
+                    undoMove();
+
+                }
+            }
         }
+
+        return true;
     }
 
     private void updateGameStatus() {

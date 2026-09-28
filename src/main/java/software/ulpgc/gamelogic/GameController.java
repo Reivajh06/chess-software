@@ -71,6 +71,10 @@ public class GameController {
 		board.addPiece(tile, piece);
 	}
 
+	public Piece getPieceIn(Tile tile) {
+		return board.pieceAt(tile);
+	}
+
 	public Piece removePieceAt(Tile tile) {
 		return board.removePieceIn(tile);
 	}
