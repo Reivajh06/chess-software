@@ -3,6 +3,7 @@ package software.ulpgc.gamelogic;
 import software.ulpgc.model.*;
 import software.ulpgc.model.movement.Move;
 import software.ulpgc.model.movement.MoveData;
+import software.ulpgc.model.movement.MoveEffect;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -82,6 +83,12 @@ public class GameController {
 	public void undoMove(MoveData moveData) {
 		if(moveData.move().effect() != null) {
 			moveData.move().effect().undo(moveData);
+
+			if(moveData.pieceMoved().type() == PieceType.KING) {
+				if(moveData.pieceMoved().color() == PieceColor.BLACK) blackKingTile = moveData.from();
+				else whiteKingTile = moveData.from();
+			}
+
 			return;
 		}
 
