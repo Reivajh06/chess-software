@@ -47,6 +47,10 @@ public class Piece {
 		timesMoved++;
 	}
 
+	public void unmoved() {
+		timesMoved = Math.max(0, timesMoved - 1);
+	}
+
 	public int timesMoved() {
 		return timesMoved;
 	}
@@ -64,4 +68,6 @@ public class Piece {
 	public String toString() {
 		return SpritesRepository.sprite(code());
 	}
+
+
 }

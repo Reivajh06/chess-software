@@ -80,9 +80,18 @@ public class GameController {
 	}
 
 	public void undoMove(MoveData moveData) {
-		Piece movedPiece = board.removePieceIn(moveData.to());
-		addPiece(movedPiece, moveData.from());
-		addPiece(moveData.pieceCaptured(), moveData.to());
+		if(moveData.move().effect() != null) {
+			moveData.move().effect().undo(moveData);
+			return;
+		}
+
+		Tile from = moveData.from();
+		Tile to = moveData.to();
+
+		Piece movedPiece = board.removePieceIn(to);
+		board.addPiece(from, movedPiece);
+		board.addPiece(moveData.to(), moveData.pieceCaptured());
+		movedPiece.unmoved();
 
 		if(movedPiece.type() == PieceType.KING) {
 			if(movedPiece.color() == PieceColor.BLACK) blackKingTile = moveData.from();

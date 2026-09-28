@@ -46,6 +46,8 @@ public class GameSession {
     }
 
     public Map<Move, List<Tile>> legalPieceMoves(Tile location) {
+        if(controller.getPieceIn(location) == null) return new HashMap<>();
+
         Map<Move, List<Tile>> movesetMap = validPieceMoves(location);
 
         Map<Move, List<Tile>> legalMoveset = new HashMap<>();
@@ -77,7 +79,8 @@ public class GameSession {
         registerMove(move, from, to, pieceEaten);
 
         Piece movedPiece = board.pieceAt(to);
-        movedPiece.moved();
+
+        if(move.effect() == null) movedPiece.moved();
 
         if(movedPiece.type() == PieceType.PAWN) {
             if(movedPiece.color() == PieceColor.BLACK && to.rank() == GameController.WHITE_KING_START_RANK) movedPiece.enablePromotion();
@@ -130,7 +133,7 @@ public class GameSession {
     }
 
     public void registerMove(Move move, Tile from, Tile to, Piece capturedPiece) {
-        movesHistory.push(new MoveData(board.pieceAt(to), move, from, to, capturedPiece));
+        movesHistory.push(new MoveData(board.pieceAt(to), move, from, to, capturedPiece, board));
 
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
     }
@@ -149,6 +152,8 @@ public class GameSession {
     }
 
     private Map<Move, List<Tile>> pieceMovesetTiles(Tile location) {
+        if(controller.getPieceIn(location) == null) return new HashMap<>();
+
         Piece piece = board.pieceAt(location);
 
         List<Move> pieceMoveset = piece.moveset();
@@ -169,6 +174,7 @@ public class GameSession {
     }
 
     private Map<Move, List<Tile>> validPieceMoves(Tile location) {
+        if(controller.getPieceIn(location) == null) return new HashMap<>();
         if(status != GameStatus.ACTIVE) return new HashMap<>();
 
         return pieceMovesetTiles(location).entrySet().stream()
@@ -215,7 +221,7 @@ public class GameSession {
             if(isKingChecked(pieceMoved.color())) return false;
 
         } finally {
-            controller.undoMove(new MoveData(pieceMoved, move, from, to, pieceCaptured));
+            controller.undoMove(new MoveData(pieceMoved, move, from, to, pieceCaptured, board));
         }
 
         return true;

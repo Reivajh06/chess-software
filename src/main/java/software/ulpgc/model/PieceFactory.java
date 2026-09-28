@@ -13,8 +13,10 @@ public class PieceFactory {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
 				new MoveBuilder().forward().conditions(MoveRules.DESTINATION_EMPTY).build(),
 				new MoveBuilder().forward().forward().conditions(MoveRules.START_TWO_FORWARD).build(),
-				new MoveBuilder().forwardLeft().conditions(MoveRules.DIAGONAL_CAPTURE, MoveRules.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build(),
-				new MoveBuilder().forwardRight().conditions(MoveRules.DIAGONAL_CAPTURE, MoveRules.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build()
+				new MoveBuilder().forwardLeft().conditions(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
+				new MoveBuilder().forwardLeft().conditions(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build(),
+				new MoveBuilder().forwardRight().conditions(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
+				new MoveBuilder().forwardRight().conditions(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build()
 		)));
 	}
 
