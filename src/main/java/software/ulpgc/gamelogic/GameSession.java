@@ -4,7 +4,9 @@ import software.ulpgc.model.*;
 import software.ulpgc.model.movement.Move;
 import software.ulpgc.model.movement.MoveData;
 
+import javax.swing.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GameSession {
 
@@ -43,48 +45,23 @@ public class GameSession {
         controller.setupBoard();
     }
 
-    public Map<Move, List<Tile>> pieceMovesetTiles(Tile location) {
-        Piece piece = board.pieceAt(location);
+    public Map<Move, List<Tile>> legalPieceMoves(Tile location) {
+        Map<Move, List<Tile>> movesetMap = validPieceMoves(location);
 
-        List<Move> pieceMoveset = piece.moveset();
+        Map<Move, List<Tile>> legalMoveset = new HashMap<>();
 
-        Map<Move, List<Tile>> movesetTiles = new HashMap<>();
+        PieceColor color = controller.getPieceIn(location).color();
 
-        for(Move move : pieceMoveset) {
-            List<Tile> filteredMoveTiles = controller.calculateMoveTiles(
-                    piece.color(),
-                    location,
-                    move
-            );
-
-            movesetTiles.put(move, filteredMoveTiles);
-        }
-
-        return movesetTiles;
-    }
-
-    public Map<Move, List<Tile>> filteredPieceMovesetTiles(Tile location) {
-        if(status != GameStatus.ACTIVE) return new HashMap<>();
-
-        Piece piece = board.pieceAt(location);
-        Map<Move, List<Tile>> movesetTiles = pieceMovesetTiles(location);
-
-        for(Map.Entry<Move, List<Tile>> moveEntry: movesetTiles.entrySet()) {
+        for(Map.Entry<Move, List<Tile>> moveEntry : movesetMap.entrySet()) {
             Move move = moveEntry.getKey();
-            List<Tile> filteredTiles = validator.filterMoveTiles(
-                    move,
-                    location,
-                    moveEntry.getValue(),
-                    movesHistory.isEmpty() ? null : movesHistory.peek()
-            );
+            List<Tile> moveTiles = new ArrayList<>(moveEntry.getValue());
 
-            if(checkedColor != null && checkedColor == piece.color() && !moveUnchecksKing(move, location, filteredTiles)) continue;
-            movesetTiles.put(move, filteredTiles);
+			moveTiles.removeIf(tile -> !moveUnchecksKing(move, location, tile));
+
+            legalMoveset.put(move, moveTiles);
         }
 
-        if(isAbsolutelyPinned(location, movesetTiles)) return new HashMap<>();
-
-        return movesetTiles;
+        return legalMoveset;
     }
 
     public void move(Move move, Tile from, Tile to) {
@@ -163,34 +140,44 @@ public class GameSession {
 
         MoveData top = movesHistory.pop();
 
-        capturedPieces.get(top.pieceEaten().color()).remove(top.pieceEaten());
+        capturedPieces.get(top.pieceCaptured().color()).remove(top.pieceCaptured());
     }
 
-    private boolean isAbsolutelyPinned(Tile location, Map<Move, List<Tile>> movesetMap) {
+    public void printBoard() {
+        board.printBoard();
+        System.out.println();
+    }
+
+    private Map<Move, List<Tile>> pieceMovesetTiles(Tile location) {
         Piece piece = board.pieceAt(location);
 
-        if(piece == null) return false;
-        if(piece.type() == PieceType.KING) return false;
+        List<Move> pieceMoveset = piece.moveset();
 
-        for(Map.Entry<Move, List<Tile>> moveEntry: movesetMap.entrySet()) {
-            Move move = moveEntry.getKey();
-            List<Tile> tiles = moveEntry.getValue();
+        Map<Move, List<Tile>> movesetTiles = new HashMap<>();
 
-            for(Tile tile : tiles) {
-                try {
-                    Piece capturedPiece = controller.movePiece(move, location, tile);
-                    registerMove(move, location, tile, capturedPiece);
+        for(Move move : pieceMoveset) {
+            List<Tile> filteredMoveTiles = controller.calculateMoveTiles(
+                    piece.color(),
+                    location,
+                    move
+            );
 
-                    if(!isKingChecked(piece.color())) return false;
-
-                } finally {
-                    undoMove();
-
-                }
-            }
+            movesetTiles.put(move, filteredMoveTiles);
         }
 
-        return true;
+        return movesetTiles;
+    }
+
+    private Map<Move, List<Tile>> validPieceMoves(Tile location) {
+        if(status != GameStatus.ACTIVE) return new HashMap<>();
+
+        return pieceMovesetTiles(location).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> validator.filterMoveTiles(
+                        e.getKey(),
+                        location,
+                        e.getValue(),
+                        movesHistory.isEmpty() ? null : movesHistory.peek()
+                )));
     }
 
     private void updateGameStatus() {
@@ -198,7 +185,7 @@ public class GameSession {
 
         PieceColor kingColor = PieceColor.rivalColor(lastMove.pieceMoved().color());
 
-        checkedColor = isKingCheckedBy(lastMove.to()) ? kingColor : null;
+        checkedColor = isKingChecked(kingColor) ? kingColor : null;
 
         if(checkedColor == null) return;
 
@@ -207,33 +194,47 @@ public class GameSession {
         if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
     }
 
-    private boolean moveUnchecksKing(Move move, Tile location, List<Tile> filteredMoveTiles) {
-        Piece p = board.pieceAt(location);
+    private boolean isKingCheckedBy(Tile tile, Map<Move, List<Tile>> validPieceMoves) {
+        PieceColor kingCheckedColor = PieceColor.rivalColor(controller.getPieceIn(tile).color());
 
-        return filteredMoveTiles.stream().anyMatch(t -> {
-            controller.movePiece(move, location, t);
-
-            return !isKingChecked(p.color());
-        });
-    }
-
-    private boolean isKingCheckedBy(Tile tile) {
-        PieceColor color = board.pieceAt(tile).color();
-
-        return pieceMovesetTiles(tile).values().stream().anyMatch(l -> l.contains(controller.kingTile(PieceColor.rivalColor(color))));
+        return validPieceMoves.values().stream().anyMatch(l -> l.contains(controller.kingTile(kingCheckedColor)));
     }
 
     private boolean isKingChecked(PieceColor kingColor) {
-        return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
-                .anyMatch(this::isKingCheckedBy);
+		return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
+                .anyMatch(t -> isKingCheckedBy(t, validPieceMoves(t)));
+    }
+
+    private boolean moveUnchecksKing(Move move, Tile from, Tile to) {
+        Piece pieceMoved = controller.getPieceIn(from);
+        Piece pieceCaptured = null;
+
+        try {
+            pieceCaptured = controller.movePiece(move, from, to);
+
+            if(isKingChecked(pieceMoved.color())) return false;
+
+        } finally {
+            controller.undoMove(new MoveData(pieceMoved, move, from, to, pieceCaptured));
+        }
+
+        return true;
     }
 
     private boolean isCheckMate(Tile kingTile) {
-        return pieceMovesetTiles(kingTile).values().stream().allMatch(List::isEmpty);
+        PieceColor kingColor = controller.getPieceIn(kingTile).color();
+
+        if (!isKingChecked(kingColor))
+            return false;
+
+        return !canAnyPieceSaveKing(kingColor);
     }
 
-    public void printBoard() {
-        board.printBoard();
-        System.out.println();
+    private boolean canAnyPieceSaveKing(PieceColor kingColor) {
+        return controller.piecesTilesByColor(kingColor).stream()
+                .anyMatch(tile ->
+                        legalPieceMoves(tile).values().stream()
+                                .anyMatch(moveTiles -> !moveTiles.isEmpty())
+                );
     }
 }

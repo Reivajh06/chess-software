@@ -11,7 +11,7 @@ public class PieceFactory {
 
 	public static Piece createPawn(PieceColor color) {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().build(),
+				new MoveBuilder().forward().conditions(MoveRules.DESTINATION_EMPTY).build(),
 				new MoveBuilder().forward().forward().conditions(MoveRules.START_TWO_FORWARD).build(),
 				new MoveBuilder().forwardLeft().conditions(MoveRules.DIAGONAL_CAPTURE, MoveRules.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build(),
 				new MoveBuilder().forwardRight().conditions(MoveRules.DIAGONAL_CAPTURE, MoveRules.EN_PASSANT).effect(MoveEffect.PAWN_DIAGONAL_CAPTURE).build()

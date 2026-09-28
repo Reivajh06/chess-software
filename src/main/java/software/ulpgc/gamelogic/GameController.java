@@ -82,7 +82,12 @@ public class GameController {
 	public void undoMove(MoveData moveData) {
 		Piece movedPiece = board.removePieceIn(moveData.to());
 		addPiece(movedPiece, moveData.from());
-		addPiece(moveData.pieceEaten(), moveData.to());
+		addPiece(moveData.pieceCaptured(), moveData.to());
+
+		if(movedPiece.type() == PieceType.KING) {
+			if(movedPiece.color() == PieceColor.BLACK) blackKingTile = moveData.from();
+			else whiteKingTile = moveData.from();
+		}
 	}
 
 	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {

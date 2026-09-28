@@ -26,12 +26,12 @@ void main() {
 	while (game.status() == GameStatus.ACTIVE) {
 		IO.println("Turn: " + game.colorTurn());
 
-		Tile from = readTile(scanner, "Select pieceMoved: ");
+		Tile from = readTile(scanner, "Select moved: ");
 
 		if (from == null)
 			break;
 
-		Map<Move, List<Tile>> possibleMoves = game.filteredPieceMovesetTiles(from);
+		Map<Move, List<Tile>> possibleMoves = game.legalPieceMoves(from);
 
 		List<Tile> possibleTiles = possibleMoves.values()
 				.stream()
@@ -40,7 +40,7 @@ void main() {
 				.toList();
 
 		if (possibleTiles.isEmpty()) {
-			IO.println("That pieceMoved cannot be moved.");
+			IO.println("That moved cannot be moved.");
 			IO.println();
 			continue;
 		}

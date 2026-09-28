@@ -6,6 +6,8 @@ import java.util.List;
 
 public class MoveRules {
 
+	public static final MoveCondition DESTINATION_EMPTY = ctx -> ctx.board().pieceAt(ctx.to()) == null;
+
 	public static final MoveCondition DIAGONAL_CAPTURE = ctx -> {
 		Piece pieceToCapture = ctx.board().pieceAt(ctx.to());
 
@@ -15,7 +17,7 @@ public class MoveRules {
 	public static final MoveCondition START_TWO_FORWARD = (ctx) -> {
 		Piece p = ctx.board().pieceAt(ctx.from());
 
-		return p.timesMoved() == 0 && isVerticalMove(ctx.from(), ctx.to());
+		return p.timesMoved() == 0 && isVerticalMove(ctx.from(), ctx.to()) && DESTINATION_EMPTY.satisfies(ctx);
 	};
 
 	public static final MoveCondition SAFE_MOVE = ctx -> {

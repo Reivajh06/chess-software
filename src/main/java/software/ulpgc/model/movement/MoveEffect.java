@@ -27,21 +27,21 @@ public interface MoveEffect {
 	};
 
 	MoveEffect QUEENSIDE_CASTLING = (board, from, to) -> {
-		board.addPiece(to, board.removePieceIn(from));
-		board.addPiece(
-				new Tile(File.D, from.rank()),
-				board.removePieceIn(new Tile(File.A, from.rank()))
-		);
+		Piece king = board.removePieceIn(from);
+		Piece rook = board.removePieceIn(new Tile(File.A, from.rank()));
+
+		board.addPiece(to, king);
+		board.addPiece(new Tile(File.D, from.rank()), rook);
 
 		return null;
 	};
 
 	MoveEffect KINGSIDE_CASTLING = (board, from, to) -> {
-		board.addPiece(to, board.removePieceIn(from));
-		board.addPiece(
-				new Tile(File.F, from.rank()),
-				board.removePieceIn(new Tile(File.H, from.rank()))
-		);
+		Piece king = board.removePieceIn(from);
+		Piece rook = board.removePieceIn(new Tile(File.H, from.rank()));
+
+		board.addPiece(to, king);
+		board.addPiece(new Tile(File.F, from.rank()), rook);
 
 		return null;
 	};

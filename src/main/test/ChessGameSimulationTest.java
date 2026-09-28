@@ -414,7 +414,7 @@ class ChessGameSimulationTest {
     }
 
     @Test
-    @DisplayName("10 - Legal movement generation for every pieceMoved type and color")
+    @DisplayName("10 - Legal movement generation for every moved type and color")
     void legalMovesAreGeneratedForEveryPieceTypeAndColor() {
         MatchReport report = new MatchReport(
                 "MOVE GENERATION - ALL PIECES / BOTH COLORS",
@@ -504,7 +504,7 @@ class ChessGameSimulationTest {
         Piece piece = board.pieceAt(from);
 
         if (piece == null) {
-            return new MoveAttempt(false, "There is no pieceMoved on " + from.name() + ".");
+            return new MoveAttempt(false, "There is no moved on " + from.name() + ".");
         }
 
         if (piece.color() != game.colorTurn()) {
@@ -515,7 +515,7 @@ class ChessGameSimulationTest {
         }
 
         try {
-            Map<Move, List<Tile>> possibleMoves = game.filteredPieceMovesetTiles(from);
+            Map<Move, List<Tile>> possibleMoves = game.legalPieceMoves(from);
             Optional<Move> selectedMove = possibleMoves.entrySet().stream()
                     .filter(entry -> entry.getValue().contains(to))
                     .map(Map.Entry::getKey)
@@ -560,7 +560,7 @@ class ChessGameSimulationTest {
         }
 
         try {
-            return targetNames(game.filteredPieceMovesetTiles(from));
+            return targetNames(game.legalPieceMoves(from));
         } catch (RuntimeException exception) {
             return Set.of("<EXCEPTION:" + exception.getClass().getSimpleName() + ">");
         }
