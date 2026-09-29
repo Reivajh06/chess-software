@@ -252,13 +252,18 @@ public class GameSession {
         return onStalemate() || onDeadPosition() || onThreefoldRepetition() || onDrawAgreement();
     }
 
+    private boolean noLegalMoves(PieceColor color) {
+        return controller.piecesTilesByColor(color).stream()
+                .allMatch(t ->legalPieceMoves(t).isEmpty());
+    }
+
     private boolean onStalemate() {
         /*
          * A draw by stalemate happens when the player who needs to move has no legal moves and his king is not in check
          * (otherwise, that would be a checkmate!).
          *  For a stalemate to happen, the move that produced the position has to be legal.
          * */
-        return false;
+        return !isKingChecked(colorTurn()) && noLegalMoves(colorTurn());
     }
 
     private boolean onDeadPosition() {
@@ -286,7 +291,7 @@ public class GameSession {
         *  the game immediately ends, and both win half a point. For this type of tie to happen, one of the players must propose a draw, and the other player must accept it.
         *  If the other player refuses the offer or keeps playing, the game is not tied.
         * */
-
+        
         return false;
     }
 
