@@ -139,13 +139,28 @@ public class GameSession {
     public void undoMove() {
         if(movesHistory.isEmpty()) return;
 
-        MoveData top = movesHistory.pop();
+        MoveData lastMove = movesHistory.pop();
 
-        capturedPieces.get(top.pieceCaptured().color()).remove(top.pieceCaptured());
+        controller.undoMove(new MoveData(lastMove.pieceMoved(), lastMove.move(), lastMove.from(), lastMove.to(), lastMove.pieceCaptured(), board));
+
+        turn = lastMove.pieceMoved().color();
+
+        if(debug) controller.printBoard();
+
+        if(lastMove.pieceCaptured() == null) return;
+        capturedPieces.get(lastMove.pieceCaptured().color()).remove(lastMove.pieceCaptured());
+    }
+
+    public Map<PieceColor, List<Piece>> capturedPieces() {
+        return capturedPieces;
+    }
+
+    public Piece pieceAt(Tile tile) {
+        return board.pieceAt(tile);
     }
 
     public void printBoard() {
-        board.printBoard();
+        controller.printBoard();
         System.out.println();
     }
 

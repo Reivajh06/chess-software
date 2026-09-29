@@ -154,6 +154,10 @@ public class GameController {
 		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
 	}
 
+	public void printBoard() {
+		board.printBoard();
+	}
+
 	private boolean outOfBounds(int fileIndex, int rankIndex) {
 		return (fileIndex < 0 || fileIndex >= File.values().length) ||
 				(rankIndex < 0 || rankIndex >= Rank.values().length);
