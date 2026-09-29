@@ -61,4 +61,17 @@ public class Board {
 			System.out.println(row);
 		}
 	}
+
+	public Board copy() {
+		Board board = new Board();
+
+		for(Map.Entry<Tile, Piece> entry : tiles.entrySet()) {
+			Tile tile = entry.getKey();
+			Piece piece = entry.getValue();
+
+			board.addPiece(new Tile(tile.file(), tile.rank()), piece == null ? null : piece.copy());
+		}
+
+		return board;
+	}
 }

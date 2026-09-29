@@ -12,7 +12,7 @@ public class Piece {
 	private final PieceType type;
 	private final String name;
 	private final List<Move> moveset;
-	private boolean isPromotable = false;
+	private final boolean isPromotable;
 
 	private int timesMoved;
 
@@ -21,6 +21,12 @@ public class Piece {
 		this.color = color;
 		name = color.name().charAt(0) + type.name().substring(0, 1);
 		this.moveset = moveset;
+		isPromotable = type == PieceType.PAWN;
+	}
+
+	public Piece(PieceType type, PieceColor color, List<Move> moveset, int timesMoved) {
+		this(type, color, moveset);
+		this.timesMoved = timesMoved;
 	}
 
 	public String code() {
@@ -59,15 +65,13 @@ public class Piece {
 		return isPromotable;
 	}
 
-	public void enablePromotion() {
-		isPromotable = true;
-	}
-
 	@NotNull
 	@Override
 	public String toString() {
 		return SpritesRepository.sprite(code());
 	}
 
-
+	public Piece copy() {
+		return new Piece(type, color, moveset, timesMoved);
+	}
 }

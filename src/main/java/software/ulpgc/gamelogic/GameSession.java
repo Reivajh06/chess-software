@@ -82,11 +82,6 @@ public class GameSession {
 
         if(move.effect() == null) movedPiece.moved();
 
-        if(movedPiece.type() == PieceType.PAWN) {
-            if(movedPiece.color() == PieceColor.BLACK && to.rank() == GameController.WHITE_KING_START_RANK) movedPiece.enablePromotion();
-            if(movedPiece.color() == PieceColor.WHITE && to.rank() == GameController.BLACK_KING_START_RANK) movedPiece.enablePromotion();
-        }
-
         if(debug) printBoard();
 
         updateGameStatus();
@@ -98,6 +93,10 @@ public class GameSession {
         if(board.pieceAt(tile) == null || newType == PieceType.KING) return;
 
         Piece piece = board.removePieceIn(tile);
+
+        if(piece.color() == PieceColor.BLACK && tile.rank() != GameController.WHITE_KING_START_RANK) return;
+        if(piece.color() == PieceColor.WHITE && tile.rank() != GameController.BLACK_KING_START_RANK) return;
+
         Piece newPiece;
 
         newPiece = switch(newType) {
@@ -133,7 +132,7 @@ public class GameSession {
     }
 
     public void registerMove(Move move, Tile from, Tile to, Piece capturedPiece) {
-        movesHistory.push(new MoveData(board.pieceAt(to), move, from, to, capturedPiece, board));
+        movesHistory.push(new MoveData(board.pieceAt(to), move, from, to, capturedPiece, board.copy()));
 
         if(capturedPiece != null) capturedPieces.get(capturedPiece.color()).add(capturedPiece);
     }
