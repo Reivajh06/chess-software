@@ -58,7 +58,7 @@ public class GameSession {
             Move move = moveEntry.getKey();
             List<Tile> moveTiles = new ArrayList<>(moveEntry.getValue());
 
-			moveTiles.removeIf(tile -> !moveUnchecksKing(move, location, tile));
+            moveTiles.removeIf(tile -> !moveUnchecksKing(move, location, tile));
 
             legalMoveset.put(move, moveTiles);
         }
@@ -94,6 +94,7 @@ public class GameSession {
 
         Piece piece = board.removePieceIn(tile);
 
+        if(!piece.isPromotable()) return;
         if(piece.color() == PieceColor.BLACK && tile.rank() != GameController.WHITE_KING_START_RANK) return;
         if(piece.color() == PieceColor.WHITE && tile.rank() != GameController.BLACK_KING_START_RANK) return;
 
@@ -193,7 +194,10 @@ public class GameSession {
 
         checkedColor = isKingChecked(kingColor) ? kingColor : null;
 
-        if(checkedColor == null) return;
+        if(checkedColor == null) {
+            status = onDraw() ? GameStatus.DRAW : GameStatus.ACTIVE;
+            return;
+        }
 
         Tile kingTile = controller.kingTile(kingColor);
 
@@ -207,7 +211,7 @@ public class GameSession {
     }
 
     private boolean isKingChecked(PieceColor kingColor) {
-		return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
+        return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
                 .anyMatch(t -> isKingCheckedBy(t, validPieceMoves(t)));
     }
 
@@ -243,4 +247,61 @@ public class GameSession {
                                 .anyMatch(moveTiles -> !moveTiles.isEmpty())
                 );
     }
+
+    private boolean onDraw() {
+        return onStalemate() || onDeadPosition() || onThreefoldRepetition() || onDrawAgreement();
+    }
+
+    private boolean onStalemate() {
+        /*
+         * A draw by stalemate happens when the player who needs to move has no legal moves and his king is not in check
+         * (otherwise, that would be a checkmate!).
+         *  For a stalemate to happen, the move that produced the position has to be legal.
+         * */
+        return false;
+    }
+
+    private boolean onDeadPosition() {
+        /*
+        * A dead position happens when neither player can legally checkmate the opponent's king.
+        *  If the game reaches this situation and the move that generated the position is legal,
+        *  the game ends in a tie.
+        *
+        * One of the most common instances of dead positions is when there is insufficient material for either player to checkmate their opponent. This type of draw can happen even when one of the players runs out of time, provided the other player does not have enough material to deliver checkmate.
+
+        Here are the piece combinations that lead to a draw by insufficient material:
+
+        King vs. king
+        King and bishop vs. king
+        King and knight vs. king
+        King and bishop vs. king and bishop of the same color as the opponent's bishop
+        * */
+        return false;
+    }
+
+    private boolean onDrawAgreement() {
+        /*
+        * Mutual Agreement
+        If for any reason, both players agree to a draw,
+        *  the game immediately ends, and both win half a point. For this type of tie to happen, one of the players must propose a draw, and the other player must accept it.
+        *  If the other player refuses the offer or keeps playing, the game is not tied.
+        * */
+
+        return false;
+    }
+
+    private boolean onThreefoldRepetition() {
+        /*
+        * Threefold Repetition
+        A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game. This repetition is only possible when all the pieces of the same size and color are occupying identical squares as they were before, and all the possible moves are also the same. As a result, if capturing en passant was previously an option that is no longer available, this position is not considered a repetition.
+
+        When a threefold repetition occurs, the game does not necessarily need to end immediately. The game only ends in a draw if the player who has the move requests a tie.
+
+        Most commonly, threefold repetitions happen when a player is losing and finds a perpetual check to save his game.
+        *
+        * */
+
+        return false;
+    }
+
 }

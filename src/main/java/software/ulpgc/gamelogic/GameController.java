@@ -3,7 +3,6 @@ package software.ulpgc.gamelogic;
 import software.ulpgc.model.*;
 import software.ulpgc.model.movement.Move;
 import software.ulpgc.model.movement.MoveData;
-import software.ulpgc.model.movement.MoveEffect;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,10 +10,10 @@ import java.util.List;
 
 public class GameController {
 
-	protected static final Rank WHITE_PAWN_START_RANK = Rank.TWO;
-	protected static final Rank WHITE_KING_START_RANK = Rank.ONE;
-	protected static final Rank BLACK_PAWN_START_RANK = Rank.SEVEN;
-	protected static final Rank BLACK_KING_START_RANK = Rank.EIGHT;
+	protected static final Rank WHITE_PAWN_START_RANK = Rank.R2;
+	protected static final Rank WHITE_KING_START_RANK = Rank.R1;
+	protected static final Rank BLACK_PAWN_START_RANK = Rank.R7;
+	protected static final Rank BLACK_KING_START_RANK = Rank.R8;
 
 	private final Board board;
 	private Tile whiteKingTile;
@@ -113,7 +112,7 @@ public class GameController {
 
 		for(int i = 0; i < move.repetitions(); i++) {
 			int fileIndex = t.file().code + move.x() - File.A.code;
-			int rankIndex = t.rank().number + move.y() * movementFactor - Rank.ONE.number;
+			int rankIndex = t.rank().number + move.y() * movementFactor - Rank.R1.number;
 
 			if(outOfBounds(fileIndex, rankIndex)) break;
 

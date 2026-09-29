@@ -2,14 +2,14 @@ package software.ulpgc.model;
 
 public enum Rank {
 
-	ONE(1),
-	TWO(2),
-	THREE(3),
-	FOUR(4),
-	FIVE(5),
-	SIX(6),
-	SEVEN(7),
-	EIGHT(8);
+	R1(1),
+	R2(2),
+	R3(3),
+	R4(4),
+	R5(5),
+	R6(6),
+	R7(7),
+	R8(8);
 
 	public final int number;
 
@@ -18,12 +18,12 @@ public enum Rank {
 	}
 
 	public static Rank next(Rank currentRank) {
-		if(currentRank.equals(Rank.EIGHT)) return null;
+		if(currentRank.equals(Rank.R8)) return null;
 		return Rank.values()[currentRank.number];
 	}
 
 	public static Rank previous(Rank currentRank) {
-		if(currentRank.equals(Rank.ONE)) return null;
-		return Rank.values()[currentRank.number - Rank.ONE.number - 1];
+		if(currentRank.equals(Rank.R1)) return null;
+		return Rank.values()[currentRank.number - Rank.R1.number - 1];
 	}
 }
