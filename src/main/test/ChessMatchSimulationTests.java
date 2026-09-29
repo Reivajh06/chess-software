@@ -18,7 +18,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Twenty complete chess-match simulations starting from the normal initial board.
+ * Twenty-five complete chess-match simulations starting from the normal initial board.
  *
  * The purpose of this class is deliberately end-to-end rather than microscopic:
  * each test describes a complete game, enables GameSession debug mode, lets
@@ -40,15 +40,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * frontend/application is expected to complete promotion.
  *
  * IMPORTANT ABOUT DRAWS:
- * Matches 19 and 20 end by threefold repetition and expect GameStatus.DRAW.
- * If draw detection has not been implemented in GameSession yet, those tests are
- * expected to remain red until it is implemented.
+ * Matches 19 and 20 end by threefold repetition. Matches 21 through 25 end
+ * by stalemate. All seven draw matches expect GameStatus.DRAW. If draw or
+ * stalemate detection has not been implemented in GameSession yet, the related
+ * tests are expected to remain red until it is implemented.
  */
 @TestMethodOrder(MethodOrderer.DisplayName.class)
-class ChessTwentyMatchSimulationTest {
+class ChessMatchSimulationTests {
 
     // ---------------------------------------------------------------------
-    // 20 independent JUnit matches
+    // 25 independent JUnit matches
     // ---------------------------------------------------------------------
 
     @Test
@@ -169,6 +170,36 @@ class ChessTwentyMatchSimulationTest {
     @DisplayName("20 - Threefold repetition after e4 e5 - Draw")
     void match20ThreefoldAfterOpening() {
         runMatch(match20());
+    }
+
+    @Test
+    @DisplayName("21 - Sam Loyd ten-move stalemate - Draw")
+    void match21SamLoydStalemate() {
+        runMatch(match21());
+    }
+
+    @Test
+    @DisplayName("22 - Sam Loyd reordered stalemate - Draw")
+    void match22SamLoydReorderedStalemate() {
+        runMatch(match22());
+    }
+
+    @Test
+    @DisplayName("23 - Alternate opening into ten-move stalemate - Draw")
+    void match23AlternateOpeningStalemate() {
+        runMatch(match23());
+    }
+
+    @Test
+    @DisplayName("24 - Frederick Rhine ten-move stalemate - Draw")
+    void match24FrederickRhineStalemate() {
+        runMatch(match24());
+    }
+
+    @Test
+    @DisplayName("25 - All-pieces stalemate - Draw")
+    void match25AllPiecesStalemate() {
+        runMatch(match25());
     }
 
     // ---------------------------------------------------------------------
@@ -722,6 +753,91 @@ class ChessTwentyMatchSimulationTest {
         );
     }
 
+    private MatchSpec match21() {
+        return match(
+                "Sam Loyd ten-move stalemate",
+                GameStatus.DRAW,
+                "White's queen reaches E6 on move 10. Black's king on G6 is not in check, but Black has no legal move, so the game is stalemate.",
+                List.of("stalemate", "draw", "queen sweep", "king confinement", "no legal moves"),
+                "e2e3 a7a5 d1h5 a8a6 h5a5 h7h5 a5c7 a6h6 h2h4 f7f6 c7d7 e8f7 d7b7 d8d3 b7b8 d3h7 b8c8 f7g6 c8e6",
+                notes(
+                        11, "White queen captures D7 with check.",
+                        12, "Black king moves E8-F7 to escape the check.",
+                        17, "White queen captures the bishop on C8.",
+                        18, "Black king moves F7-G6 into the final confined position.",
+                        19, "White queen C8-E6 does not check the king on G6, but Black has no legal move: stalemate."
+                )
+        );
+    }
+
+    private MatchSpec match22() {
+        return match(
+                "Sam Loyd reordered ten-move stalemate",
+                GameStatus.DRAW,
+                "This reaches the same stalemate pattern as match 21, but swaps the order of Qxc7 and h4 to exercise a different legal move history.",
+                List.of("stalemate", "draw", "move-order variation", "queen sweep", "no legal moves"),
+                "e2e3 a7a5 d1h5 a8a6 h5a5 h7h5 h2h4 a6h6 a5c7 f7f6 c7d7 e8f7 d7b7 d8d3 b7b8 d3h7 b8c8 f7g6 c8e6",
+                notes(
+                        7, "White plays H2-H4 before taking on C7; this is the intentional move-order variation.",
+                        8, "Black rook A6-H6 keeps the rook move legal before F7-F6 blocks the sixth rank.",
+                        9, "White queen A5xC7 resumes the standard stalemate construction.",
+                        18, "Black king reaches G6.",
+                        19, "White queen C8-E6 leaves Black with no legal move while the king is not in check: stalemate."
+                )
+        );
+    }
+
+    private MatchSpec match23() {
+        return match(
+                "Alternate opening into the ten-move stalemate",
+                GameStatus.DRAW,
+                "A different first three moves transpose into the same queen-and-rook stalemate mechanism, ending with Qe6 and no legal Black move.",
+                List.of("stalemate", "draw", "alternate opening", "queen sweep", "no legal moves"),
+                "c2c4 h7h5 h2h4 a7a5 d1a4 a8a6 a4a5 a6h6 a5c7 f7f6 c7d7 e8f7 d7b7 d8d3 b7b8 d3h7 b8c8 f7g6 c8e6",
+                notes(
+                        1, "White starts C2-C4 instead of E2-E3.",
+                        5, "White queen moves D1-A4 and the game now enters the familiar stalemate construction.",
+                        18, "Black king moves F7-G6.",
+                        19, "White queen C8-E6 leaves Black not in check and without a legal move: stalemate."
+                )
+        );
+    }
+
+    private MatchSpec match24() {
+        return match(
+                "Frederick Rhine ten-move stalemate",
+                GameStatus.DRAW,
+                "White removes Black's queenside material with the queen and finishes with Qe6. The black king on G6 is not checked, but Black has no legal move.",
+                List.of("stalemate", "draw", "queen captures", "rook movement", "no legal moves"),
+                "d2d4 c7c5 d4c5 f7f6 d1d7 e8f7 d7d8 c8f5 d8b8 h7h5 b8a8 h8h6 a8b7 a7a6 b7a6 f5h7 h2h4 f7g6 a6e6",
+                notes(
+                        5, "White queen D1xD7 gives check.",
+                        6, "Black king E8-F7 escapes the check.",
+                        11, "White queen B8xA8 captures Black's queenside rook.",
+                        18, "Black king F7-G6 enters the final confined square.",
+                        19, "White queen A6-E6 creates stalemate: the king is not in check and Black has no legal move."
+                )
+        );
+    }
+
+    private MatchSpec match25() {
+        return match(
+                "All-pieces stalemate",
+                GameStatus.DRAW,
+                "No captures occur. After Black plays F5-F4, every White piece is blocked or pinned and the white king is not in check, so White has no legal move.",
+                List.of("stalemate", "draw", "all 32 pieces", "no captures", "blocked position", "no legal moves"),
+                "d2d4 d7d6 d1d2 e7e5 a2a4 e5e4 d2f4 f7f5 h2h3 f8e7 f4h2 c8e6 a1a3 c7c5 a3g3 d8a5 b1d2 e7h4 f2f3 e6b3 d4d5 e4e3 c2c4 f5f4",
+                notes(
+                        15, "White rook A3-G3 helps seal White's kingside movement.",
+                        16, "Black queen D8-A5 gives check.",
+                        17, "White knight B1-D2 answers the check by blocking the queen's diagonal toward E2 and the king area.",
+                        20, "Black's C8 bishop, now on E6, moves E6-B3 and further restricts White.",
+                        22, "Black pawn E4-E3 closes additional White movement squares.",
+                        24, "Black pawn F5-F4 completes the cage. White is not in check but has no legal move: stalemate."
+                )
+        );
+    }
+
     // ---------------------------------------------------------------------
     // Small data helpers
     // ---------------------------------------------------------------------
@@ -795,3 +911,4 @@ class ChessTwentyMatchSimulationTest {
     ) {
     }
 }
+

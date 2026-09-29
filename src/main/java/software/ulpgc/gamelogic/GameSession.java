@@ -52,8 +52,6 @@ public class GameSession {
 
         Map<Move, List<Tile>> legalMoveset = new HashMap<>();
 
-        PieceColor color = controller.getPieceIn(location).color();
-
         for(Map.Entry<Move, List<Tile>> moveEntry : movesetMap.entrySet()) {
             Move move = moveEntry.getKey();
             List<Tile> moveTiles = new ArrayList<>(moveEntry.getValue());
@@ -84,9 +82,9 @@ public class GameSession {
 
         if(debug) printBoard();
 
-        updateGameStatus();
-
         turn = PieceColor.rivalColor(turn);
+
+        updateGameStatus();
     }
 
     public void promotePieceIn(Tile tile, PieceType newType) {
@@ -254,15 +252,12 @@ public class GameSession {
 
     private boolean noLegalMoves(PieceColor color) {
         return controller.piecesTilesByColor(color).stream()
-                .allMatch(t ->legalPieceMoves(t).isEmpty());
+                .map(t -> legalPieceMoves(t).values())
+                .flatMap(Collection::stream)
+                .allMatch(Collection::isEmpty);
     }
 
     private boolean onStalemate() {
-        /*
-         * A draw by stalemate happens when the player who needs to move has no legal moves and his king is not in check
-         * (otherwise, that would be a checkmate!).
-         *  For a stalemate to happen, the move that produced the position has to be legal.
-         * */
         return !isKingChecked(colorTurn()) && noLegalMoves(colorTurn());
     }
 
@@ -291,7 +286,7 @@ public class GameSession {
         *  the game immediately ends, and both win half a point. For this type of tie to happen, one of the players must propose a draw, and the other player must accept it.
         *  If the other player refuses the offer or keeps playing, the game is not tied.
         * */
-        
+
         return false;
     }
 
