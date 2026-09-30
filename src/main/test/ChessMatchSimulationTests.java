@@ -18,7 +18,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Twenty-five complete chess-match simulations starting from the normal initial board.
+ * Thirty complete chess-match simulations starting from the normal initial board.
  *
  * The purpose of this class is deliberately end-to-end rather than microscopic:
  * each test describes a complete game, enables GameSession debug mode, lets
@@ -41,15 +41,17 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * IMPORTANT ABOUT DRAWS:
  * Matches 19 and 20 end by threefold repetition. Matches 21 through 25 end
- * by stalemate. All seven draw matches expect GameStatus.DRAW. If draw or
- * stalemate detection has not been implemented in GameSession yet, the related
- * tests are expected to remain red until it is implemented.
+ * by stalemate. Matches 26 through 30 end by dead position: K vs K, K+B vs K,
+ * K+N vs K, and K+B vs K+B with all bishops confined to one square color.
+ * All twelve draw matches expect GameStatus.DRAW. If repetition, stalemate, or
+ * dead-position detection has not been implemented in GameSession yet, the
+ * related tests are expected to remain red until it is implemented.
  */
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 class ChessMatchSimulationTests {
 
     // ---------------------------------------------------------------------
-    // 25 independent JUnit matches
+    // 30 independent JUnit matches
     // ---------------------------------------------------------------------
 
     @Test
@@ -200,6 +202,36 @@ class ChessMatchSimulationTests {
     @DisplayName("25 - All-pieces stalemate - Draw")
     void match25AllPiecesStalemate() {
         runMatch(match25());
+    }
+
+    @Test
+    @DisplayName("26 - Dead position - King vs. king - Draw")
+    void match26KingVsKingDeadPosition() {
+        runMatch(match26());
+    }
+
+    @Test
+    @DisplayName("27 - Dead position - King and bishop vs. king - Draw")
+    void match27KingAndBishopVsKingDeadPosition() {
+        runMatch(match27());
+    }
+
+    @Test
+    @DisplayName("28 - Dead position - King and knight vs. king - Draw")
+    void match28KingAndKnightVsKingDeadPosition() {
+        runMatch(match28());
+    }
+
+    @Test
+    @DisplayName("29 - Dead position - King and bishop vs. king and same-color bishop (light squares) - Draw")
+    void match29SameColorLightBishopsDeadPosition() {
+        runMatch(match29());
+    }
+
+    @Test
+    @DisplayName("30 - Dead position - King and bishop vs. king and same-color bishop (dark squares) - Draw")
+    void match30SameColorDarkBishopsDeadPosition() {
+        runMatch(match30());
     }
 
     // ---------------------------------------------------------------------
@@ -838,6 +870,85 @@ class ChessMatchSimulationTests {
         );
     }
 
+
+    private MatchSpec match26() {
+        return match(
+                "Dead position: king versus king",
+                GameStatus.DRAW,
+                "White's king captures Black's final pawn on C5. Only the two kings remain, so checkmate is impossible and the game must be declared a draw by dead position.",
+                List.of("dead position", "draw", "king vs king", "material exhaustion", "final king capture"),
+                "f2f3 a7a5 h2h4 b7b5 b1a3 g7g5 a3c4 b5c4 h4g5 h7h5 b2b4 c4b3 h1h5 b3a2 h5h8 g8f6 g5f6 a5a4 h8h6 e7f6 h6g6 f7g6 a1a2 f8b4 a2a4 a8a4 c1a3 b4a3 d2d4 a4d4 e2e4 d4d1 e1d1 f6f5 f1a6 b8a6 c2c4 f5e4 f3e4 e8f8 g1h3 d7d5 c4d5 c8h3 d5d6 h3f5 e4f5 a3d6 f5g6 d8b8 g6g7 f8e7 d1e1 b8f8 g2g3 d6f4 e1f1 f8g7 f1f2 f4d2 f2g2 d2f4 g3g4 g7g4 g2f2 f4g3 f2e3 g4f3 e3f3 g3f4 f3f4 a6b4 f4e5 b4d5 e5d5 c7c5 d5c5",
+                notes(
+                        69, "White king E3xF3 removes Black's queen, leaving only Black's bishop, knight, and C-pawn besides the kings.",
+                        71, "White king F3xF4 captures Black's bishop.",
+                        75, "White king E5xD5 captures Black's last knight; the remaining C-pawn still prevents the position from being dead.",
+                        76, "Black advances its final pawn from C7 to C5.",
+                        77, "White king D5xC5 captures the last non-king piece. The board is now king versus king and GameStatus.DRAW is expected immediately."
+                )
+        );
+    }
+
+    private MatchSpec match27() {
+        return match(
+                "Dead position: king and bishop versus king",
+                GameStatus.DRAW,
+                "Black's king captures White's final pawn on C7. White is left with only king and bishop against the black king, so no legal continuation can produce checkmate.",
+                List.of("dead position", "draw", "king and bishop vs king", "insufficient mating material", "final king capture"),
+                "d2d4 g7g5 c1f4 g5f4 e2e4 b7b5 g2g3 f4g3 h2g3 e7e5 d4e5 f8d6 e5d6 f7f5 h1h7 h8h7 g1h3 c7d6 d1d6 d8b6 d6d7 h7d7 e4f5 b6g6 a2a4 g6g3 f1b5 g3h3 b1a3 h3a3 a1a3 b8a6 b2b4 a6b4 b5d7 e8d8 f2f3 b4c2 e1d1 c8b7 d1c2 b7f3 a3f3 a8c8 c2b3 c8c2 a4a5 a7a6 f5f6 c2c6 f3c3 g8f6 c3c5 c6b6 a5b6 f6h5 c5b5 a6b5 d7b5 h5g7 b3c3 g7e8 c3b3 e8c7 b6c7 d8c7",
+                notes(
+                        59, "White bishop D7xB5 removes Black's last pawn, while White still has a B-pawn and Black still has a knight.",
+                        65, "White pawn B6xC7 captures Black's last knight. White still has that pawn, so the position is not dead yet.",
+                        66, "Black king D8xC7 captures White's final pawn. Only White's bishop on B5 remains besides the kings, creating king-and-bishop versus king and an immediate dead-position draw."
+                )
+        );
+    }
+
+    private MatchSpec match28() {
+        return match(
+                "Dead position: king and knight versus king",
+                GameStatus.DRAW,
+                "White's king captures Black's final rook on F2. White is left with only king and knight against the black king, so checkmate is impossible.",
+                List.of("dead position", "draw", "king and knight vs king", "insufficient mating material", "final king capture"),
+                "f2f3 h7h6 a2a3 b8c6 d2d4 g7g5 c1g5 f7f6 c2c4 c6d4 g5h6 d4e2 h6f8 b7b5 d1d7 c8d7 c4b5 e2g1 h2h4 h8h4 a3a4 h4a4 a1a4 g1f3 g2f3 c7c6 f8e7 g8h6 e7d8 e8d8 b5c6 a7a5 h1h6 d7c6 b2b4 a5b4 a4b4 c6b5 f1b5 a8a6 h6f6 a6b6 f6g6 b6b5 b4b3 b5b3 g6b6 b3f3 b6f6 f3f2 f6g6 f2d2 g6g2 d2g2 b1c3 g2f2 e1f2",
+                notes(
+                        54, "Black rook D2xG2 captures White's last rook. The only remaining non-king pieces are White's knight and Black's rook.",
+                        55, "White keeps the surviving knight by moving B1-C3.",
+                        56, "Black rook G2-F2 moves next to the white king while the position is still live because the rook remains.",
+                        57, "White king E1xF2 captures Black's final rook. The result is king and knight versus king, so GameStatus.DRAW is expected by dead position."
+                )
+        );
+    }
+
+    private MatchSpec match29() {
+        return match(
+                "Dead position: same-color bishops on light squares",
+                GameStatus.DRAW,
+                "White's light-squared bishop captures Black's final pawn on A4. Each side is left with a king and a bishop, and both bishops are restricted to light squares, so checkmate is impossible.",
+                List.of("dead position", "draw", "bishop vs bishop", "same-color bishops", "light-square bishops"),
+                "g1f3 e7e5 f3e5 c7c6 e5c6 b7c6 b2b4 f8b4 c1a3 b4a3 b1a3 g7g5 h2h4 g5h4 h1h4 d8h4 d2d4 h4d4 d1d3 d4f2 e1f2 b8a6 d3d7 e8f8 d7c6 g8h6 c6a6 c8a6 a3c4 h6g8 g2g4 a6c4 f2f3 h7h5 a2a4 c4e2 f3f4 f7f5 f4f5 g8f6 c2c3 h5g4 a1d1 f6d5 d1a1 h8h3 a1a3 h3c3 f5e6 c3a3 e6d7 a3a4 d7c6 d5c7 c6c7 a7a5 c7c6 a8d8 c6c7 d8d6 c7c8 d6d8 c8d8 a4b4 d8d7 a5a4 d7d8 b4c4 f1h3 c4c8 d8d7 c8c5 h3g4 c5f5 d7c6 f5b5 c6d7 b5h5 d7c7 h5d5 c7c6 d5d3 c6b7 d3d7 b7b6 d7d8 g4h5 d8e8 h5e8 e2d1 b6a5 f8g7 e8a4",
+                notes(
+                        89, "White bishop H5xE8 captures Black's final rook. A black pawn on A4 still keeps mating material on the board.",
+                        90, "Black bishop E2-D1 stays on the light-square complex.",
+                        93, "White bishop E8xA4 captures Black's last pawn. White's bishop on A4 and Black's bishop on D1 are both light-squared bishops, so the position is dead and must be drawn."
+                )
+        );
+    }
+
+    private MatchSpec match30() {
+        return match(
+                "Dead position: same-color bishops on dark squares",
+                GameStatus.DRAW,
+                "White's dark-squared bishop captures Black's final pawn on G3. Each side is left with a king and a bishop, and both bishops are restricted to dark squares, so checkmate is impossible.",
+                List.of("dead position", "draw", "bishop vs bishop", "same-color bishops", "dark-square bishops"),
+                "e2e3 b8a6 f1a6 b7b5 c2c4 h7h5 c4b5 c7c6 a6c8 d8c8 d1h5 c6b5 h5h7 c8c2 h7g8 h8g8 b2b3 c2d2 b1d2 d7d5 g1h3 g7g5 f2f4 g5f4 e3f4 g8g7 g2g3 g7g3 a2a4 b5a4 h2g3 a4b3 d2c4 d5c4 a1a3 a7a5 a3b3 a8b8 b3b8 e8d7 b8b3 c4b3 h1f1 e7e5 e1d2 e5e4 h3f2 d7c7 f2d3 e4d3 d2d3 c7b6 f1e1 b3b2 c1b2 f7f6 e1e5 f6e5 d3e4 e5f4 e4d4 f4g3 d4c3 b6b5 c3d3 a5a4 d3c2 b5c6 b2g7 c6d5 g7f6 d5e6 c2b1 e6f5 b1a2 a4a3 f6e5 f5e6 a2b3 a3a2 b3a2 f8d6 a2b2 e6f5 b2c3 f5g6 c3d4 g6h5 e5g3",
+                notes(
+                        81, "White king B3xA2 captures Black's A-pawn. The remaining non-king material is the two dark-squared bishops plus Black's G-pawn.",
+                        83, "Black bishop F8-D6 stays on the dark-square complex.",
+                        89, "White bishop E5xG3 captures Black's final pawn. White's bishop on G3 and Black's bishop on D6 are both dark-squared bishops, so no checkmate can ever be reached and GameStatus.DRAW is expected."
+                )
+        );
+    }
+
     // ---------------------------------------------------------------------
     // Small data helpers
     // ---------------------------------------------------------------------
@@ -911,4 +1022,5 @@ class ChessMatchSimulationTests {
     ) {
     }
 }
+
 

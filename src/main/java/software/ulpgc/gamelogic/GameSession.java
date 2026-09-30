@@ -4,7 +4,6 @@ import software.ulpgc.model.*;
 import software.ulpgc.model.movement.Move;
 import software.ulpgc.model.movement.MoveData;
 
-import javax.swing.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -262,7 +261,7 @@ public class GameSession {
     }
 
     private boolean onDraw() {
-        return onStalemate() || onDeadPosition() || onThreefoldRepetition() || onDrawAgreement();
+        return onStalemate() || onDeadPosition() || onThreefoldRepetition();
     }
 
     private boolean noLegalMoves(PieceColor color) {
@@ -277,32 +276,23 @@ public class GameSession {
     }
 
     private boolean onDeadPosition() {
-        /*
-        * A dead position happens when neither player can legally checkmate the opponent's king.
-        *  If the game reaches this situation and the move that generated the position is legal,
-        *  the game ends in a tie.
-        *
-        * One of the most common instances of dead positions is when there is insufficient material for either player to checkmate their opponent. This type of draw can happen even when one of the players runs out of time, provided the other player does not have enough material to deliver checkmate.
-
-        Here are the piece combinations that lead to a draw by insufficient material:
-
-        King vs. king
-        King and bishop vs. king
-        King and knight vs. king
-        King and bishop vs. king and bishop of the same color as the opponent's bishop
-        * */
-        return false;
+        return (piecesRemaining(PieceColor.WHITE, PieceType.KING) && piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
+                (piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
+                (piecesRemaining(PieceColor.WHITE, PieceType.KING) && piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.BISHOP)) ||
+                (piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.KNIGHT) && piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
+                (piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.KNIGHT) && piecesRemaining(PieceColor.WHITE, PieceType.KING)) ||
+                (piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.BISHOP));
     }
 
-    private boolean onDrawAgreement() {
-        /*
-        * Mutual Agreement
-        If for any reason, both players agree to a draw,
-        *  the game immediately ends, and both win half a point. For this type of tie to happen, one of the players must propose a draw, and the other player must accept it.
-        *  If the other player refuses the offer or keeps playing, the game is not tied.
-        * */
+    private boolean piecesRemaining(PieceColor color, PieceType... pieceTypes) {
+        List<Tile> remainingPiecesTiles = controller.piecesTilesByColor(color);
 
-        return false;
+        if(remainingPiecesTiles.size() != pieceTypes.length) return false;
+
+        return remainingPiecesTiles.stream()
+                .map(t -> board.pieceAt(t).type())
+                .collect(Collectors.toSet())
+                .containsAll(List.of(pieceTypes));
     }
 
     private boolean onThreefoldRepetition() {
