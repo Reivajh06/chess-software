@@ -10,6 +10,39 @@ public class Board {
 
 	private final Map<Tile, Piece> tiles;
 
+	public static Board of(String boardAsFEN) {
+		Board board = new Board();
+
+		String[] fenRanks = boardAsFEN.split("/");
+		Rank rank = Rank.R8;
+
+		for(String fenRank : fenRanks) {
+			File file = File.A;
+			char[] tilesData = fenRank.toCharArray();
+
+			for(char tileData : tilesData) {
+				int i = tileData - '0';
+
+				if(i > 0 && i < 9) {
+					int fileIndex = (file.code + i) - File.A.code;
+
+					if(fileIndex == 8) continue;
+
+					file = File.values()[fileIndex];
+
+				} else {
+					board.addPiece(new Tile(file, rank), PieceFactory.createPieceByFENCode(tileData));
+					file = File.next(file);
+				}
+			}
+
+			rank = Rank.previous(rank);
+		}
+
+		board.printBoard();
+		return board;
+	}
+
 	public Board() {
 		tiles = new HashMap<>();
 
@@ -73,5 +106,34 @@ public class Board {
 		}
 
 		return board;
+	}
+
+	public String toFEN() {
+		StringBuilder fenBoard = new StringBuilder();
+
+		for(Rank rank = Rank.R8; rank != null && rank.number >= Rank.R1.number; rank = Rank.previous(rank)) {
+			int emptyTiles = 0;
+			StringBuilder rankFEN = new StringBuilder();
+
+			for(File file = File.A; file != null && file.code <= File.H.code; file = File.next(file)) {
+				Piece piece = tiles.get(new Tile(file, rank));
+
+				if(piece == null) emptyTiles++;
+
+				else {
+					if(emptyTiles > 0) rankFEN.append(emptyTiles);
+
+					rankFEN.append(piece.fenCode());
+					emptyTiles = 0;
+				}
+			}
+
+			fenBoard.append(rankFEN);
+			if(emptyTiles != 0) fenBoard.append(emptyTiles);
+			fenBoard.append("/");
+		}
+
+		fenBoard.deleteCharAt(fenBoard.length() - 1);
+		return fenBoard.toString();
 	}
 }

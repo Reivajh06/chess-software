@@ -40,7 +40,9 @@ public final class ChessCLI {
     private Map<Move, List<Tile>> selectedMoves = Map.of();
 
     public ChessCLI() {
-        this(new GameSession(Gamemode.PVP, Difficulty.NOT_CPU), new Scanner(System.in));
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        session.setDebug(true);
+        this(session, new Scanner(System.in));
     }
 
     ChessCLI(GameSession game, Scanner scanner) {
@@ -186,7 +188,6 @@ public final class ChessCLI {
 
         System.out.println("Moved " + from + " -> " + to + ".");
         clearSelection();
-        game.printBoard();
     }
 
     private void undo(String[] parts) {

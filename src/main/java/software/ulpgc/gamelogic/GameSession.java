@@ -42,6 +42,7 @@ public class GameSession {
         validator = new MovesValidator(board, controller);
 
         controller.setupBoard();
+        System.out.println(board.toFEN());
     }
 
     public Map<Move, List<Tile>> legalPieceMoves(Tile location) {
@@ -83,6 +84,7 @@ public class GameSession {
 
         turn = PieceColor.rivalColor(turn);
 
+        System.out.println(board.toFEN());
         updateGameStatus();
     }
 
@@ -298,7 +300,9 @@ public class GameSession {
     private boolean onThreefoldRepetition() {
         /*
         * Threefold Repetition
-        A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game. This repetition is only possible when all the pieces of the same size and color are occupying identical squares as they were before, and all the possible moves are also the same. As a result, if capturing en passant was previously an option that is no longer available, this position is not considered a repetition.
+        A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game.
+        *  This repetition is only possible when all the pieces of the same size and color are occupying identical squares as they were before
+        * and all the possible moves are also the same. As a result, if capturing en passant was previously an option that is no longer available, this position is not considered a repetition.
 
         When a threefold repetition occurs, the game does not necessarily need to end immediately. The game only ends in a draw if the player who has the move requests a tie.
 

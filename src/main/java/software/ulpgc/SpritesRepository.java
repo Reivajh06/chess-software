@@ -8,18 +8,18 @@ public class SpritesRepository {
 	public static final Map<String, String> SPRITES = new HashMap<>();
 
 	static {
-		SPRITES.put("WPA", "♙");
-		SPRITES.put("WRO", "♖");
-		SPRITES.put("WKI", "♔");
-		SPRITES.put("WQU", "♕");
-		SPRITES.put("WBI", "♗");
-		SPRITES.put("WKN", "♘");
-		SPRITES.put("BPA", "♟");
-		SPRITES.put("BRO", "♜");
-		SPRITES.put("BKI", "♚");
-		SPRITES.put("BQU", "♛");
-		SPRITES.put("BBI", "♝");
-		SPRITES.put("BKN", "♞");
+		SPRITES.put("WP", "♙");
+		SPRITES.put("WR", "♖");
+		SPRITES.put("WK", "♔");
+		SPRITES.put("WQ", "♕");
+		SPRITES.put("WB", "♗");
+		SPRITES.put("WN", "♘");
+		SPRITES.put("BP", "♟");
+		SPRITES.put("BR", "♜");
+		SPRITES.put("BK", "♚");
+		SPRITES.put("BQ", "♛");
+		SPRITES.put("BB", "♝");
+		SPRITES.put("BN", "♞");
 	}
 
 	public static String sprite(String code) {
