@@ -10,84 +10,23 @@ import java.util.List;
 
 public class GameController {
 
-	protected static final Rank WHITE_PAWN_START_RANK = Rank.R2;
-	protected static final Rank WHITE_KING_START_RANK = Rank.R1;
-	protected static final Rank BLACK_PAWN_START_RANK = Rank.R7;
-	protected static final Rank BLACK_KING_START_RANK = Rank.R8;
-
 	private final Board board;
-	private Tile whiteKingTile;
-	private Tile blackKingTile;
-
 
 	public GameController(Board board) {
 		this.board = board;
 	}
 
-	public void setupBoard() {
-		allocatePieces(board, PieceColor.BLACK);
-		allocatePieces(board, PieceColor.WHITE);
-
-		blackKingTile = new Tile(File.E, BLACK_KING_START_RANK);
-		whiteKingTile = new Tile(File.E, WHITE_KING_START_RANK);
-	}
-
-	private void allocatePieces(Board board, PieceColor color) {
-		Rank pawnRank = WHITE_PAWN_START_RANK;
-		Rank kingRank = WHITE_KING_START_RANK;
-
-		if(color == PieceColor.BLACK) {
-			pawnRank = BLACK_PAWN_START_RANK;
-			kingRank = BLACK_KING_START_RANK;
-		}
-
-		for(File file = File.A; file != null && file.compareTo(File.H) <= 0; file = File.next(file)) {
-			board.addPiece(new Tile(file, pawnRank), PieceFactory.createPawn(color));
-		}
-
-		board.addPiece(new Tile(File.A, kingRank), PieceFactory.createRook(color));
-		board.addPiece(new Tile(File.B, kingRank), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.C, kingRank), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.D, kingRank), PieceFactory.createQueen(color));
-		board.addPiece(new Tile(File.E, kingRank), PieceFactory.createKing(color) );
-		board.addPiece(new Tile(File.F, kingRank), PieceFactory.createBishop(color));
-		board.addPiece(new Tile(File.G, kingRank), PieceFactory.createKnight(color));
-		board.addPiece(new Tile(File.H, kingRank), PieceFactory.createRook(color));
-
-	}
-
 	public Piece movePiece(Move move, Tile from, Tile to) {
-		Piece p = board.pieceAt(from);
-
-		if(p.type() == PieceType.KING) {
-			if(p.color() == PieceColor.BLACK) blackKingTile = to;
-			else whiteKingTile = to;
-		}
-
 		return move.effect().apply(board, from, to);
-	}
-
-	public void addPiece(Piece piece, Tile tile) {
-		board.addPiece(tile, piece);
 	}
 
 	public Piece getPieceIn(Tile tile) {
 		return board.pieceAt(tile);
 	}
 
-	public Piece removePieceAt(Tile tile) {
-		return board.removePieceIn(tile);
-	}
-
 	public void undoMove(MoveData moveData) {
 		if(moveData.move().effect() != null) {
 			moveData.move().effect().undo(moveData);
-
-			if(moveData.pieceMoved().type() == PieceType.KING) {
-				if(moveData.pieceMoved().color() == PieceColor.BLACK) blackKingTile = moveData.from();
-				else whiteKingTile = moveData.from();
-			}
-
 			return;
 		}
 
@@ -98,11 +37,6 @@ public class GameController {
 		board.addPiece(from, movedPiece);
 		board.addPiece(moveData.to(), moveData.pieceCaptured());
 		movedPiece.unmoved();
-
-		if(movedPiece.type() == PieceType.KING) {
-			if(movedPiece.color() == PieceColor.BLACK) blackKingTile = moveData.from();
-			else whiteKingTile = moveData.from();
-		}
 	}
 
 	public List<Tile> calculateMoveTiles(PieceColor color, Tile start, Move move) {
@@ -140,18 +74,6 @@ public class GameController {
 				.filter(t -> t.rank().equals(rank))
 				.sorted(Comparator.comparing(Tile::file))
 				.toList();
-	}
-
-	public Tile blackKingTile() {
-		return blackKingTile;
-	}
-
-	public Tile whiteKingTile() {
-		return whiteKingTile;
-	}
-
-	public Tile kingTile(PieceColor kingColor) {
-		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
 	}
 
 	public void printBoard() {

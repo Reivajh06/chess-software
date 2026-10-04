@@ -8,7 +8,14 @@ import java.util.stream.Stream;
 
 public class Board {
 
+	public static final Rank WHITE_PAWN_START_RANK = Rank.R2;
+	public static final Rank WHITE_KING_START_RANK = Rank.R1;
+	public static final Rank BLACK_PAWN_START_RANK = Rank.R7;
+	public static final Rank BLACK_KING_START_RANK = Rank.R8;
+
 	private final Map<Tile, Piece> tiles;
+	private final Tile blackKingTile;
+	private final Tile whiteKingTile;
 
 	public static Board of(String boardAsFEN) {
 		Board board = new Board();
@@ -46,14 +53,34 @@ public class Board {
 	public Board() {
 		tiles = new HashMap<>();
 
-		File[] files = File.values();
-		Rank[] ranks = Rank.values();
+		whiteKingTile = new Tile(File.A, Rank.R1);
+		blackKingTile = new Tile(File.E, Rank.R8);
+		allocatePieces(PieceColor.BLACK);
+		allocatePieces(PieceColor.WHITE);
+	}
 
-		for(int i = 0; i < 8; i++) {
-			for(int j = 0; j < 8; j++) {
-				tiles.put(new Tile(files[j], ranks[i]), null);
-			}
+	private void allocatePieces(PieceColor color) {
+		Rank pawnRank = WHITE_PAWN_START_RANK;
+		Rank kingRank = WHITE_KING_START_RANK;
+
+		if(color == PieceColor.BLACK) {
+			pawnRank = BLACK_PAWN_START_RANK;
+			kingRank = BLACK_KING_START_RANK;
 		}
+
+		for(File file = File.A; file != null && file.compareTo(File.H) <= 0; file = File.next(file)) {
+			addPiece(new Tile(file, pawnRank), PieceFactory.createPawn(color));
+		}
+
+		addPiece(new Tile(File.A, kingRank), PieceFactory.createRook(color));
+		addPiece(new Tile(File.B, kingRank), PieceFactory.createKnight(color));
+		addPiece(new Tile(File.C, kingRank), PieceFactory.createBishop(color));
+		addPiece(new Tile(File.D, kingRank), PieceFactory.createQueen(color));
+		addPiece(new Tile(File.E, kingRank), PieceFactory.createKing(color) );
+		addPiece(new Tile(File.F, kingRank), PieceFactory.createBishop(color));
+		addPiece(new Tile(File.G, kingRank), PieceFactory.createKnight(color));
+		addPiece(new Tile(File.H, kingRank), PieceFactory.createRook(color));
+
 	}
 
 	public Piece removePieceIn(Tile t) {
@@ -135,5 +162,9 @@ public class Board {
 
 		fenBoard.deleteCharAt(fenBoard.length() - 1);
 		return fenBoard.toString();
+	}
+
+	public Tile kingTile(PieceColor kingColor) {
+		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
 	}
 }
