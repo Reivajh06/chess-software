@@ -1,6 +1,5 @@
 package reivajh06.model.movement;
 
-import reivajh06.gamelogic.GameController;
 import reivajh06.model.Board;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;

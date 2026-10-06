@@ -1,5 +1,5 @@
 package reivajh06.model.movement;
-
+import reivajh06.gamelogic.GameController;
 import reivajh06.model.*;
 
 import java.util.List;
@@ -27,14 +27,14 @@ public class MoveRules {
 
 	public static final MoveCondition SAFE_MOVE = ctx -> {
 		Piece piece = ctx.board().pieceAt(ctx.from());
-		List<Tile> rivalTiles = ctx.controller().piecesTilesByColor(piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
+		List<Tile> rivalTiles = GameController.piecesTilesByColor(ctx.board(), piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK);
 
 		for(Tile rivalTile : rivalTiles) {
 			Piece rivalPiece = ctx.board().pieceAt(rivalTile);
 			List<Move> moveset = rivalPiece.moveset();
 
 			for(Move move : moveset) {
-				boolean isTileCompromised = ctx.controller().calculateMoveTiles(rivalPiece.color(), rivalTile, move).stream()
+				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.board(), rivalPiece.color(), rivalTile, move).stream()
 						.filter(t -> t.equals(ctx.to()))
 						.findFirst()
 						.orElse(null) != null;
@@ -71,7 +71,7 @@ public class MoveRules {
 		if(king.timesMoved() != 0) return false;
 		if(ctx.colorChecked() == king.color()) return false;
 
-		Tile leftRookTile = ctx.controller().tilesByRank(ctx.from().rank()).getFirst();
+		Tile leftRookTile = GameController.tilesByRank(ctx.board(), ctx.from().rank()).getFirst();
 		Piece rook = ctx.board().pieceAt(leftRookTile);
 
 		if(rook == null) return false;
@@ -82,7 +82,6 @@ public class MoveRules {
 			if(ctx.board().pieceAt(new Tile(file, ctx.from().rank())) != null) return false;
 			if(!SAFE_MOVE.satisfies(new MoveContext(
 					ctx.lastMove(),
-					ctx.controller(),
 					ctx.board(),
 					ctx.from(),
 					new Tile(file, ctx.from().rank()), ctx.colorChecked()))
@@ -98,7 +97,7 @@ public class MoveRules {
 		if(king.timesMoved() != 0) return false;
 		if(ctx.colorChecked() == king.color()) return false;
 
-		Tile rightRookTile = ctx.controller().tilesByRank(ctx.from().rank()).getLast();
+		Tile rightRookTile = GameController.tilesByRank(ctx.board(), ctx.from().rank()).getLast();
 
 		Piece rook = ctx.board().pieceAt(rightRookTile);
 
@@ -110,7 +109,6 @@ public class MoveRules {
 			if(ctx.board().pieceAt(new Tile(file, ctx.from().rank())) != null) return false;
 			if(!SAFE_MOVE.satisfies(new MoveContext(
 					ctx.lastMove(),
-					ctx.controller(),
 					ctx.board(),
 					ctx.from(),
 					new Tile(file, ctx.from().rank()),
