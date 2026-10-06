@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 
 public class GameController {
 
-	public static Piece movePiece(GameSession session, Move move, Tile from, Tile to) {
-		return move.effect().apply(session.board(), from, to);
+	public static Piece movePiece(GameState gameState, Move move, Tile from, Tile to) {
+		return move.effect().apply(gameState.board(), from, to);
 	}
 
-	public static void undoMove(GameSession session, MoveData moveData) {
+	public static void undoMove(GameState gameState, MoveData moveData) {
 		if(moveData.move().effect() != null) {
 			moveData.move().effect().undo(moveData);
 			return;
@@ -22,13 +22,13 @@ public class GameController {
 		Tile from = moveData.from();
 		Tile to = moveData.to();
 
-		Piece movedPiece = session.board().removePieceIn(to);
-		session.board().addPiece(from, movedPiece);
-		session.board().addPiece(moveData.to(), moveData.pieceCaptured());
+		Piece movedPiece = gameState.board().removePieceIn(to);
+		gameState.board().addPiece(from, movedPiece);
+		gameState.board().addPiece(moveData.to(), moveData.pieceCaptured());
 		movedPiece.unmoved();
 	}
 
-	public static List<Tile> calculateMoveTiles(GameSession session, PieceColor color, Tile start, Move move) {
+	public static List<Tile> calculateMoveTiles(GameState gameState, PieceColor color, Tile start, Move move) {
 		List<Tile> tiles = new ArrayList<>();
 		Tile t = start;
 		int movementFactor = color == PieceColor.BLACK ? -1 : 1;
@@ -46,29 +46,29 @@ public class GameController {
 
 			tiles.add(t);
 
-			if(session.board().pieceAt(t) != null) break;
+			if(gameState.board().pieceAt(t) != null) break;
 		}
 
 		return tiles;
 	}
 
-	public static List<Tile> piecesTilesByColor(GameSession session, PieceColor color) {
-		return session.board().asStream()
-				.filter(t -> session.board().pieceAt(t) != null && session.board().pieceAt(t).color() == color)
+	public static List<Tile> piecesTilesByColor(GameState gameState, PieceColor color) {
+		return gameState.board().asStream()
+				.filter(t -> gameState.board().pieceAt(t) != null && gameState.board().pieceAt(t).color() == color)
 				.toList();
 	}
 
-	public static List<Tile> tilesByRank(GameSession session, Rank rank) {
-		return session.board().asStream()
+	public static List<Tile> tilesByRank(GameState gameState, Rank rank) {
+		return gameState.board().asStream()
 				.filter(t -> t.rank().equals(rank))
 				.sorted(Comparator.comparing(Tile::file))
 				.toList();
 	}
 
-	public static Map<Move, List<Tile>> legalPieceMoves(GameSession session, Tile location) {
-		if(session.board().pieceAt(location) == null) return new HashMap<>();
+	public static Map<Move, List<Tile>> legalPieceMoves(GameState gameState, Tile location) {
+		if(gameState.board().pieceAt(location) == null) return new HashMap<>();
 
-		Map<Move, List<Tile>> movesetMap = validPieceMoves(session, location);
+		Map<Move, List<Tile>> movesetMap = validPieceMoves(gameState, location);
 
 		Map<Move, List<Tile>> legalMoveset = new HashMap<>();
 
@@ -76,7 +76,7 @@ public class GameController {
 			Move move = moveEntry.getKey();
 			List<Tile> moveTiles = new ArrayList<>(moveEntry.getValue());
 
-			moveTiles.removeIf(tile -> !GameConditions.moveUnchecksKing(session, move, location, tile));
+			moveTiles.removeIf(tile -> !GameConditions.moveUnchecksKing(gameState, move, location, tile));
 
 			legalMoveset.put(move, moveTiles);
 		}
@@ -84,10 +84,10 @@ public class GameController {
 		return legalMoveset;
 	}
 
-	public static Map<Move, List<Tile>> pieceMovesetTiles(GameSession session, Tile location) {
-		if(session.board().pieceAt(location) == null) return new HashMap<>();
+	public static Map<Move, List<Tile>> pieceMovesetTiles(GameState gameState, Tile location) {
+		if(gameState.board().pieceAt(location) == null) return new HashMap<>();
 
-		Piece piece = session.board().pieceAt(location);
+		Piece piece = gameState.board().pieceAt(location);
 
 		List<Move> pieceMoveset = piece.moveset();
 
@@ -95,7 +95,7 @@ public class GameController {
 
 		for(Move move : pieceMoveset) {
 			List<Tile> filteredMoveTiles = calculateMoveTiles(
-					session,
+					gameState,
 					piece.color(),
 					location,
 					move
@@ -107,20 +107,21 @@ public class GameController {
 		return movesetTiles;
 	}
 
-	public static Map<Move, List<Tile>> validPieceMoves(GameSession session, Tile location) {
-		if(session.board().pieceAt(location) == null) return new HashMap<>();
-		if(session.status() != GameStatus.ACTIVE) return new HashMap<>();
+	public static Map<Move, List<Tile>> validPieceMoves(GameState gameState, Tile location) {
+		if(gameState.board().pieceAt(location) == null) return new HashMap<>();
+		if(gameState.status() != GameStatus.ACTIVE) return new HashMap<>();
 
-		return pieceMovesetTiles(session, location).entrySet().stream()
+		return pieceMovesetTiles(gameState, location).entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> {
 					Move move = e.getKey();
 					List<Tile> pendingTiles = e.getValue();
 
 					return MovesValidator.filterMoveTiles(
-							session,
+							gameState,
 							move,
 							location,
-							pendingTiles
+							pendingTiles,
+							gameState.lastMove()
 					);
 				}));
 	}

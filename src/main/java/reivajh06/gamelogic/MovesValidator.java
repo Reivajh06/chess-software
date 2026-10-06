@@ -5,20 +5,21 @@ import reivajh06.model.Tile;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveCondition;
 import reivajh06.model.movement.MoveContext;
+import reivajh06.model.movement.MoveData;
 
 import java.util.List;
 
 public class MovesValidator {
 
-	public static List<Tile> filterMoveTiles(GameSession session, Move move, Tile from, List<Tile> pendingTiles) {
+	public static List<Tile> filterMoveTiles(GameState gameState, Move move, Tile from, List<Tile> pendingTiles, MoveData lastMove) {
 		return pendingTiles.stream().filter(pendingTile -> {
-			Piece p = session.board().pieceAt(pendingTile);
+			Piece p = gameState.board().pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();
 
-			if(p != null && p.color() == session.board().pieceAt(from).color()) return false;
+			if(p != null && p.color() == gameState.board().pieceAt(from).color()) return false;
 
 			for(MoveCondition condition : conditions) {
-				if(condition.satisfies(new MoveContext(session, from, pendingTile))) return true;
+				if(condition.satisfies(new MoveContext(gameState, from, pendingTile, lastMove))) return true;
 			}
 
 			return false;

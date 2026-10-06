@@ -1,9 +1,13 @@
 package reivajh06.gamelogic;
 
+import reivajh06.model.Board;
 import reivajh06.model.Castling;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
+import reivajh06.model.movement.MoveData;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 
 public class GameStateBuilder {
@@ -11,14 +15,38 @@ public class GameStateBuilder {
     public static final List<Castling> CASTLING_ALL = List.of(Castling.KINGSIDE, Castling.QUEENSIDE);
 
     private PieceColor turnColor;
+    private Board board;
+    private Deque<MoveData> movesHistory = new ArrayDeque<>();
+    private PieceColor checkedColor;
+    private GameStatus status;
     private List<Castling> whiteCastling;
     private List<Castling> blackCastling;
     private Tile enPassantDestination;
     private int movesAfterPawn;
-    private int nTotalPlay;
+    private int nTotalPlay = 0;
+
+    public GameStateBuilder board(Board board) {
+        this.board = board;
+        return this;
+    }
+
+    public GameStateBuilder movesHistory(Deque<MoveData> movesHistory) {
+        this.movesHistory = movesHistory;
+        return this;
+    }
 
     public GameStateBuilder turnColor(PieceColor turnColor) {
         this.turnColor = turnColor;
+        return this;
+    }
+
+    public GameStateBuilder checkedColor(PieceColor checkedColor) {
+        this.checkedColor = checkedColor;
+        return this;
+    }
+
+    public GameStateBuilder status(GameStatus status) {
+        this.status = status;
         return this;
     }
 
@@ -49,12 +77,16 @@ public class GameStateBuilder {
 
     public GameState build() {
         return new GameState(
+                board,
+                movesHistory,
                 turnColor,
+                checkedColor,
+                status,
                 whiteCastling,
                 blackCastling,
                 enPassantDestination,
                 movesAfterPawn,
-                nTotalPlay == 0 ? 1 : nTotalPlay
+                nTotalPlay
         );
     }
 }

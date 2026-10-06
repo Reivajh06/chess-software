@@ -10,67 +10,67 @@ import java.util.Map;
 
 public class GameConditions {
 
-    public static boolean moveUnchecksKing(GameSession session, Move move, Tile from, Tile to) {
-        Piece pieceMoved = session.board().pieceAt(from);
+    public static boolean moveUnchecksKing(GameState gameState, Move move, Tile from, Tile to) {
+        Piece pieceMoved = gameState.board().pieceAt(from);
         Piece pieceCaptured = null;
 
         try {
-            pieceCaptured = GameController.movePiece(session, move, from, to);
+            pieceCaptured = GameController.movePiece(gameState, move, from, to);
 
-            if(isKingChecked(session, pieceMoved.color())) return false;
+            if(isKingChecked(gameState, pieceMoved.color())) return false;
 
         } finally {
-            GameController.undoMove(session, new MoveData(pieceMoved, move, from, to, pieceCaptured, session.board()));
+            GameController.undoMove(gameState, new MoveData(pieceMoved, move, from, to, pieceCaptured, gameState.board()));
         }
 
         return true;
     }
 
-    public static boolean isKingCheckedBy(GameSession session, Tile tile, Map<Move, List<Tile>> validPieceMoves) {
-        PieceColor kingCheckedColor = PieceColor.rivalColor(session.board().pieceAt(tile).color());
+    public static boolean isKingCheckedBy(GameState gameState, Tile tile, Map<Move, List<Tile>> validPieceMoves) {
+        PieceColor kingCheckedColor = PieceColor.rivalColor(gameState.board().pieceAt(tile).color());
 
-        return validPieceMoves.values().stream().anyMatch(l -> l.contains(session.board().kingTile(kingCheckedColor)));
+        return validPieceMoves.values().stream().anyMatch(l -> l.contains(gameState.board().kingTile(kingCheckedColor)));
     }
 
-    public static boolean isKingChecked(GameSession session, PieceColor kingColor) {
-        return GameController.piecesTilesByColor(session, PieceColor.rivalColor(kingColor)).stream()
-                .anyMatch(t -> isKingCheckedBy(session, t, GameController.validPieceMoves(session, t)));
+    public static boolean isKingChecked(GameState gameState, PieceColor kingColor) {
+        return GameController.piecesTilesByColor(gameState, PieceColor.rivalColor(kingColor)).stream()
+                .anyMatch(t -> isKingCheckedBy(gameState, t, GameController.validPieceMoves(gameState, t)));
     }
 
-    public static boolean isCheckMate(GameSession session, Tile kingTile) {
-        PieceColor kingColor = session.board().pieceAt(kingTile).color();
+    public static boolean isCheckMate(GameState gameState, Tile kingTile) {
+        PieceColor kingColor = gameState.board().pieceAt(kingTile).color();
 
-        if (!isKingChecked(session, kingColor))
+        if (!isKingChecked(gameState, kingColor))
             return false;
 
-        return !canAnyPieceSaveKing(session, kingColor);
+        return !canAnyPieceSaveKing(gameState, kingColor);
     }
 
-    public static boolean canAnyPieceSaveKing(GameSession session, PieceColor kingColor) {
-        return GameController.piecesTilesByColor(session, kingColor).stream()
+    public static boolean canAnyPieceSaveKing(GameState gameState, PieceColor kingColor) {
+        return GameController.piecesTilesByColor(gameState, kingColor).stream()
                 .anyMatch(tile ->
-                        GameController.legalPieceMoves(session, tile).values().stream()
+                        GameController.legalPieceMoves(gameState, tile).values().stream()
                                 .anyMatch(moveTiles -> !moveTiles.isEmpty())
                 );
     }
 
-    public static boolean onDraw(GameSession session) {
-        return onStalemate(session) || onDeadPosition(session) || onThreefoldRepetition(session);
+    public static boolean onDraw(GameState gameState) {
+        return onStalemate(gameState) || onDeadPosition(gameState) || onThreefoldRepetition(gameState);
     }
 
-    public static boolean noLegalMoves(GameSession session, PieceColor color) {
-        return GameController.piecesTilesByColor(session, color).stream()
-                .map(t -> GameController.legalPieceMoves(session, t).values())
+    public static boolean noLegalMoves(GameState gameState, PieceColor color) {
+        return GameController.piecesTilesByColor(gameState, color).stream()
+                .map(t -> GameController.legalPieceMoves(gameState, t).values())
                 .flatMap(Collection::stream)
                 .allMatch(Collection::isEmpty);
     }
 
-    public static boolean onStalemate(GameSession session) {
-        return !isKingChecked(session, session.gameState().turnColor()) && noLegalMoves(session, session.gameState().turnColor());
+    public static boolean onStalemate(GameState gameState) {
+        return !isKingChecked(gameState, gameState.turnColor()) && noLegalMoves(gameState, gameState.turnColor());
     }
 
-    public static boolean onDeadPosition(GameSession session) {
-        Board board = session.board();
+    public static boolean onDeadPosition(GameState gameState) {
+        Board board = gameState.board();
 
         return (board.piecesRemaining(PieceColor.WHITE, PieceType.KING) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
                 (board.piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
@@ -80,7 +80,7 @@ public class GameConditions {
                 (board.piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.BISHOP));
     }
 
-    public static boolean onThreefoldRepetition(GameSession session) {
+    public static boolean onThreefoldRepetition(GameState gameState) {
         /*
         * Threefold Repetition
         A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game.

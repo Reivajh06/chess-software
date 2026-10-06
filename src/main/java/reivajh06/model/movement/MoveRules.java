@@ -6,16 +6,16 @@ import java.util.List;
 
 public class MoveRules {
 
-	public static final MoveCondition DESTINATION_EMPTY = ctx -> ctx.session().board().pieceAt(ctx.to()) == null;
+	public static final MoveCondition DESTINATION_EMPTY = ctx -> ctx.gameState().board().pieceAt(ctx.to()) == null;
 
 	public static final MoveCondition DIAGONAL_CAPTURE = ctx -> {
-		Piece pieceToCapture = ctx.session().board().pieceAt(ctx.to());
+		Piece pieceToCapture = ctx.gameState().board().pieceAt(ctx.to());
 
 		return isDiagonalMove(ctx.from(), ctx.to()) && pieceToCapture != null;
 	};
 
 	public static final MoveCondition START_TWO_FORWARD = (ctx) -> {
-		Board board = ctx.session().board();
+		Board board = ctx.gameState().board();
 
 		Piece p = board.pieceAt(ctx.from());
 
@@ -28,11 +28,11 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition SAFE_MOVE = ctx -> {
-		Board board = ctx.session().board();
+		Board board = ctx.gameState().board();
 
 		Piece piece = board.pieceAt(ctx.from());
 		List<Tile> rivalTiles = GameController.piecesTilesByColor(
-				ctx.session(),
+				ctx.gameState(),
 				piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK
 		);
 
@@ -41,7 +41,7 @@ public class MoveRules {
 			List<Move> moveset = rivalPiece.moveset();
 
 			for(Move move : moveset) {
-				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.session(), rivalPiece.color(), rivalTile, move).stream()
+				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.gameState(), rivalPiece.color(), rivalTile, move).stream()
 						.filter(t -> t.equals(ctx.to()))
 						.findFirst()
 						.orElse(null) != null;
@@ -54,7 +54,7 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition EN_PASSANT = ctx -> {
-		Board board = ctx.session().board();
+		Board board = ctx.gameState().board();
 		Piece p = board.pieceAt(ctx.from());
 		Tile adjacentTile = new Tile(ctx.to().file(), ctx.from().rank());
 		Piece adjacentPiece = board.pieceAt(adjacentTile);
@@ -65,7 +65,7 @@ public class MoveRules {
 		if(adjacentPiece.type() != PieceType.PAWN) return false;
 		if(adjacentPiece.timesMoved() > 1) return false;
 
-		MoveData lastMove = ctx.session().lastMove();
+		MoveData lastMove = ctx.lastMove();
 
 		if(lastMove == null) return false;
 		if(!lastMove.to().equals(adjacentTile)) return false;
@@ -74,15 +74,15 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition QUEENSIDE_CASTLING = ctx -> {
-		Board board = ctx.session().board();
-		PieceColor checkedColor = ctx.session().checkedColor();
+		Board board = ctx.gameState().board();
+		PieceColor checkedColor = ctx.gameState().checkedColor();
 
 		Piece king = board.pieceAt(ctx.from());
 
 		if(king.timesMoved() != 0) return false;
 		if(checkedColor == king.color()) return false;
 
-		Tile leftRookTile = GameController.tilesByRank(ctx.session(), ctx.from().rank()).getFirst();
+		Tile leftRookTile = GameController.tilesByRank(ctx.gameState(), ctx.from().rank()).getFirst();
 		Piece rook = board.pieceAt(leftRookTile);
 
 		if(rook == null) return false;
@@ -90,11 +90,14 @@ public class MoveRules {
 		if(rook.timesMoved() != 0) return false;
 
 		for(File file = File.B; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
-			if(board.pieceAt(new Tile(file, ctx.from().rank())) != null) return false;
+			Tile tile = new Tile(file, ctx.from().rank());
+
+			if(board.pieceAt(tile) != null) return false;
 			if(!SAFE_MOVE.satisfies(new MoveContext(
-					ctx.session(),
+					ctx.gameState(),
 					ctx.from(),
-					new Tile(file, ctx.from().rank())))
+					tile,
+					ctx.lastMove()))
 			) return false;
 		}
 
@@ -102,15 +105,15 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition KINGSIDE_CASTLING = ctx -> {
-		Board board = ctx.session().board();
-		PieceColor checkedColor = ctx.session().checkedColor();
+		Board board = ctx.gameState().board();
+		PieceColor checkedColor = ctx.gameState().checkedColor();
 
 		Piece king = board.pieceAt(ctx.from());
 
 		if(king.timesMoved() != 0) return false;
 		if(checkedColor == king.color()) return false;
 
-		Tile rightRookTile = GameController.tilesByRank(ctx.session(), ctx.from().rank()).getLast();
+		Tile rightRookTile = GameController.tilesByRank(ctx.gameState(), ctx.from().rank()).getLast();
 
 		Piece rook = board.pieceAt(rightRookTile);
 
@@ -123,9 +126,10 @@ public class MoveRules {
 
 			if(board.pieceAt(tile) != null) return false;
 			if(!SAFE_MOVE.satisfies(new MoveContext(
-					ctx.session(),
+					ctx.gameState(),
 					ctx.from(),
-					tile))
+					tile,
+					ctx.lastMove()))
 			) return false;
 		}
 
