@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 public class GameSession {
 
+    private final String id;
+
     private final GameController controller;
     private final MovesValidator validator;
 
@@ -25,6 +27,7 @@ public class GameSession {
     private boolean debug = false;
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
+        id = UUID.randomUUID().toString();
         this.difficulty = difficulty;
         this.gamemode = gamemode;
 
@@ -127,6 +130,10 @@ public class GameSession {
 
     public GameStatus status() {
         return status;
+    }
+
+    public String id() {
+        return id;
     }
 
     public void registerMove(Move move, Tile from, Tile to, Piece capturedPiece) {

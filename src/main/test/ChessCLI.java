@@ -1,3 +1,4 @@
+import software.ulpgc.api.ChessAPI;
 import software.ulpgc.gamelogic.Difficulty;
 import software.ulpgc.gamelogic.GameSession;
 import software.ulpgc.gamelogic.GameStatus;

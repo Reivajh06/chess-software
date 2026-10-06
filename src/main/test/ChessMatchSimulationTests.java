@@ -2,6 +2,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import software.ulpgc.api.ChessAPI;
 import software.ulpgc.gamelogic.Difficulty;
 import software.ulpgc.gamelogic.GameSession;
 import software.ulpgc.gamelogic.GameStatus;
