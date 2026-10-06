@@ -44,7 +44,7 @@ public class GameSession {
         controller = new GameController(board);
         validator = new MovesValidator(board, controller);
 
-        controller.setupBoard();
+        System.out.println(board.toFEN());
     }
 
     public Map<Move, List<Tile>> legalPieceMoves(Tile location) {
@@ -95,8 +95,8 @@ public class GameSession {
         Piece piece = board.removePieceIn(tile);
 
         if(!piece.isPromotable()) return;
-        if(piece.color() == PieceColor.BLACK && tile.rank() != GameController.WHITE_KING_START_RANK) return;
-        if(piece.color() == PieceColor.WHITE && tile.rank() != GameController.BLACK_KING_START_RANK) return;
+        if(piece.color() == PieceColor.BLACK && tile.rank() != Board.WHITE_KING_START_RANK) return;
+        if(piece.color() == PieceColor.WHITE && tile.rank() != Board.BLACK_KING_START_RANK) return;
 
         Piece newPiece;
 
@@ -218,20 +218,20 @@ public class GameSession {
             return;
         }
 
-        Tile kingTile = controller.kingTile(kingColor);
+        Tile kingTile = board.kingTile(kingColor);
 
         if(isCheckMate(kingTile)) status = board.pieceAt(kingTile).color() == PieceColor.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
     }
 
-    private boolean isKingCheckedBy(Tile tile, Map<Move, List<Tile>> validPieceMoves) {
-        PieceColor kingCheckedColor = PieceColor.rivalColor(controller.getPieceIn(tile).color());
+    private boolean piecesRemaining(PieceColor color, PieceType... pieceTypes) {
+        List<Tile> remainingPiecesTiles = controller.piecesTilesByColor(color);
 
-        return validPieceMoves.values().stream().anyMatch(l -> l.contains(controller.kingTile(kingCheckedColor)));
-    }
+        if(remainingPiecesTiles.size() != pieceTypes.length) return false;
 
-    private boolean isKingChecked(PieceColor kingColor) {
-        return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
-                .anyMatch(t -> isKingCheckedBy(t, validPieceMoves(t)));
+        return remainingPiecesTiles.stream()
+                .map(t -> board.pieceAt(t).type())
+                .collect(Collectors.toSet())
+                .containsAll(List.of(pieceTypes));
     }
 
     private boolean moveUnchecksKing(Move move, Tile from, Tile to) {
@@ -248,6 +248,17 @@ public class GameSession {
         }
 
         return true;
+    }
+
+    private boolean isKingCheckedBy(Tile tile, Map<Move, List<Tile>> validPieceMoves) {
+        PieceColor kingCheckedColor = PieceColor.rivalColor(controller.getPieceIn(tile).color());
+
+        return validPieceMoves.values().stream().anyMatch(l -> l.contains(board.kingTile(kingCheckedColor)));
+    }
+
+    private boolean isKingChecked(PieceColor kingColor) {
+        return controller.piecesTilesByColor(PieceColor.rivalColor(kingColor)).stream()
+                .anyMatch(t -> isKingCheckedBy(t, validPieceMoves(t)));
     }
 
     private boolean isCheckMate(Tile kingTile) {
@@ -291,21 +302,12 @@ public class GameSession {
                 (piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.BISHOP));
     }
 
-    private boolean piecesRemaining(PieceColor color, PieceType... pieceTypes) {
-        List<Tile> remainingPiecesTiles = controller.piecesTilesByColor(color);
-
-        if(remainingPiecesTiles.size() != pieceTypes.length) return false;
-
-        return remainingPiecesTiles.stream()
-                .map(t -> board.pieceAt(t).type())
-                .collect(Collectors.toSet())
-                .containsAll(List.of(pieceTypes));
-    }
-
     private boolean onThreefoldRepetition() {
         /*
         * Threefold Repetition
-        A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game. This repetition is only possible when all the pieces of the same size and color are occupying identical squares as they were before, and all the possible moves are also the same. As a result, if capturing en passant was previously an option that is no longer available, this position is not considered a repetition.
+        A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game.
+        *  This repetition is only possible when all the pieces of the same size and color are occupying identical squares as they were before
+        * and all the possible moves are also the same. As a result, if capturing en passant was previously an option that is no longer available, this position is not considered a repetition.
 
         When a threefold repetition occurs, the game does not necessarily need to end immediately. The game only ends in a draw if the player who has the move requests a tie.
 
@@ -315,5 +317,4 @@ public class GameSession {
 
         return false;
     }
-
 }

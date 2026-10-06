@@ -78,4 +78,22 @@ public class PieceFactory {
 				new MoveBuilder().backward().backward().left().build()
 		)));
 	}
+
+	public static Piece createPieceByFENCode(char fenCode) {
+		return switch(fenCode) {
+			case 'P' -> createPawn(PieceColor.WHITE);
+			case 'B' -> createBishop(PieceColor.WHITE);
+			case 'R' -> createRook(PieceColor.WHITE);
+			case 'K' -> createKing(PieceColor.WHITE);
+			case 'Q' -> createQueen(PieceColor.WHITE);
+			case 'N' -> createKnight(PieceColor.WHITE);
+			case 'p' -> createPawn(PieceColor.BLACK);
+			case 'b' -> createBishop(PieceColor.BLACK);
+			case 'r' -> createRook(PieceColor.BLACK);
+			case 'k' -> createKing(PieceColor.BLACK);
+			case 'q' -> createQueen(PieceColor.BLACK);
+			case 'n' -> createKnight(PieceColor.BLACK);
+			default -> null;
+		};
+	}
 }

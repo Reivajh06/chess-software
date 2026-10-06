@@ -11,7 +11,6 @@ import java.util.List;
 public class MovesValidator {
 
 	private final Board board;
-	private PieceColor checkedColor;
 	private final GameController controller;
 
 	public MovesValidator(Board board, GameController controller) {
