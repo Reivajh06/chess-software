@@ -4,7 +4,7 @@ import reivajh06.model.Board;
 import reivajh06.model.Castling;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
-import reivajh06.model.movement.MoveData;
+import reivajh06.model.movement.MoveEvent;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -16,7 +16,7 @@ public class GameStateBuilder {
 
     private PieceColor turnColor;
     private Board board;
-    private Deque<MoveData> movesHistory = new ArrayDeque<>();
+    private Deque<MoveEvent> movesHistory = new ArrayDeque<>();
     private PieceColor checkedColor;
     private GameStatus status;
     private List<Castling> whiteCastling;
@@ -30,7 +30,7 @@ public class GameStateBuilder {
         return this;
     }
 
-    public GameStateBuilder movesHistory(Deque<MoveData> movesHistory) {
+    public GameStateBuilder movesHistory(Deque<MoveEvent> movesHistory) {
         this.movesHistory = movesHistory;
         return this;
     }

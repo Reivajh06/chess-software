@@ -4,7 +4,7 @@ import reivajh06.model.Board;
 import reivajh06.model.Castling;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
-import reivajh06.model.movement.MoveData;
+import reivajh06.model.movement.MoveEvent;
 
 import java.util.Deque;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public record GameState(
 		Board board,
-        Deque<MoveData> movesHistory,
+        Deque<MoveEvent> movesHistory,
         PieceColor turnColor,
 		PieceColor checkedColor,
 		GameStatus status,
@@ -57,7 +57,7 @@ public record GameState(
                 .toString();
     }
 
-    public MoveData lastMove() {
+    public MoveEvent lastMove() {
         return movesHistory.isEmpty() ? null : movesHistory.peek();
     }
 }

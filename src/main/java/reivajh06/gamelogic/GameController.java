@@ -2,7 +2,7 @@ package reivajh06.gamelogic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.MoveData;
+import reivajh06.model.movement.MoveEvent;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,18 +13,18 @@ public class GameController {
 		return move.effect().apply(gameState.board(), from, to);
 	}
 
-	public static void undoMove(GameState gameState, MoveData moveData) {
-		if(moveData.move().effect() != null) {
-			moveData.move().effect().undo(moveData);
+	public static void undoMove(GameState gameState, MoveEvent moveEvent) {
+		if(moveEvent.move().effect() != null) {
+			moveEvent.move().effect().undo(moveEvent);
 			return;
 		}
 
-		Tile from = moveData.from();
-		Tile to = moveData.to();
+		Tile from = moveEvent.from();
+		Tile to = moveEvent.to();
 
 		Piece movedPiece = gameState.board().removePieceIn(to);
 		gameState.board().addPiece(from, movedPiece);
-		gameState.board().addPiece(moveData.to(), moveData.pieceCaptured());
+		gameState.board().addPiece(moveEvent.to(), moveEvent.pieceCaptured());
 		movedPiece.unmoved();
 	}
 

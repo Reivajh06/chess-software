@@ -2,7 +2,7 @@ package reivajh06.gamelogic;
 
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.MoveData;
+import reivajh06.model.movement.MoveEvent;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +20,7 @@ public class GameConditions {
             if(isKingChecked(gameState, pieceMoved.color())) return false;
 
         } finally {
-            GameController.undoMove(gameState, new MoveData(pieceMoved, move, from, to, pieceCaptured, gameState.board()));
+            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, gameState.board()));
         }
 
         return true;

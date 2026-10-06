@@ -5,13 +5,13 @@ import reivajh06.model.Tile;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveCondition;
 import reivajh06.model.movement.MoveContext;
-import reivajh06.model.movement.MoveData;
+import reivajh06.model.movement.MoveEvent;
 
 import java.util.List;
 
 public class MovesValidator {
 
-	public static List<Tile> filterMoveTiles(GameState gameState, Move move, Tile from, List<Tile> pendingTiles, MoveData lastMove) {
+	public static List<Tile> filterMoveTiles(GameState gameState, Move move, Tile from, List<Tile> pendingTiles, MoveEvent lastMove) {
 		return pendingTiles.stream().filter(pendingTile -> {
 			Piece p = gameState.board().pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();

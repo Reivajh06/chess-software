@@ -65,7 +65,7 @@ public class MoveRules {
 		if(adjacentPiece.type() != PieceType.PAWN) return false;
 		if(adjacentPiece.timesMoved() > 1) return false;
 
-		MoveData lastMove = ctx.lastMove();
+		MoveEvent lastMove = ctx.lastMove();
 
 		if(lastMove == null) return false;
 		if(!lastMove.to().equals(adjacentTile)) return false;
