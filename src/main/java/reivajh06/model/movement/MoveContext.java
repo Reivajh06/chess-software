@@ -5,5 +5,5 @@ import reivajh06.model.Board;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
 
-public record MoveContext(MoveData lastMove, GameController controller, Board board, Tile from, Tile to, PieceColor colorChecked) {
+public record MoveContext(MoveData lastMove, Board board, Tile from, Tile to, PieceColor colorChecked) {
 }

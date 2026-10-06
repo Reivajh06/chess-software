@@ -13,15 +13,7 @@ import java.util.List;
 
 public class MovesValidator {
 
-	private final Board board;
-	private final GameController controller;
-
-	public MovesValidator(Board board, GameController controller) {
-		this.controller = controller;
-		this.board = board;
-	}
-
-	public List<Tile> filterMoveTiles(Move move, Tile from, List<Tile> pendingTiles, MoveData lastMove, PieceColor checkedColor) {
+	public static List<Tile> filterMoveTiles(Board board, Move move, Tile from, List<Tile> pendingTiles, MoveData lastMove, PieceColor checkedColor) {
 		return pendingTiles.stream().filter(pendingTile -> {
 			Piece p = board.pieceAt(pendingTile);
 			List<MoveCondition> conditions = move.conditions();
@@ -29,7 +21,7 @@ public class MovesValidator {
 			if(p != null && p.color() == board.pieceAt(from).color()) return false;
 
 			for(MoveCondition condition : conditions) {
-				if(condition.satisfies(new MoveContext(lastMove, controller, board, from, pendingTile, checkedColor))) return true;
+				if(condition.satisfies(new MoveContext(lastMove, board, from, pendingTile, checkedColor))) return true;
 			}
 
 			return false;
