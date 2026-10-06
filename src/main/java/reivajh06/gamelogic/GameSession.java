@@ -1,6 +1,7 @@
 package reivajh06.gamelogic;
 
 import reivajh06.model.Board;
+import reivajh06.model.PieceColor;
 import reivajh06.model.movement.MoveData;
 
 import java.util.Stack;
@@ -16,6 +17,7 @@ public class GameSession {
     private GameState gameState;
     private GameStatus status;
     private Stack<MoveData> movesHistory;
+    private PieceColor checkedColor;
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         id = UUID.randomUUID().toString();
@@ -51,6 +53,18 @@ public class GameSession {
 
     public GameStatus status() {
         return status;
+    }
+
+    public Stack<MoveData> movesHistory() {
+        return movesHistory;
+    }
+
+    public PieceColor checkedColor() {
+        return checkedColor;
+    }
+
+    public MoveData lastMove() {
+        return movesHistory.isEmpty() ? null : movesHistory.peek();
     }
 
     public String toFEN() {

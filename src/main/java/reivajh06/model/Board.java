@@ -1,8 +1,6 @@
 package reivajh06.model;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -103,6 +101,30 @@ public class Board {
 
 	public Stream<Tile> asStream() {
 		return tiles.keySet().stream();
+	}
+
+	public List<Tile> piecesTilesByColor(PieceColor color) {
+		return asStream()
+				.filter(t -> pieceAt(t) != null && pieceAt(t).color() == color)
+				.toList();
+	}
+
+	public List<Tile> tilesByRank(Rank rank) {
+		return asStream()
+				.filter(t -> t.rank().equals(rank))
+				.sorted(Comparator.comparing(Tile::file))
+				.toList();
+	}
+
+	public boolean piecesRemaining(PieceColor color, PieceType... pieceTypes) {
+		List<Tile> remainingPiecesTiles = piecesTilesByColor(color);
+
+		if(remainingPiecesTiles.size() != pieceTypes.length) return false;
+
+		return remainingPiecesTiles.stream()
+				.map(t -> pieceAt(t).type())
+				.collect(Collectors.toSet())
+				.containsAll(List.of(pieceTypes));
 	}
 
 	public void printBoard() {
