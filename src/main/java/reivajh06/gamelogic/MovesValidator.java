@@ -4,7 +4,6 @@ import reivajh06.model.Board;
 import reivajh06.model.Piece;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
-import software.ulpgc.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveCondition;
 import reivajh06.model.movement.MoveContext;

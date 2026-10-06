@@ -52,4 +52,9 @@ public class GameSession {
     public GameStatus status() {
         return status;
     }
+
+    public String toFEN() {
+        return board.toFEN() + " " + gameState.toFEN();
+    }
+
 }

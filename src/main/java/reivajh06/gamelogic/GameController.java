@@ -1,7 +1,6 @@
 package reivajh06.gamelogic;
 
 import reivajh06.model.*;
-import software.ulpgc.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveData;
 

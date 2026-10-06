@@ -1,7 +1,6 @@
 package reivajh06.model.movement;
 
 import reivajh06.model.*;
-import software.ulpgc.model.*;
 
 import java.util.List;
 
