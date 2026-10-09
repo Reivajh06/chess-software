@@ -1,14 +1,9 @@
 package reivajh06.gamelogic;
 
-import reivajh06.model.Board;
-import reivajh06.model.Castling;
-import reivajh06.model.PieceColor;
-import reivajh06.model.Tile;
+import reivajh06.model.*;
 import reivajh06.model.movement.MoveEvent;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 public class GameStateBuilder {
 
@@ -17,13 +12,14 @@ public class GameStateBuilder {
     private PieceColor turnColor;
     private Board board;
     private Deque<MoveEvent> movesHistory = new ArrayDeque<>();
+    private Map<PieceColor, List<Piece>> eatenPieces = new HashMap<>();
     private PieceColor checkedColor;
     private GameStatus status;
     private List<Castling> whiteCastling;
     private List<Castling> blackCastling;
     private Tile enPassantDestination;
-    private int movesAfterPawn;
-    private int nTotalPlay = 0;
+    private int halfMoveClock;
+    private int fullMoves = 0;
 
     public GameStateBuilder board(Board board) {
         this.board = board;
@@ -50,6 +46,11 @@ public class GameStateBuilder {
         return this;
     }
 
+    public GameStateBuilder eatenPieces(Map<PieceColor, List<Piece>> eatenPieces) {
+        this.eatenPieces = eatenPieces;
+        return this;
+    }
+
     public GameStateBuilder whiteCastling(List<Castling> whiteCastling) {
         this.whiteCastling = whiteCastling;
         return this;
@@ -65,13 +66,13 @@ public class GameStateBuilder {
         return this;
     }
 
-    public GameStateBuilder movesAfterPawn(int movesAfterPawn) {
-        this.movesAfterPawn = movesAfterPawn;
+    public GameStateBuilder halfMoveClock(int movesAfterPawn) {
+        this.halfMoveClock = movesAfterPawn;
         return this;
     }
 
-    public GameStateBuilder nTotalPlay(int nTotalPlay) {
-        this.nTotalPlay = nTotalPlay;
+    public GameStateBuilder fullMoves(int fullMoves) {
+        this.fullMoves = fullMoves;
         return this;
     }
 
@@ -79,14 +80,15 @@ public class GameStateBuilder {
         return new GameState(
                 board,
                 movesHistory,
+                eatenPieces,
                 turnColor,
                 checkedColor,
                 status,
                 whiteCastling,
                 blackCastling,
                 enPassantDestination,
-                movesAfterPawn,
-                nTotalPlay
+                halfMoveClock,
+                fullMoves
         );
     }
 }

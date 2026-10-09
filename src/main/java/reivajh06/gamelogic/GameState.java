@@ -1,26 +1,25 @@
 package reivajh06.gamelogic;
 
-import reivajh06.model.Board;
-import reivajh06.model.Castling;
-import reivajh06.model.PieceColor;
-import reivajh06.model.Tile;
+import reivajh06.model.*;
 import reivajh06.model.movement.MoveEvent;
 
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public record GameState(
 		Board board,
         Deque<MoveEvent> movesHistory,
+		Map<PieceColor, List<Piece>> eatenPieces,
         PieceColor turnColor,
 		PieceColor checkedColor,
 		GameStatus status,
 		List<Castling> whiteCastling,
 		List<Castling> blackCastling,
 		Tile enPassantDestination,
-		int movesAfterPawn,
-		int nTotalPlay
+		int halfMoveClock,
+		int fullMoves
 ) {
 
     public static GameState startingState() {
@@ -32,8 +31,8 @@ public record GameState(
                 .whiteCastling(GameStateBuilder.CASTLING_ALL)
                 .blackCastling(GameStateBuilder.CASTLING_ALL)
                 .enPassantDestination(null)
-                .movesAfterPawn(0)
-                .nTotalPlay(1)
+                .halfMoveClock(0)
+                .fullMoves(1)
                 .build();
     }
 
@@ -51,9 +50,9 @@ public record GameState(
                 .append(" ")
                 .append(enPassantDestination == null ? "-" : enPassantDestination.name().toLowerCase())
                 .append(" ")
-                .append(movesAfterPawn)
+                .append(halfMoveClock)
                 .append(" ")
-                .append(nTotalPlay)
+                .append(fullMoves)
                 .toString();
     }
 

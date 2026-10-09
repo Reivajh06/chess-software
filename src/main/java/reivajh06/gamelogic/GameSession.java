@@ -8,7 +8,7 @@ public class GameSession {
 
     private final Gamemode gamemode;
     private final Difficulty difficulty;
-    private final GameState gameState;
+    private GameState gameState;
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
         id = UUID.randomUUID().toString();
@@ -32,6 +32,10 @@ public class GameSession {
 
     public GameState gameState() {
         return gameState;
+    }
+
+    public void gameState(GameState gameState) {
+        this.gameState = gameState;
     }
 
     public String toFEN() {

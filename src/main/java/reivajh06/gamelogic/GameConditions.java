@@ -20,7 +20,7 @@ public class GameConditions {
             if(isKingChecked(gameState, pieceMoved.color())) return false;
 
         } finally {
-            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, gameState.board()));
+            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, gameState.board().toFEN()));
         }
 
         return true;
@@ -37,9 +37,7 @@ public class GameConditions {
                 .anyMatch(t -> isKingCheckedBy(gameState, t, GameController.validPieceMoves(gameState, t)));
     }
 
-    public static boolean isCheckMate(GameState gameState, Tile kingTile) {
-        PieceColor kingColor = gameState.board().pieceAt(kingTile).color();
-
+    public static boolean isCheckMate(GameState gameState, PieceColor kingColor) {
         if (!isKingChecked(gameState, kingColor))
             return false;
 

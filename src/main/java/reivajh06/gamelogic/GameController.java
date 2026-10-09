@@ -108,9 +108,6 @@ public class GameController {
 	}
 
 	public static Map<Move, List<Tile>> validPieceMoves(GameState gameState, Tile location) {
-		if(gameState.board().pieceAt(location) == null) return new HashMap<>();
-		if(gameState.status() != GameStatus.ACTIVE) return new HashMap<>();
-
 		return pieceMovesetTiles(gameState, location).entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> {
 					Move move = e.getKey();
