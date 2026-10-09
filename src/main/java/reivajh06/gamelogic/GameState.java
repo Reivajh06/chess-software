@@ -6,6 +6,7 @@ import reivajh06.model.movement.MoveEvent;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public record GameState(
@@ -37,16 +38,19 @@ public record GameState(
     }
 
     public String toFEN() {
-        String whiteCastlingRights = whiteCastling.stream().map(c -> c == null ? "-" : c.firstLetter()).collect(Collectors.joining());
-        String blackCastlingRights = blackCastling.stream().map(c -> c == null ? "-" : c.firstLetter().toLowerCase()).collect(Collectors.joining());
+        String whiteCastlingRights = whiteCastling.stream().filter(Objects::nonNull).map(Castling::firstLetter).collect(Collectors.joining());
+        String blackCastlingRights = blackCastling.stream().filter(Objects::nonNull).map(c -> c.firstLetter().toLowerCase()).collect(Collectors.joining());
+
+		String castlingRights = whiteCastlingRights + blackCastlingRights;
+
+		if(castlingRights.isEmpty()) castlingRights = "-";
 
         return new StringBuilder()
                 .append(board.toFEN())
                 .append(" ")
                 .append(turnColor.name().toLowerCase().charAt(0))
                 .append(" ")
-                .append(whiteCastlingRights)
-                .append(blackCastlingRights)
+                .append(castlingRights)
                 .append(" ")
                 .append(enPassantDestination == null ? "-" : enPassantDestination.name().toLowerCase())
                 .append(" ")
