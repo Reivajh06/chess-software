@@ -12,8 +12,12 @@ public class Board {
 	public static final Rank BLACK_KING_START_RANK = Rank.R8;
 
 	private final Map<Tile, Piece> tiles;
-	private final Tile blackKingTile;
-	private final Tile whiteKingTile;
+	private Tile blackKingTile;
+	private Tile whiteKingTile;
+	private Tile whiteKingSideRook;
+	private Tile whiteQueenSideRook;
+	private Tile blackKingSideRook;
+	private Tile blackQueenSideRook;
 
 	public static Board of(String boardAsFEN) {
 		Board board = new Board();
@@ -53,6 +57,12 @@ public class Board {
 
 		whiteKingTile = new Tile(File.A, Rank.R1);
 		blackKingTile = new Tile(File.E, Rank.R8);
+
+		whiteKingSideRook = new Tile(File.A, Rank.R1);
+		whiteQueenSideRook = new Tile(File.H, Rank.R1);
+		blackKingSideRook = new Tile(File.A, Rank.R8);
+		blackQueenSideRook = new Tile(File.H, Rank.R8);
+
 		allocatePieces(PieceColor.BLACK);
 		allocatePieces(PieceColor.WHITE);
 	}
@@ -188,5 +198,41 @@ public class Board {
 
 	public Tile kingTile(PieceColor kingColor) {
 		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
+	}
+
+	public Tile rookTile(PieceColor color, Castling castlingSide) {
+		if(color == PieceColor.BLACK) return castlingSide == Castling.KINGSIDE ? blackKingSideRook : blackQueenSideRook;
+
+		return castlingSide == Castling.KINGSIDE ? whiteKingSideRook : whiteQueenSideRook;
+	}
+
+	public Board blackKingTile(Tile blackKingTile) {
+		this.blackKingTile = blackKingTile;
+		return this;
+	}
+
+	public Board whiteKingTile(Tile whiteKingTile) {
+		this.whiteKingTile = whiteKingTile;
+		return this;
+	}
+
+	public Board whiteKingSideRook(Tile whiteKingSideRook) {
+		this.whiteKingSideRook = whiteKingSideRook;
+		return this;
+	}
+
+	public Board whiteQueenSideRook(Tile whiteQueenSideRook) {
+		this.whiteQueenSideRook = whiteQueenSideRook;
+		return this;
+	}
+
+	public Board blackKingSideRook(Tile blackKingSideRook) {
+		this.blackKingSideRook = blackKingSideRook;
+		return this;
+	}
+
+	public Board blackQueenSideRook(Tile blackQueenSideRook) {
+		this.blackQueenSideRook = blackQueenSideRook;
+		return this;
 	}
 }
