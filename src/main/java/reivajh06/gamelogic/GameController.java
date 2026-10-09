@@ -15,7 +15,7 @@ public class GameController {
 
 	public static void undoMove(GameState gameState, MoveEvent moveEvent) {
 		if(moveEvent.move().effect() != null) {
-			moveEvent.move().effect().undo(moveEvent);
+			moveEvent.move().effect().undo(moveEvent, gameState.board());
 			return;
 		}
 

@@ -22,9 +22,7 @@ public interface MoveEffect {
 		}
 
 		@Override
-		public void undo(MoveEvent moveEvent) {
-			Board board = moveEvent.board();
-
+		public void undo(MoveEvent moveEvent, Board board) {
 			Piece movedPiece = board.removePieceIn(moveEvent.to());
 
 			board.addPiece(moveEvent.from(), movedPiece);
@@ -54,9 +52,7 @@ public interface MoveEffect {
 		}
 
 		@Override
-		public void undo(MoveEvent moveEvent) {
-			Board board = moveEvent.board();
-
+		public void undo(MoveEvent moveEvent, Board board) {
 			Piece movedPawn = board.removePieceIn(moveEvent.to());
 
 			board.addPiece(moveEvent.from(), movedPawn);
@@ -85,9 +81,7 @@ public interface MoveEffect {
 		}
 
 		@Override
-		public void undo(MoveEvent moveEvent) {
-			Board board = moveEvent.board();
-
+		public void undo(MoveEvent moveEvent, Board board) {
 			Tile rookCurrentTile = new Tile(
 					File.D,
 					moveEvent.from().rank()
@@ -132,9 +126,7 @@ public interface MoveEffect {
 		}
 
 		@Override
-		public void undo(MoveEvent moveEvent) {
-			Board board = moveEvent.board();
-
+		public void undo(MoveEvent moveEvent, Board board) {
 			Tile rookCurrentTile = new Tile(
 					File.F,
 					moveEvent.from().rank()
@@ -164,5 +156,5 @@ public interface MoveEffect {
 	};
 
 	Piece apply(Board board, Tile from, Tile to);
-	void undo(MoveEvent moveEvent);
+	void undo(MoveEvent moveEvent, Board board);
 }
