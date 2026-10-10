@@ -16,21 +16,12 @@ public class Board {
 	private final Map<Tile, Piece> tiles;
 	private Tile blackKingTile;
 	private Tile whiteKingTile;
-	private Tile whiteKingSideRook;
-	private Tile whiteQueenSideRook;
-	private Tile blackKingSideRook;
-	private Tile blackQueenSideRook;
 
 	public static Board startingBoard() {
 		Board board = new Board();
 
 		board.whiteKingTile = new Tile(File.E, Rank.R1);
 		board.blackKingTile = new Tile(File.E, Rank.R8);
-
-		board.whiteKingSideRook = new Tile(File.H, Rank.R1);
-		board.whiteQueenSideRook = new Tile(File.A, Rank.R1);
-		board.blackKingSideRook = new Tile(File.H, Rank.R8);
-		board.blackQueenSideRook = new Tile(File.A, Rank.R8);
 
 		board.allocatePieces(PieceColor.BLACK);
 		board.allocatePieces(PieceColor.WHITE);
@@ -143,12 +134,6 @@ public class Board {
 		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
 	}
 
-	public Tile rookTile(PieceColor color, Castling castlingSide) {
-		if(color == PieceColor.BLACK) return castlingSide == Castling.KINGSIDE ? blackKingSideRook : blackQueenSideRook;
-
-		return castlingSide == Castling.KINGSIDE ? whiteKingSideRook : whiteQueenSideRook;
-	}
-
 	public Board blackKingTile(Tile blackKingTile) {
 		this.blackKingTile = blackKingTile;
 		return this;
@@ -156,26 +141,6 @@ public class Board {
 
 	public Board whiteKingTile(Tile whiteKingTile) {
 		this.whiteKingTile = whiteKingTile;
-		return this;
-	}
-
-	public Board whiteKingSideRook(Tile whiteKingSideRook) {
-		this.whiteKingSideRook = whiteKingSideRook;
-		return this;
-	}
-
-	public Board whiteQueenSideRook(Tile whiteQueenSideRook) {
-		this.whiteQueenSideRook = whiteQueenSideRook;
-		return this;
-	}
-
-	public Board blackKingSideRook(Tile blackKingSideRook) {
-		this.blackKingSideRook = blackKingSideRook;
-		return this;
-	}
-
-	public Board blackQueenSideRook(Tile blackQueenSideRook) {
-		this.blackQueenSideRook = blackQueenSideRook;
 		return this;
 	}
 }

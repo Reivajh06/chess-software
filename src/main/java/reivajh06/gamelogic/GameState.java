@@ -4,10 +4,7 @@ import reivajh06.FenParser;
 import reivajh06.model.*;
 import reivajh06.model.movement.MoveEvent;
 
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public record GameState(
@@ -29,6 +26,7 @@ public record GameState(
                 .board(Board.startingBoard())
                 .turnColor(PieceColor.WHITE)
                 .checkedColor(null)
+				.eatenPieces(Map.of(PieceColor.BLACK, new ArrayList<>(), PieceColor.WHITE, new ArrayList<>()))
                 .status(GameStatus.ACTIVE)
                 .whiteCastling(GameStateBuilder.CASTLING_ALL)
                 .blackCastling(GameStateBuilder.CASTLING_ALL)

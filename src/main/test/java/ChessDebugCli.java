@@ -155,10 +155,7 @@ public final class ChessDebugCli {
         };
         String rights = fields[2];
         if (!rights.matches("-|K?Q?k?q?")) throw new IllegalArgumentException("Bad castling rights in FEN");
-        board.whiteKingSideRook(rights.contains("K") ? new Tile("h1") : null);
-        board.whiteQueenSideRook(rights.contains("Q") ? new Tile("a1") : null);
-        board.blackKingSideRook(rights.contains("k") ? new Tile("h8") : null);
-        board.blackQueenSideRook(rights.contains("q") ? new Tile("a8") : null);
+        // Castling rights belong to GameState. The board only stores pieces.
         Tile ep = fields[3].equals("-") ? null : new Tile(fields[3]);
         int halfmove = Integer.parseInt(fields[4]);
         int fullmove = Integer.parseInt(fields[5]);

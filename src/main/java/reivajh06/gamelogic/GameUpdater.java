@@ -35,24 +35,8 @@ public class GameUpdater {
 		Piece capturedPiece = GameController.movePiece(session.gameState(), move, from, to);
 
 		if(movedPiece.type() == PieceType.KING) updateKingTile(movedPiece.color(), to);
-		else if(movedPiece.type() == PieceType.ROOK) updateRookTile(movedPiece.color(), from, to);
 
 		session.gameState(updateGameState(move, movedPiece, capturedPiece, from, to));
-	}
-
-	private void updateRookTile(PieceColor color, Tile previousLocation, Tile newLocation) {
-		Board board = session.gameState().board();
-
-		if(color == PieceColor.BLACK) {
-			if(board.rookTile(color, Castling.KINGSIDE) == previousLocation) board.blackKingSideRook(newLocation);
-
-			else board.blackQueenSideRook(newLocation);
-
-		} else {
-			if(board.rookTile(color, Castling.KINGSIDE) == previousLocation) board.whiteKingSideRook(newLocation);
-
-			else board.whiteQueenSideRook(newLocation);
-		}
 	}
 
 	private void updateKingTile(PieceColor color, Tile newLocation) {
@@ -88,9 +72,17 @@ public class GameUpdater {
 		List<Castling> whiteCastling = new ArrayList<>(currentState.whiteCastling());
 		List<Castling> blackCastling = new ArrayList<>(currentState.blackCastling());
 
-		if(movedPiece.color() == PieceColor.WHITE) whiteCastling = updateCastlingRights(movedPiece);
+		if(movedPiece.color() == PieceColor.WHITE) {
+			if(movedPiece.type() == PieceType.KING) whiteCastling = new ArrayList<>();
 
-		else blackCastling = updateCastlingRights(movedPiece);
+			else whiteCastling = updateCastlingRights(movedPiece);
+		}
+
+		else {
+			if(movedPiece.type() == PieceType.KING) blackCastling = new ArrayList<>();
+
+			else blackCastling = updateCastlingRights(movedPiece);
+		}
 
 		stateBuilder.whiteCastling(whiteCastling).blackCastling(blackCastling);
 
@@ -189,32 +181,70 @@ public class GameUpdater {
 		);
 
 		if(castlingRights.getFirst() != null) {
-			if(!canCastlingTo(movedPiece, Castling.KINGSIDE)) castlingRights.set(0, null);
+			if(!canCastleKingSide(movedPiece)) castlingRights.set(0, null);
 
 		} else if(castlingRights.getLast() != null) {
-			if(!canCastlingTo(movedPiece, Castling.QUEENSIDE)) castlingRights.set(1, null);
+			if(!canCastleQueenSide(movedPiece)) castlingRights.set(1, null);
 		}
 
 		return castlingRights;
 	}
 
-	private boolean canCastlingTo(Piece movedPiece, Castling castlingSide) {
+	private boolean canCastleKingSide(Piece movedPiece) {
 		PieceColor color = movedPiece.color();
 		GameState currentState = session.gameState();
 		Board updatedBoard = currentState.board();
 
+		if(movedPiece.type() == PieceType.KING) return false;
+
 		if(color == PieceColor.BLACK) {
 			if(currentState.blackCastling().getFirst() == null) return false;
+
+			Tile kingsideRookTile = new Tile(File.H, Board.BLACK_KING_START_RANK);
+			Piece piece = updatedBoard.pieceAt(kingsideRookTile);
+
+			if(piece == null) return false;
+			if(piece.type() == PieceType.ROOK) return piece.color() == movedPiece.color() && piece.timesMoved() == 0;
+
 		} else {
 			if(currentState.whiteCastling().getFirst() == null) return false;
+
+			Tile kingsideRookTile = new Tile(File.H, Board.WHITE_KING_START_RANK);
+			Piece piece = updatedBoard.pieceAt(kingsideRookTile);
+
+			if(piece == null) return false;
+			if(piece.type() == PieceType.ROOK) return piece.color() == movedPiece.color() && piece.timesMoved() == 0;
 		}
+
+		return false;
+	}
+
+	private boolean canCastleQueenSide(Piece movedPiece) {
+		PieceColor color = movedPiece.color();
+		GameState currentState = session.gameState();
+		Board updatedBoard = currentState.board();
 
 		if(movedPiece.type() == PieceType.KING) return false;
 
-		Tile rookTile = updatedBoard.rookTile(movedPiece.color(), castlingSide);
+		if(color == PieceColor.BLACK) {
+			if(currentState.blackCastling().getLast() == null) return false;
 
-		if(rookTile == null) return false;
+			Tile queensideRookTile = new Tile(File.A, Board.BLACK_KING_START_RANK);
+			Piece piece = updatedBoard.pieceAt(queensideRookTile);
 
-		return movedPiece.type() != PieceType.ROOK || !updatedBoard.pieceAt(rookTile).equals(movedPiece);
+			if(piece == null) return false;
+			if(piece.type() == PieceType.ROOK) return piece.timesMoved() == 0;
+
+		} else {
+			if(currentState.whiteCastling().getLast() == null) return false;
+
+			Tile queensideRookTile = new Tile(File.A, Board.WHITE_KING_START_RANK);
+			Piece piece = updatedBoard.pieceAt(queensideRookTile);
+
+			if(piece == null) return false;
+			if(piece.type() == PieceType.ROOK) return piece.timesMoved() == 0;
+		}
+
+		return false;
 	}
 }

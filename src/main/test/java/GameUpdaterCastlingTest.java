@@ -1,0 +1,151 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import reivajh06.gamelogic.Difficulty;
+import reivajh06.gamelogic.GameSession;
+import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.Gamemode;
+import reivajh06.model.Castling;
+import reivajh06.model.PieceColor;
+import reivajh06.model.Tile;
+import reivajh06.model.movement.Move;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+
+class GameUpdaterCastlingTest {
+    private static final String OPEN_ROOKS =
+            "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
+
+    private static GameSession at(String fen) {
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        ChessDebugCli.loadFen(session, fen);
+        return session;
+    }
+
+    private static void play(GameSession session, String uci) {
+        ChessDebugCli.applyCoordinateMove(session, uci);
+    }
+
+    private static String rights(GameSession session) {
+        return session.toFEN().split("\\s+")[2];
+    }
+
+    private static boolean containsRight(GameSession session, PieceColor color, Castling side) {
+        List<Castling> flags = color == PieceColor.WHITE
+                ? session.gameState().whiteCastling()
+                : session.gameState().blackCastling();
+        return flags.contains(side);
+    }
+
+    private static boolean canMove(GameSession session, String from, String to) {
+        Map<Move, List<Tile>> legal = new GameUpdater(session).pieceMoves(new Tile(from));
+        Tile destination = new Tile(to);
+        return legal.values().stream().flatMap(Collection::stream).anyMatch(destination::equals);
+    }
+
+    private static Stream<Arguments> originalRookMoves() {
+        return Stream.of(
+                Arguments.of("white h-rook", OPEN_ROOKS, "h1h2", "Qkq", PieceColor.WHITE, Castling.KINGSIDE),
+                Arguments.of("white a-rook", OPEN_ROOKS, "a1a2", "Kkq", PieceColor.WHITE, Castling.QUEENSIDE),
+                Arguments.of("black h-rook", OPEN_ROOKS.replace(" w ", " b "), "h8h7", "KQq", PieceColor.BLACK, Castling.KINGSIDE),
+                Arguments.of("black a-rook", OPEN_ROOKS.replace(" w ", " b "), "a8a7", "KQk", PieceColor.BLACK, Castling.QUEENSIDE)
+        );
+    }
+
+    @ParameterizedTest(name = "{0} permanently loses only its own castling side")
+    @MethodSource("originalRookMoves")
+    void rookMovesRevokeExactlyOneRight(String label, String initial, String uci,
+                                        String expectedRights, PieceColor color, Castling revoked) {
+        GameSession session = at(initial);
+        assertTrue(containsRight(session, color, revoked), "fixture must initially allow this side");
+        play(session, uci);
+        assertEquals(expectedRights, rights(session), label);
+        assertFalse(containsRight(session, color, revoked), "moved rook may no longer castle");
+    }
+
+    private static Stream<Arguments> kingMoves() {
+        return Stream.of(
+                Arguments.of("white king", OPEN_ROOKS, "e1e2", "kq", PieceColor.WHITE),
+                Arguments.of("black king", OPEN_ROOKS.replace(" w ", " b "), "e8e7", "KQ", PieceColor.BLACK)
+        );
+    }
+
+    @ParameterizedTest(name = "{0} revokes both sides")
+    @MethodSource("kingMoves")
+    void kingMoveRevokesBothRights(String label, String initial, String uci,
+                                  String expectedRights, PieceColor color) {
+        GameSession session = at(initial);
+        play(session, uci);
+        assertEquals(expectedRights, rights(session), label);
+        assertFalse(containsRight(session, color, Castling.KINGSIDE));
+        assertFalse(containsRight(session, color, Castling.QUEENSIDE));
+    }
+
+    @Test
+    @DisplayName("A non-king/non-rook move does not revoke either castling right")
+    void ordinaryPieceMoveKeepsAllRights() {
+        GameSession session = at("r3k2r/8/8/8/8/8/8/R3K1NR w KQkq - 0 1");
+        play(session, "g1f3");
+        assertEquals("KQkq", rights(session));
+    }
+
+    @Test
+    @DisplayName("Capture of black a8 rook removes black queenside rights as well")
+    void capturedCornerRookRevokesOpponentsRight() {
+        GameSession session = at("r3k2r/8/8/8/8/8/6B1/R3K2R w KQkq - 0 1");
+        play(session, "g2a8");
+        assertEquals("KQk", rights(session));
+        assertFalse(containsRight(session, PieceColor.BLACK, Castling.QUEENSIDE));
+        assertTrue(containsRight(session, PieceColor.BLACK, Castling.KINGSIDE));
+    }
+
+    @Test
+    @DisplayName("One corner-rook capture may revoke rights for both players")
+    void cornerRookCapturingOpponentCornerRookRevokesBothSides() {
+        GameSession session = at(OPEN_ROOKS);
+        play(session, "a1a8");
+        assertEquals("Kk", rights(session));
+    }
+
+    @Test
+    @DisplayName("Historical castling rights cannot be reconstructed from unmoved-looking FEN pieces")
+    void absentFenRightsProhibitCastlingEvenIfCornerRooksExist() {
+        GameSession session = at("r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1");
+        assertEquals("-", rights(session));
+        assertFalse(canMove(session, "e1", "g1"), "a rook and an unmoved king do not restore K");
+        assertFalse(canMove(session, "e1", "c1"), "a rook and an unmoved king do not restore Q");
+    }
+
+    @Test
+    @DisplayName("Revoked castling flags must not reappear after an unrelated move")
+    void originallyAbsentRightsRemainAbsent() {
+        GameSession session = at("r3k2r/8/8/8/8/8/P7/R3K2R w - - 0 1");
+        play(session, "a2a3");
+        assertEquals("-", rights(session));
+    }
+
+    @Test
+    @DisplayName("A temporary obstruction or attacked transit square does not revoke history rights")
+    void temporarilyUnavailableCastleKeepsTheRight() {
+        GameSession session = at("r3k2r/8/8/8/8/5r2/P7/R3K2R w KQkq - 0 1");
+        assertFalse(canMove(session, "e1", "g1"), "the black rook attacks f1");
+        play(session, "a2a3");
+        assertEquals("KQkq", rights(session));
+    }
+
+    @Test
+    @DisplayName("A different-color rook on a corner never preserves white castling rights")
+    void wrongColorRookCannotPreserveKingsideRight() {
+        GameSession session = at("4k3/8/8/8/8/8/P7/4KP1r w K - 0 1");
+        play(session, "a2a3");
+        assertEquals("-", rights(session));
+    }
+}
