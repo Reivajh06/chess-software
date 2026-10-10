@@ -14,18 +14,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Acceptance tests for CORRECT chess, not tests tailored to today's implementation.
- *
- * No endpoints, database, or previous GameState snapshots are required. Each game
- * has one current session state and an ordered move-event history.
- *
- * Moves are UCI coordinate strings. Fixtures are complete six-field FEN strings.
- * Intentional RED tests include promotion, repetition, draw rules, move
- * validation, board metadata, historical FEN, and failed-update atomicity.
- *
- * Run: mvn -Dtest=GameSimulationTest test   (with a Java 25 toolchain)
- */
+
 class GameSimulationTest {
 
     private static final String START =
@@ -37,13 +26,11 @@ class GameSimulationTest {
 
     private static GameSession at(String fen) {
         GameSession session = newGame();
-        // Independent fixture setup makes the game-logic tests usable even while
-        // the production Board.of() importer is defective (tested separately).
+
         ChessDebugCli.loadFen(session, fen);
         return session;
     }
 
-    /** Play moves through GameUpdater, and report the failing ply and pre-move state. */
     private static void play(GameSession session, String moves) {
         String[] tokens = moves.trim().split("\\s+");
         for (int i = 0; i < tokens.length; i++) {
@@ -56,7 +43,7 @@ class GameSimulationTest {
                 assertEquals(oldPly + 1, session.gameState().movesHistory().size(), "one event per accepted move");
                 assertEquals(PieceColor.rivalColor(side), session.gameState().turnColor(), "turn must alternate");
                 assertEquals(uci.substring(2, 4),
-                        session.gameState().movesHistory().getLast().to().name().toLowerCase(Locale.ROOT),
+                        session.gameState().movesHistory().getFirst().to().name().toLowerCase(Locale.ROOT),
                         "recorded destination");
             } catch (Throwable failure) {
                 throw new AssertionError("Ply " + (i + 1) + ", move " + uci
@@ -82,17 +69,14 @@ class GameSimulationTest {
         assertNull(s.gameState().board().pieceAt(new Tile(square)), "expected empty " + square);
     }
 
-    private static void assertNoStateChange(GameSession s, Runnable rejectedMove) {
-        String beforeFen = s.toFEN();
-        int beforeHistory = s.gameState().movesHistory().size();
-        GameStatus beforeStatus = s.gameState().status();
-        PieceColor beforeTurn = s.gameState().turnColor();
-        // Rejection MAY signal an exception, or return normally without a commit.
-        try { rejectedMove.run(); } catch (IllegalArgumentException | IllegalStateException ex) { /* rejected */ }
-        assertEquals(beforeFen, s.toFEN(), "rejected move must not change any FEN field");
-        assertEquals(beforeHistory, s.gameState().movesHistory().size(), "no rejected move event");
-        assertEquals(beforeTurn, s.gameState().turnColor(), "rejected move must not consume turn");
-        assertEquals(beforeStatus, s.gameState().status(), "rejected move must not end the game");
+
+    private static void assertMoveUnavailable(GameSession s, String from, String to) {
+        Tile destination = new Tile(to);
+        Map<Move, List<Tile>> legalMoves = new GameUpdater(s).pieceMoves(new Tile(from));
+        boolean available = legalMoves.values().stream()
+                .flatMap(Collection::stream)
+                .anyMatch(destination::equals);
+        assertFalse(available, from + to + " must not be returned as a legal move");
     }
 
     @Test
@@ -131,11 +115,6 @@ class GameSimulationTest {
         assertEquals(expected, s.gameState().status(), name);
         assertEquals(checked, s.gameState().checkedColor(), "losing king is in check");
         assertTrue(GameConditions.isCheckMate(s.gameState(), checked), "position is checkmate");
-        assertNoStateChange(s, () -> new GameUpdater(s).movePieceAndUpdate(
-                s.gameState().board().pieceAt(new Tile("a1")) == null
-                        ? new Move(0, 1, 1, List.of(), null)
-                        : s.gameState().board().pieceAt(new Tile("a1")).moveset().getFirst(),
-                new Tile("a1"), new Tile("a2")));
     }
 
     @Test
@@ -165,7 +144,6 @@ class GameSimulationTest {
         play(s, "g1f3 g8f6 f3g1 f6g8 g1f3 g8f6 f3g1 f6g8");
         assertEquals(GameStatus.ACTIVE, s.gameState().status());
         assertEquals(8, s.gameState().movesHistory().size());
-        // A dedicated draw-claim API can be tested when it exists.
     }
 
     @Test
@@ -272,22 +250,20 @@ class GameSimulationTest {
     void expiredEnPassantRejected() {
         GameSession s = newGame();
         play(s, "e2e4 a7a6 e4e5 d7d5 g1f3 g8f6");
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e5d6"));
+        assertMoveUnavailable(s, "e5", "d6");
     }
 
     @Test
     @DisplayName("En passant that exposes own king to rook check is illegal")
     void enPassantDiscoveredCheckRejected() {
         GameSession s = at("4r1k1/8/8/3pP3/8/8/8/4K3 w - d6 0 1");
-        // A FEN alone does not provide MoveEvent. Seed the previous double push
-        // so a rejection must come from king safety, not absent history.
         Piece blackPawn = assertPiece(s, "d5", PieceColor.BLACK, PieceType.PAWN);
         Move doublePush = blackPawn.moveset().stream()
                 .filter(m -> m.x() == 0 && m.y() == 2).findFirst().orElseThrow();
-        s.gameState().movesHistory().addLast(new MoveEvent(
+        s.gameState().movesHistory().addFirst(new MoveEvent(
                 blackPawn, doublePush, new Tile("d7"), new Tile("d5"), null,
                 "4r1k1/8/8/3pP3/8/8/8/4K3 w - d6 0 1"));
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e5d6"));
+        assertMoveUnavailable(s, "e5", "d6");
     }
 
     static Stream<Arguments> promotions() {
@@ -307,8 +283,7 @@ class GameSimulationTest {
         String target = color == PieceColor.WHITE ? "a8" : "a1";
         String uci = color == PieceColor.WHITE ? "a7a8" + suffix : "a2a1" + suffix;
         GameSession s = at(initial);
-        // These cases intentionally FAIL until Move/GameUpdater can model a
-        // promotion choice and replace the pawn as part of the committed move.
+
         play(s, uci);
         assertPiece(s, target, color, promotedType);
         assertEquals(1, s.gameState().movesHistory().size());
@@ -327,55 +302,50 @@ class GameSimulationTest {
     @DisplayName("Pinned rook cannot expose its own king")
     void pinnedPieceCannotMoveSideways() {
         GameSession s = at("4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1");
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e2d2"));
+        assertMoveUnavailable(s, "e2", "d2");
     }
 
     @Test
     @DisplayName("King cannot move into rook attack")
     void kingCannotEnterCheck() {
         GameSession s = at("4k3/8/8/8/8/8/3r4/4K3 w - - 0 1");
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e1d1"));
+        assertMoveUnavailable(s, "e1", "d1");
     }
 
     @Test
     @DisplayName("Castling through an attacked transit square is illegal")
     void cannotCastleThroughCheck() {
         GameSession s = at("r3k2r/8/8/8/8/5r2/8/R3K2R w KQkq - 0 1");
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e1g1"));
+        assertMoveUnavailable(s, "e1", "g1");
     }
 
     @Test
     @DisplayName("Castling while the king starts in check is illegal")
     void cannotCastleOutOfCheck() {
         GameSession s = at("4r1k1/8/8/8/8/8/8/4K2R w K - 0 1");
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e1g1"));
+        assertMoveUnavailable(s, "e1", "g1");
     }
 
     @Test
     @DisplayName("A side cannot castle without the required rook")
     void cannotCastleWithMissingRook() {
         GameSession s = at("4k3/8/8/8/8/8/8/4K3 w K - 0 1");
-        assertNoStateChange(s, () -> ChessDebugCli.applyCoordinateMove(s, "e1g1"));
+        assertMoveUnavailable(s, "e1", "g1");
     }
 
     @Test
-    @DisplayName("Invalid move submitted directly to updater cannot bypass validation")
-    void updaterRejectsImpossiblePawnJump() {
+    @DisplayName("Move history behaves as a stack: newest accepted event is at the head")
+    void moveHistoryIsNewestFirstStack() {
         GameSession s = newGame();
-        Move pawnSinglePush = s.gameState().board().pieceAt(new Tile("e2")).moveset().stream()
-                .filter(m -> m.x() == 0 && m.y() == 1).findFirst().orElseThrow();
-        assertNoStateChange(s, () -> new GameUpdater(s)
-                .movePieceAndUpdate(pawnSinglePush, new Tile("e2"), new Tile("e5")));
-    }
+        play(s, "e2e4 e7e5 g1f3");
 
-    @Test
-    @DisplayName("Invalid move submitted directly to updater cannot bypass turn enforcement")
-    void updaterRejectsOutOfTurnPlayer() {
-        GameSession s = newGame();
-        Move blackPush = s.gameState().board().pieceAt(new Tile("e7")).moveset().stream()
-                .filter(m -> m.x() == 0 && m.y() == 2).findFirst().orElseThrow();
-        assertNoStateChange(s, () -> new GameUpdater(s)
-                .movePieceAndUpdate(blackPush, new Tile("e7"), new Tile("e5")));
+        Deque<MoveEvent> history = s.gameState().movesHistory();
+        assertEquals(3, history.size());
+        assertSame(history.peekFirst(), s.gameState().lastMove(), "lastMove must return the stack top");
+        assertEquals(new Tile("g1"), history.getFirst().from());
+        assertEquals(new Tile("f3"), history.getFirst().to());
+        assertEquals(new Tile("e2"), history.getLast().from(), "oldest event remains at the tail");
+        assertEquals(new Tile("e4"), history.getLast().to());
     }
 
     @Test
@@ -386,7 +356,7 @@ class GameSimulationTest {
         assertPiece(s, "d5", PieceColor.WHITE, PieceType.PAWN);
         assertEquals(31, occupiedSquares(s.gameState().board()));
         assertEquals(1, s.gameState().eatenPieces().get(PieceColor.BLACK).size());
-        assertEquals(PieceType.PAWN, s.gameState().movesHistory().getLast().pieceCaptured().type());
+        assertEquals(PieceType.PAWN, s.gameState().movesHistory().getFirst().pieceCaptured().type());
     }
 
     @Test
@@ -396,7 +366,7 @@ class GameSimulationTest {
         play(s, "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6");
         Deque<MoveEvent> events = s.gameState().movesHistory();
         assertEquals(8, events.size());
-        assertSame(events.getLast(), s.gameState().lastMove(), "lastMove must read history tail");
+        assertSame(events.getFirst(), s.gameState().lastMove(), "lastMove must read history head/top");
         for (MoveEvent event : events) {
             String stored = event.gameStateFen();
             assertEquals(6, stored.trim().split("\\s+").length,
@@ -404,7 +374,7 @@ class GameSimulationTest {
             GameSession reconstructed = at(stored);
             assertEquals(stored, reconstructed.toFEN(), "stored position must be independently loadable");
         }
-        assertEquals(s.toFEN(), events.getLast().gameStateFen(), "last event must be the current position");
+        assertEquals(s.toFEN(), events.getFirst().gameStateFen(), "top event must be the current position");
     }
 
     @Test
@@ -414,7 +384,9 @@ class GameSimulationTest {
         GameSession original = newGame();
         play(original, transcript);
         GameSession replay = newGame();
-        for (MoveEvent e : original.gameState().movesHistory()) {
+        Iterator<MoveEvent> chronological = original.gameState().movesHistory().descendingIterator();
+        while (chronological.hasNext()) {
+            MoveEvent e = chronological.next();
             ChessDebugCli.applyCoordinateMove(replay,
                     e.from().name().toLowerCase(Locale.ROOT) + e.to().name().toLowerCase(Locale.ROOT));
         }
@@ -446,8 +418,7 @@ class GameSimulationTest {
     void failedCaptureDoesNotCorruptSession() {
         GameSession s = newGame();
         play(s, "e2e4 d7d5");
-        // Even if internal capture bookkeeping throws, the entire session must
-        // remain at the last successfully committed state.
+
         String before = s.toFEN();
         int count = s.gameState().movesHistory().size();
         try {

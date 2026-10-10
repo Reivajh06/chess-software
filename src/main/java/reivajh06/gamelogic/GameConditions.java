@@ -20,7 +20,7 @@ public class GameConditions {
             if(isKingChecked(gameState, pieceMoved.color())) return false;
 
         } finally {
-            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, gameState.board().toFEN()));
+            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, gameState.toFEN()));
         }
 
         return true;

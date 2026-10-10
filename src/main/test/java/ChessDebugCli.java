@@ -15,7 +15,6 @@ public final class ChessDebugCli {
         GameSession session = freshSession();
         System.out.println("Chess game-logic debugger (no HTTP). Type 'help'.");
         if (args.length > 0) {
-            // Handy non-interactive usage: ChessDebugCli e2e4 e7e5 g1f3 ...
             try {
                 for (String uci : args) {
                     applyCoordinateMove(session, uci);
@@ -82,11 +81,7 @@ public final class ChessDebugCli {
         return new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
     }
 
-    /**
-     * Resolves a coordinate move using the REAL updater's legal move set.
-     * Throws on illegal/ambiguous moves; does not silently select a different rule.
-     * Note: the current updater itself still needs validation/atomicity fixes.
-     */
+
     public static void applyCoordinateMove(GameSession session, String uci) {
         String normalized = uci.trim().toLowerCase(Locale.ROOT);
         if (!normalized.matches("[a-h][1-8][a-h][1-8][qrbn]?")) {
@@ -119,7 +114,6 @@ public final class ChessDebugCli {
         updater.movePieceAndUpdate(matching.getFirst(), from, to);
     }
 
-    /** Loads a *debug fixture* independently of Board.of(), which is also tested. */
     public static void loadFen(GameSession session, String fullFen) {
         String[] fields = fullFen.trim().split("\\s+");
         if (fields.length != 6) throw new IllegalArgumentException("FEN must have six fields");

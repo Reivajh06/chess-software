@@ -55,13 +55,13 @@ public class Board {
 	public Board() {
 		tiles = new HashMap<>();
 
-		whiteKingTile = new Tile(File.A, Rank.R1);
+		whiteKingTile = new Tile(File.E, Rank.R1);
 		blackKingTile = new Tile(File.E, Rank.R8);
 
-		whiteKingSideRook = new Tile(File.A, Rank.R1);
-		whiteQueenSideRook = new Tile(File.H, Rank.R1);
-		blackKingSideRook = new Tile(File.A, Rank.R8);
-		blackQueenSideRook = new Tile(File.H, Rank.R8);
+		whiteKingSideRook = new Tile(File.H, Rank.R1);
+		whiteQueenSideRook = new Tile(File.A, Rank.R1);
+		blackKingSideRook = new Tile(File.H, Rank.R8);
+		blackQueenSideRook = new Tile(File.A, Rank.R8);
 
 		allocatePieces(PieceColor.BLACK);
 		allocatePieces(PieceColor.WHITE);

@@ -16,6 +16,10 @@ public class GameUpdater {
 	}
 
 	public Map<Move, List<Tile>> pieceMoves(Tile location) {
+		Piece pieceToMove = session.gameState().board().pieceAt(location);
+
+		if(pieceToMove == null || pieceToMove.color() != session.gameState().turnColor()) return new HashMap<>();
+
 		return GameController.legalPieceMoves(session.gameState(), location);
 	}
 
@@ -25,6 +29,7 @@ public class GameUpdater {
 		Piece movedPiece = session.gameState().board().pieceAt(from);
 
 		if(movedPiece == null) return;
+		if(movedPiece.color() != session.gameState().turnColor()) return;
 
 		Piece capturedPiece = GameController.movePiece(session.gameState(), move, from, to);
 
@@ -64,7 +69,7 @@ public class GameUpdater {
 		GameStateBuilder stateBuilder = new GameStateBuilder()
 				.turnColor(PieceColor.rivalColor(movedPiece.color()))
 				.board(updatedBoard)
-				.movesHistory(updateMovesHistory(movedPiece, move, from, to, capturedPiece, updatedBoard.toFEN()))
+				.movesHistory(updateMovesHistory(movedPiece, move, from, to, capturedPiece, session.gameState().toFEN()))
 				.eatenPieces(updateEatenPieces(capturedPiece))
 				.checkedColor(updateCheckedColor(movedPiece))
 				.status(updateGameStatus(movedPiece))
@@ -102,7 +107,7 @@ public class GameUpdater {
 	private Deque<MoveEvent> updateMovesHistory(Piece movedPiece, Move move, Tile from, Tile to, Piece capturedPiece, String fen) {
 		Deque<MoveEvent> movesHistory = session.gameState().movesHistory();
 
-		movesHistory.add(new MoveEvent(movedPiece, move, from, to, capturedPiece, fen));
+		movesHistory.addFirst(new MoveEvent(movedPiece, move, from, to, capturedPiece, fen));
 
 		return movesHistory;
 	}
