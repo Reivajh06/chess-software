@@ -1,5 +1,7 @@
 package reivajh06.gamelogic;
 
+import reivajh06.FenParser;
+
 import java.util.UUID;
 
 public class GameSession {
@@ -39,6 +41,6 @@ public class GameSession {
     }
 
     public String toFEN() {
-        return gameState.toFEN();
+        return FenParser.gameStateToFen(gameState);
     }
 }

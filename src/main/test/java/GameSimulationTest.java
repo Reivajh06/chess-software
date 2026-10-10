@@ -3,6 +3,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import reivajh06.FenParser;
 import reivajh06.gamelogic.*;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
@@ -54,7 +55,7 @@ class GameSimulationTest {
 
     private static String bestEffortFen(GameSession session) {
         try { return session.toFEN(); }
-        catch (RuntimeException e) { return "<bad full FEN: " + e + "> " + session.gameState().board().toFEN(); }
+        catch (RuntimeException e) { return "<bad full FEN: " + e + "> " + FenParser.boardToFen(session.gameState().board()); }
     }
 
     private static Piece assertPiece(GameSession s, String square, PieceColor color, PieceType type) {
@@ -450,7 +451,7 @@ class GameSimulationTest {
     @DisplayName("Board.of parses the position as given and does not retain initial pieces")
     void productionBoardFenImportDoesNotOverlayStartingPosition() {
         Board loaded = Board.of("4k3/8/8/8/8/8/8/4K3");
-        assertEquals("4k3/8/8/8/8/8/8/4K3", loaded.toFEN());
+        assertEquals("4k3/8/8/8/8/8/8/4K3", FenParser.boardToFen(loaded));
         assertEquals(2, occupiedSquares(loaded));
         assertEquals(new Tile("e1"), loaded.kingTile(PieceColor.WHITE));
         assertEquals(new Tile("e8"), loaded.kingTile(PieceColor.BLACK));

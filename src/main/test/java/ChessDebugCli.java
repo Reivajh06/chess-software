@@ -1,3 +1,4 @@
+import reivajh06.FenParser;
 import reivajh06.gamelogic.*;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
@@ -181,7 +182,7 @@ public final class ChessDebugCli {
 
     private static String safeFen(GameSession session) {
         try { return session.toFEN(); }
-        catch (RuntimeException e) { return "<FEN error: " + e + "> board=" + session.gameState().board().toFEN(); }
+        catch (RuntimeException e) { return "<FEN error: " + e + "> board=" + FenParser.boardToFen(session.gameState().board()); }
     }
 
     private static void printState(GameSession session) {
@@ -237,7 +238,7 @@ public final class ChessDebugCli {
         System.out.println("lastMove()=" + (s.lastMove() == null ? "none" : s.lastMove().from() + "->" + s.lastMove().to()));
         System.out.println("history tail=" + (latest == null ? "none" : latest.from() + "->" + latest.to()));
         if (latest != null && latest != s.lastMove()) System.out.println("MISMATCH: lastMove is not latest event");
-        if (latest != null && !latest.gameStateFen().equals(s.board().toFEN())) {
+        if (latest != null && !latest.gameStateFen().equals(FenParser.boardToFen(s.board()))) {
             System.out.println("MISMATCH: last event board position is not current board");
         }
         System.out.println("FEN=" + safeFen(session));

@@ -1,5 +1,6 @@
 package reivajh06.gamelogic;
 
+import reivajh06.FenParser;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveEvent;
@@ -20,7 +21,7 @@ public class GameConditions {
             if(isKingChecked(gameState, pieceMoved.color())) return false;
 
         } finally {
-            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, gameState.toFEN()));
+            GameController.undoMove(gameState, new MoveEvent(pieceMoved, move, from, to, pieceCaptured, FenParser.gameStateToFen(gameState)));
         }
 
         return true;

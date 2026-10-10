@@ -1,5 +1,6 @@
 package reivajh06.gamelogic;
 
+import reivajh06.FenParser;
 import reivajh06.model.*;
 import reivajh06.model.movement.MoveEvent;
 
@@ -35,29 +36,6 @@ public record GameState(
                 .halfMoveClock(0)
                 .fullMoves(1)
                 .build();
-    }
-
-    public String toFEN() {
-        String whiteCastlingRights = whiteCastling.stream().filter(Objects::nonNull).map(Castling::firstLetter).collect(Collectors.joining());
-        String blackCastlingRights = blackCastling.stream().filter(Objects::nonNull).map(c -> c.firstLetter().toLowerCase()).collect(Collectors.joining());
-
-		String castlingRights = whiteCastlingRights + blackCastlingRights;
-
-		if(castlingRights.isEmpty()) castlingRights = "-";
-
-        return new StringBuilder()
-                .append(board.toFEN())
-                .append(" ")
-                .append(turnColor.name().toLowerCase().charAt(0))
-                .append(" ")
-                .append(castlingRights)
-                .append(" ")
-                .append(enPassantDestination == null ? "-" : enPassantDestination.name().toLowerCase())
-                .append(" ")
-                .append(halfMoveClock)
-                .append(" ")
-                .append(fullMoves)
-                .toString();
     }
 
     public MoveEvent lastMove() {

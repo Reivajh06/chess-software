@@ -1,5 +1,6 @@
 package reivajh06.gamelogic;
 
+import reivajh06.FenParser;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveEvent;
@@ -66,24 +67,46 @@ public class GameUpdater {
 		GameState currentState = session.gameState();
 		Board updatedBoard = currentState.board().copy();
 
-		GameStateBuilder stateBuilder = new GameStateBuilder()
-				.turnColor(PieceColor.rivalColor(movedPiece.color()))
-				.board(updatedBoard)
-				.movesHistory(updateMovesHistory(movedPiece, move, from, to, capturedPiece, session.gameState().toFEN()))
-				.eatenPieces(updateEatenPieces(capturedPiece))
-				.checkedColor(updateCheckedColor(movedPiece))
-				.status(updateGameStatus(movedPiece))
-				.enPassantDestination(updateEnPassantTile(move, to))
-				.halfMoveClock(updateHalfMoveClock(movedPiece, capturedPiece))
-				.fullMoves(updateFullMoves(movedPiece));
+		PieceColor turnColor = PieceColor.rivalColor(movedPiece.color());
+		Map<PieceColor, List<Piece>> eatenPieces = updateEatenPieces(capturedPiece);
+		PieceColor checkedColor = updateCheckedColor(movedPiece);
+		GameStatus status = updateGameStatus(movedPiece);
+		Tile enPassantDestination = updateEnPassantTile(move, to);
+		int halfMoveClock = updateHalfMoveClock(movedPiece, capturedPiece);
+		int fullMoves = updateFullMoves(movedPiece);
 
-		if(movedPiece.color() == PieceColor.WHITE) {
-			stateBuilder.whiteCastling(updateCastlingRights(movedPiece));
-			stateBuilder.blackCastling(new ArrayList<>(currentState.blackCastling()));
-		} else {
-			stateBuilder.whiteCastling(new ArrayList<>(currentState.whiteCastling()));
-			stateBuilder.blackCastling(updateCastlingRights(movedPiece));
-		}
+		GameStateBuilder stateBuilder = new GameStateBuilder()
+				.turnColor(turnColor)
+				.board(updatedBoard)
+				.eatenPieces(eatenPieces)
+				.checkedColor(checkedColor)
+				.status(status)
+				.enPassantDestination(enPassantDestination)
+				.halfMoveClock(halfMoveClock)
+				.fullMoves(fullMoves);
+
+		List<Castling> whiteCastling = new ArrayList<>(currentState.whiteCastling());
+		List<Castling> blackCastling = new ArrayList<>(currentState.blackCastling());
+
+		if(movedPiece.color() == PieceColor.WHITE) whiteCastling = updateCastlingRights(movedPiece);
+
+		else blackCastling = updateCastlingRights(movedPiece);
+
+		stateBuilder.whiteCastling(whiteCastling).blackCastling(blackCastling);
+
+		String fen = FenParser.gameStateToFen(
+				updatedBoard,
+				turnColor,
+				whiteCastling,
+				blackCastling,
+				enPassantDestination,
+				halfMoveClock,
+				fullMoves
+		);
+
+		Deque<MoveEvent> movesHistory = updateMovesHistory(movedPiece, move, from, to, capturedPiece, fen);
+
+		stateBuilder.movesHistory(movesHistory);
 
 		return stateBuilder.build();
 	}

@@ -167,35 +167,6 @@ public class Board {
 		return board;
 	}
 
-	public String toFEN() {
-		StringBuilder fenBoard = new StringBuilder();
-
-		for(Rank rank = Rank.R8; rank != null && rank.number >= Rank.R1.number; rank = Rank.previous(rank)) {
-			int emptyTiles = 0;
-			StringBuilder rankFEN = new StringBuilder();
-
-			for(File file = File.A; file != null && file.code <= File.H.code; file = File.next(file)) {
-				Piece piece = tiles.get(new Tile(file, rank));
-
-				if(piece == null) emptyTiles++;
-
-				else {
-					if(emptyTiles > 0) rankFEN.append(emptyTiles);
-
-					rankFEN.append(piece.fenCode());
-					emptyTiles = 0;
-				}
-			}
-
-			fenBoard.append(rankFEN);
-			if(emptyTiles != 0) fenBoard.append(emptyTiles);
-			fenBoard.append("/");
-		}
-
-		fenBoard.deleteCharAt(fenBoard.length() - 1);
-		return fenBoard.toString();
-	}
-
 	public Tile kingTile(PieceColor kingColor) {
 		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
 	}
