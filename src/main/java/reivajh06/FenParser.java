@@ -84,4 +84,36 @@ public class FenParser {
 				.append(fullMoves)
 				.toString();
 	}
+
+	public static Board fenToBoard(String fenBoard) {
+		Board board = new Board();
+
+		String[] fenRanks = fenBoard.split("/");
+		Rank rank = Rank.R8;
+
+		for(String fenRank : fenRanks) {
+			File file = File.A;
+			char[] tilesData = fenRank.toCharArray();
+
+			for(char tileData : tilesData) {
+				int i = tileData - '0';
+
+				if(i > 0 && i < 9) {
+					int fileIndex = (file.code + i) - File.A.code;
+
+					if(fileIndex == 8) continue;
+
+					file = File.values()[fileIndex];
+
+				} else {
+					board.addPiece(new Tile(file, rank), PieceFactory.createPieceByFENCode(tileData));
+					file = File.next(file);
+				}
+			}
+
+			rank = Rank.previous(rank);
+		}
+
+		return board;
+	}
 }

@@ -450,7 +450,7 @@ class GameSimulationTest {
     @Test
     @DisplayName("Board.of parses the position as given and does not retain initial pieces")
     void productionBoardFenImportDoesNotOverlayStartingPosition() {
-        Board loaded = Board.of("4k3/8/8/8/8/8/8/4K3");
+        Board loaded = FenParser.fenToBoard("4k3/8/8/8/8/8/8/4K3");
         assertEquals("4k3/8/8/8/8/8/8/4K3", FenParser.boardToFen(loaded));
         assertEquals(2, occupiedSquares(loaded));
         assertEquals(new Tile("e1"), loaded.kingTile(PieceColor.WHITE));

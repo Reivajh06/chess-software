@@ -1,5 +1,7 @@
 package reivajh06.model;
 
+import reivajh06.FenParser;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,52 +21,31 @@ public class Board {
 	private Tile blackKingSideRook;
 	private Tile blackQueenSideRook;
 
-	public static Board of(String boardAsFEN) {
+	public static Board startingBoard() {
 		Board board = new Board();
 
-		String[] fenRanks = boardAsFEN.split("/");
-		Rank rank = Rank.R8;
+		board.whiteKingTile = new Tile(File.E, Rank.R1);
+		board.blackKingTile = new Tile(File.E, Rank.R8);
 
-		for(String fenRank : fenRanks) {
-			File file = File.A;
-			char[] tilesData = fenRank.toCharArray();
+		board.whiteKingSideRook = new Tile(File.H, Rank.R1);
+		board.whiteQueenSideRook = new Tile(File.A, Rank.R1);
+		board.blackKingSideRook = new Tile(File.H, Rank.R8);
+		board.blackQueenSideRook = new Tile(File.A, Rank.R8);
 
-			for(char tileData : tilesData) {
-				int i = tileData - '0';
+		board.allocatePieces(PieceColor.BLACK);
+		board.allocatePieces(PieceColor.WHITE);
 
-				if(i > 0 && i < 9) {
-					int fileIndex = (file.code + i) - File.A.code;
-
-					if(fileIndex == 8) continue;
-
-					file = File.values()[fileIndex];
-
-				} else {
-					board.addPiece(new Tile(file, rank), PieceFactory.createPieceByFENCode(tileData));
-					file = File.next(file);
-				}
-			}
-
-			rank = Rank.previous(rank);
-		}
-
-		board.printBoard();
 		return board;
 	}
 
 	public Board() {
 		tiles = new HashMap<>();
 
-		whiteKingTile = new Tile(File.E, Rank.R1);
-		blackKingTile = new Tile(File.E, Rank.R8);
-
-		whiteKingSideRook = new Tile(File.H, Rank.R1);
-		whiteQueenSideRook = new Tile(File.A, Rank.R1);
-		blackKingSideRook = new Tile(File.H, Rank.R8);
-		blackQueenSideRook = new Tile(File.A, Rank.R8);
-
-		allocatePieces(PieceColor.BLACK);
-		allocatePieces(PieceColor.WHITE);
+		for(Rank rank : Rank.values()) {
+			for(File file : File.values()) {
+				tiles.put(new Tile(file, rank), null);
+			}
+		}
 	}
 
 	private void allocatePieces(PieceColor color) {
@@ -155,16 +136,7 @@ public class Board {
 	}
 
 	public Board copy() {
-		Board board = new Board();
-
-		for(Map.Entry<Tile, Piece> entry : tiles.entrySet()) {
-			Tile tile = entry.getKey();
-			Piece piece = entry.getValue();
-
-			board.addPiece(new Tile(tile.file(), tile.rank()), piece == null ? null : piece.copy());
-		}
-
-		return board;
+		return FenParser.fenToBoard(FenParser.boardToFen(this));
 	}
 
 	public Tile kingTile(PieceColor kingColor) {

@@ -26,7 +26,7 @@ public record GameState(
 
     public static GameState startingState() {
         return new GameStateBuilder()
-                .board(new Board())
+                .board(Board.startingBoard())
                 .turnColor(PieceColor.WHITE)
                 .checkedColor(null)
                 .status(GameStatus.ACTIVE)
