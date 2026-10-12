@@ -13,7 +13,7 @@ public class GameController {
 		return move.effect().apply(gameState.board(), from, to);
 	}
 
-	public static void undoMove(GameState gameState, MoveEvent moveEvent) {
+	public void undoMove(GameState gameState, MoveEvent moveEvent) {
 		if(moveEvent.move().effect() != null) {
 			moveEvent.move().effect().undo(moveEvent, gameState.board());
 			return;

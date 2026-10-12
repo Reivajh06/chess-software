@@ -1,6 +1,7 @@
 package reivajh06.gamelogic;
 
 import reivajh06.FenParser;
+import reivajh06.model.movement.MoveEvent;
 
 import java.util.UUID;
 
