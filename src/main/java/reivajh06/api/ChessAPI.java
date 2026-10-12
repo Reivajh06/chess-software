@@ -4,7 +4,6 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
 import reivajh06.gamelogic.GameSession;
-//import reivajh06.endpoints.*;
 
 public class ChessAPI {
 

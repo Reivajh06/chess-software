@@ -7,21 +7,21 @@ import java.util.UUID;
 
 public class GameSession {
 
-    private final String id;
+    private final UUID id;
 
     private final Gamemode gamemode;
     private final Difficulty difficulty;
     private GameState gameState;
 
     public GameSession(Gamemode gamemode, Difficulty difficulty) {
-        id = UUID.randomUUID().toString();
+        id = UUID.randomUUID();
 
         this.gamemode = gamemode;
         this.difficulty = difficulty;
         this.gameState = GameState.startingState();
     }
 
-    public String id() {
+    public UUID id() {
         return id;
     }
 
