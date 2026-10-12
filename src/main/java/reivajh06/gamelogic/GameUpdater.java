@@ -53,7 +53,7 @@ public class GameUpdater {
 
 	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
 		GameState currentState = session.gameState();
-		Board updatedBoard = currentState.board().copy();
+		Board updatedBoard = currentState.board();
 
 		PieceColor turnColor = PieceColor.rivalColor(movedPiece.color());
 		Map<PieceColor, List<Piece>> eatenPieces = updateEatenPieces(capturedPiece);
