@@ -7,7 +7,7 @@ import java.lang.reflect.Type;
 
 public class Json {
 
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
 	public static <T> T fromJson(String json, Type type) {
 		return GSON.fromJson(json, type);

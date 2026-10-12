@@ -3,6 +3,8 @@ package reivajh06.api;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
+import reivajh06.api.endpoints.PostCreateSession;
+import reivajh06.api.endpoints.PostLegalMoves;
 
 public class ChessAPI {
 
@@ -22,5 +24,8 @@ public class ChessAPI {
 
 	public void configureEndpoints(JavalinConfig config) {
 		config.staticFiles.add("/web", Location.CLASSPATH);
+
+		config.routes.post("/api/sessions", new PostCreateSession());
+		config.routes.post("/api/sessions/{sessionId}/legal-moves", new PostLegalMoves());
 	}
 }

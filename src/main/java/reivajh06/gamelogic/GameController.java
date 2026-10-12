@@ -13,7 +13,7 @@ public class GameController {
 		return move.effect().apply(gameState.board(), from, to);
 	}
 
-	public void undoMove(GameState gameState, MoveEvent moveEvent) {
+	public static void undoMove(GameState gameState, MoveEvent moveEvent) {
 		if(moveEvent.move().effect() != null) {
 			moveEvent.move().effect().undo(moveEvent, gameState.board());
 			return;
@@ -65,35 +65,39 @@ public class GameController {
 				.toList();
 	}
 
-	public static Map<Move, List<Tile>> legalPieceMoves(GameState gameState, Tile location) {
+	public static Map<Integer, List<Tile>> legalPieceMoves(GameState gameState, Tile location) {
 		if(gameState.board().pieceAt(location) == null) return new HashMap<>();
 
-		Map<Move, List<Tile>> movesetMap = validPieceMoves(gameState, location);
+		Map<Integer, List<Tile>> movesetMap = validPieceMoves(gameState, location);
 
-		Map<Move, List<Tile>> legalMoveset = new HashMap<>();
+		Map<Integer, List<Tile>> legalMoveset = new HashMap<>();
 
-		for(Map.Entry<Move, List<Tile>> moveEntry : movesetMap.entrySet()) {
-			Move move = moveEntry.getKey();
+		Piece piece = gameState.board().pieceAt(location);
+
+		for(Map.Entry<Integer, List<Tile>> moveEntry : movesetMap.entrySet()) {
+			Move move = piece.moveset().get(moveEntry.getKey());
 			List<Tile> moveTiles = new ArrayList<>(moveEntry.getValue());
 
 			moveTiles.removeIf(tile -> !GameConditions.moveUnchecksKing(gameState, move, location, tile));
 
-			legalMoveset.put(move, moveTiles);
+			legalMoveset.put(moveEntry.getKey(), moveTiles);
 		}
 
 		return legalMoveset;
 	}
 
-	public static Map<Move, List<Tile>> pieceMovesetTiles(GameState gameState, Tile location) {
+	public static Map<Integer, List<Tile>> pieceMovesetTiles(GameState gameState, Tile location) {
 		if(gameState.board().pieceAt(location) == null) return new HashMap<>();
 
 		Piece piece = gameState.board().pieceAt(location);
 
 		List<Move> pieceMoveset = piece.moveset();
 
-		Map<Move, List<Tile>> movesetTiles = new HashMap<>();
+		Map<Integer, List<Tile>> movesetTiles = new HashMap<>();
 
-		for(Move move : pieceMoveset) {
+		for(int moveIndex = 0; moveIndex < pieceMoveset.size(); moveIndex++) {
+			Move move = pieceMoveset.get(moveIndex);
+
 			List<Tile> filteredMoveTiles = calculateMoveTiles(
 					gameState,
 					piece.color(),
@@ -101,21 +105,21 @@ public class GameController {
 					move
 			);
 
-			movesetTiles.put(move, filteredMoveTiles);
+			movesetTiles.put(moveIndex, filteredMoveTiles);
 		}
 
 		return movesetTiles;
 	}
 
-	public static Map<Move, List<Tile>> validPieceMoves(GameState gameState, Tile location) {
+	public static Map<Integer, List<Tile>> validPieceMoves(GameState gameState, Tile location) {
 		return pieceMovesetTiles(gameState, location).entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> {
-					Move move = e.getKey();
+					int moveIndex = e.getKey();
 					List<Tile> pendingTiles = e.getValue();
 
 					return MovesValidator.filterMoveTiles(
 							gameState,
-							move,
+							gameState.board().pieceAt(location).moveset().get(moveIndex),
 							location,
 							pendingTiles,
 							gameState.lastMove()

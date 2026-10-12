@@ -16,7 +16,7 @@ public class GameUpdater {
 		this.session = session;
 	}
 
-	public Map<Move, List<Tile>> pieceMoves(Tile location) {
+	public Map<Integer, List<Tile>> pieceMoves(Tile location) {
 		Piece pieceToMove = session.gameState().board().pieceAt(location);
 
 		if(pieceToMove == null || pieceToMove.color() != session.gameState().turnColor()) return new HashMap<>();

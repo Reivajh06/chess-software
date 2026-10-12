@@ -5,23 +5,49 @@ export class SessionAccess {
     this.api = api;
   }
 
-  async open(sessionId, mode = "PVP") {
+  async open(sessionId, mode = "PVP", invitedPlayerId = null, invitedPlayerColor = "WHITE") {
+    if (sessionId && !invitedPlayerId)
+      throw new Error("La invitación debe incluir el ID asignado al jugador.");
+    const difficulty = mode === "PRACTICE" ? "PRACTICE" : "NOT_CPU";
     const response = sessionId
-      ? await this.api.join(sessionId)
-      : await this.api.create(mode, "NOT_CPU");
+      ? await this.api.join(sessionId, invitedPlayerId)
+      : await this.api.create(mode, difficulty);
 
+    const gamemode = response.gamemode ?? mode;
+    const humanIds = ["PVP", "PRACTICE"].includes(gamemode);
+    if (!sessionId && humanIds && (!response.whiteId || !response.blackId))
+      throw new Error("El servidor no ha proporcionado los IDs de los jugadores.");
+    if (!sessionId && gamemode === "PRACTICE" && response.whiteId !== response.blackId)
+      throw new Error("La práctica necesita el mismo ID para blancas y negras.");
+    const playerColor = sessionId ? invitedPlayerColor : !humanIds || gamemode === "PRACTICE"
+      ? "WHITE"
+      : crypto.getRandomValues(new Uint8Array(1))[0] < 128 ? "WHITE" : "BLACK";
+    const playerId = humanIds
+      ? (invitedPlayerId ?? (playerColor === "WHITE" ? response.whiteId : response.blackId))
+      : null;
+    const resolvedSessionId = response.sessionId ?? response.id ?? sessionId;
+    if (!resolvedSessionId)
+      throw new Error("El servidor no ha proporcionado el ID de sesión.");
+
+    // The creator registers its randomly assigned PvP ID; practice has no join step.
+    if (!sessionId && gamemode === "PVP") {
+      const joined = await this.api.join(resolvedSessionId, playerId);
+      response.state = joined.state ?? response.state;
+    }
     const session = {
-      sessionId: response.sessionId ?? response.id ?? sessionId,
-      playerToken: response.playerToken ?? null,
-      playerColor: response.playerColor ?? null,
-      gamemode: response.gamemode ?? mode,
+      sessionId: resolvedSessionId,
+      playerId,
+      // A local rendering preference; requests authorize with playerId only.
+      playerColor: gamemode === "AIVAI" ? null : playerColor,
+      invitedPlayerId: !sessionId && gamemode === "PVP"
+        ? (playerColor === "WHITE" ? response.blackId : response.whiteId) : null,
+      invitedPlayerColor: !sessionId && gamemode === "PVP"
+        ? (playerColor === "WHITE" ? "BLACK" : "WHITE") : null,
+      gamemode,
+      difficulty: response.difficulty ?? difficulty,
     };
 
-    if (!session.sessionId) {
-      throw new Error("El servidor no ha proporcionado el ID de sesión.");
-    }
-
-    this.api.token = session.playerToken;
+    this.api.playerId = session.playerId;
     const state =
       response.state ??
       (response.pieces || response.board || response.fen
@@ -38,6 +64,7 @@ export class SessionAccess {
     saveSession(session);
     const url = new URL(location.href);
     url.searchParams.set("session", session.sessionId);
+    url.hash = "";
     window.history.replaceState({}, "", url);
   }
 
@@ -46,6 +73,11 @@ export class SessionAccess {
     url.search = "";
     url.hash = "";
     url.searchParams.set("session", sessionId);
+    const session = this.saved(sessionId);
+    if (session?.invitedPlayerId) {
+      url.hash = new URLSearchParams({ playerId: session.invitedPlayerId,
+        side: session.invitedPlayerColor }).toString();
+    }
     return url.href;
   }
 }

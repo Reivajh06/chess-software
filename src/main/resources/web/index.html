@@ -8,7 +8,7 @@
     <link rel="icon" href="./assets/archchess_logo.png" />
     <link rel="preload" href="./assets/pixelify-sans.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
-    <script type="module" src="./app.js?v=viewport-layout"></script>
+    <script type="module" src="./app.js?v=player-id-contract"></script>
   </head>
   <body>
     <header class="topbar">
@@ -40,7 +40,7 @@
           <p id="launcher-detail">Sala privada e invitación</p>
           <p id="launcher-unavailable" class="unavailable" hidden></p>
         </div>
-        <p class="backend-note" title="Las salas y la práctica necesitan la API de sesiones, todavía pendiente en el servidor."><span>EN DESARROLLO</span> API de sesiones pendiente.</p>
+        <p class="backend-note" title="La creación de práctica está implementada. PvP, consulta de estado y movimientos necesitan endpoints adicionales."><span>EN DESARROLLO</span> PvP y jugadas: API pendiente.</p>
         <button id="new-game" class="primary">Crear sala</button>
         <button id="join-game" class="secondary">Tengo una invitación</button>
       </aside>
@@ -203,7 +203,7 @@
         </div>
         <label id="mode-field">Modalidad<select id="mode"></select></label>
         <p id="mode-explanation" class="unavailable" hidden></p>
-        <p class="setup-backend-note">API de sesiones pendiente. Este formulario estará operativo cuando el servidor admita crear y unir salas.</p>
+        <p class="setup-backend-note">Puedes crear una práctica. PvP y las jugadas requieren endpoints adicionales en el servidor.</p>
         <div id="ai-fields" hidden>
           <label
             >Modelo Ollama<select disabled>

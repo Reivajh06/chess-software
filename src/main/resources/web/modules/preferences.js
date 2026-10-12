@@ -44,3 +44,15 @@ export function parseInvitation(value) {
   }
   return /^[a-zA-Z0-9_-]{1,128}$/.test(text) ? text : null;
 }
+
+export function invitationPlayer(value) {
+  try {
+    const url = new URL(value);
+    const fragment = new URLSearchParams(url.hash.slice(1));
+    const playerId = fragment.get("playerId");
+    const playerColor = fragment.get("side");
+    return { playerId, playerColor: playerColor === "BLACK" ? "BLACK" : "WHITE" };
+  } catch {
+    return { playerId: null, playerColor: "WHITE" };
+  }
+}

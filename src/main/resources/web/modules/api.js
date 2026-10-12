@@ -6,7 +6,7 @@ export class ApiError extends Error {
 }
 export class ChessApi {
   constructor() {
-    this.token = null;
+    this.playerId = null;
     this.controllers = new Set();
   }
   cancel() {
@@ -19,7 +19,6 @@ export class ChessApi {
     const timer = setTimeout(() => controller.abort("timeout"), 10000);
     try {
       const headers = { Accept: "application/json" };
-      if (this.token) headers["X-Player-Token"] = this.token;
       if (body !== undefined) headers["Content-Type"] = "application/json";
       const response = await fetch(`/api${path}`, {
         method: body === undefined ? "GET" : "POST",
@@ -27,8 +26,8 @@ export class ChessApi {
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });
-      const json = response.headers.get("content-type")?.includes("application/json");
-      const payload = json ? await response.json().catch(() => null) : null;
+      // The current server sends JSON through Context.result(), which may use text/plain.
+      const payload = await response.json().catch(() => null);
       if (!response.ok) {
         if ([404, 405, 501].includes(response.status))
           throw new ApiError(
@@ -42,7 +41,7 @@ export class ChessApi {
           response.status,
         );
       }
-      if (!payload || typeof payload !== "object")
+      if (!payload || typeof payload !== "object" || Array.isArray(payload))
         throw new ApiError("Respuesta del servidor no válida.");
       return payload;
     } catch (error) {
@@ -58,21 +57,23 @@ export class ChessApi {
   create(mode, difficulty) {
     return this.request("/sessions", { gamemode: mode, difficulty });
   }
-  join(id) {
-    return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});
+  join(id, playerId) {
+    return this.request(`/sessions/${encodeURIComponent(id)}/join`, { playerId });
   }
   state(id) {
     return this.request(`/sessions/${encodeURIComponent(id)}`);
   }
   legal(id, from) {
     return this.request(
-      `/sessions/${encodeURIComponent(id)}/legal-moves?from=${encodeURIComponent(from)}`,
+      `/sessions/${encodeURIComponent(id)}/legal-moves`,
+      { from, ...(this.playerId ? { playerId: this.playerId } : {}) },
     );
   }
   move(id, from, to, promotion) {
     return this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
       from,
       to,
+      ...(this.playerId ? { playerId: this.playerId } : {}),
       ...(promotion ? { promotion } : {}),
     });
   }

@@ -3,7 +3,7 @@ import { GameStore, unwrap, square, labels } from "./modules/state.js";
 import { BoardView } from "./modules/board.js";
 import { pieceImage, logoUrl } from "./modules/assets.js";
 import { HistoryView } from "./modules/history.js";
-import { loadPreferences, savePreferences, parseInvitation } from "./modules/preferences.js";
+import { loadPreferences, savePreferences, parseInvitation, invitationPlayer } from "./modules/preferences.js";
 import { SessionAccess, SessionPolling } from "./modules/session.js";
 import { GameAudio } from "./modules/audio.js";
 import { applyTheme, populateThemes } from "./modules/themes.js";
@@ -39,6 +39,12 @@ const liveSession = new SessionPolling(api, {
     applyGameState(response);
   },
   onError: (error) => {
+    if ([404, 405, 501].includes(error.status)) {
+      liveSession.stop();
+      setConnection("Sesión creada");
+      setNotice("La sesión se ha creado. El servidor todavía no permite consultar su estado.");
+      return;
+    }
     setConnection("Sin conexión");
     setNotice(errorMessage(error), true);
   },
@@ -240,7 +246,7 @@ function resetSession() {
   pendingPromotion = null;
   store.reset();
   store.lastRaw = null;
-  api.token = null;
+  api.playerId = null;
   for (const id of ["promotion-dialog", "result-dialog"]) byId(id).close();
 }
 
@@ -273,7 +279,7 @@ function openSetup(join = false, id = "") {
 async function activateSession(session, state) {
   delete document.body.dataset.panel;
   store.session = session;
-  api.token = session.playerToken ?? null;
+  api.playerId = session.playerId ?? null;
   applyGameState(state);
   sessions.persist(session);
   byId("setup-dialog").close();
@@ -297,7 +303,9 @@ async function handleSessionSubmit(event) {
   const generation = sessionVersion;
   renderGame();
   try {
-    const { session, state } = await sessions.open(id, joinMode ? "PVP" : byId("mode").value);
+    const invited = invitationPlayer(byId("join-id").value);
+    const { session, state } = await sessions.open(id, joinMode ? "PVP" : byId("mode").value,
+      invited.playerId, invited.playerColor);
     if (generation === sessionVersion) await activateSession(session, state);
   } catch (error) {
     if (generation === sessionVersion && error.name !== "AbortError") {
@@ -428,7 +436,7 @@ if (invitation) {
   if (saved) {
     resetSession();
     const generation = sessionVersion;
-    api.token = saved.playerToken;
+    api.playerId = saved.playerId;
     setConnection("Conectando…");
     api
       .state(invitation)
@@ -437,9 +445,9 @@ if (invitation) {
       })
       .catch((error) => {
         if (generation === sessionVersion && error.name !== "AbortError") {
-          openSetup(true, invitation);
+          openSetup(true, location.href);
           setSetupError(errorMessage(error));
         }
       });
-  } else openSetup(true, invitation);
+  } else openSetup(true, location.href);
 }
