@@ -24,6 +24,10 @@ public class GameUpdater {
 		return GameController.legalPieceMoves(session.gameState(), location);
 	}
 
+	public void movePieceAndUpdate(int moveIndex, Tile from, Tile to) {
+		movePieceAndUpdate(session.gameState().board().pieceAt(from).moveset().get(moveIndex), from, to);
+	}
+
 	public void movePieceAndUpdate(Move move, Tile from, Tile to) {
 		if(session.gameState().status() != GameStatus.ACTIVE) return;
 

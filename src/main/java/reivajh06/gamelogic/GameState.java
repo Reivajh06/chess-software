@@ -1,11 +1,12 @@
 package reivajh06.gamelogic;
 
-import reivajh06.FenParser;
 import reivajh06.model.*;
 import reivajh06.model.movement.MoveEvent;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
 
 public record GameState(
 		Board board,
