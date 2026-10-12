@@ -8,7 +8,7 @@
     <link rel="icon" href="./assets/archchess_logo.png" />
     <link rel="preload" href="./assets/pixelify-sans.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
-    <script type="module" src="./app.js?v=player-id-contract"></script>
+    <script type="module" src="./app.js?v=grouped-legal-moves"></script>
   </head>
   <body>
     <header class="topbar">
@@ -232,6 +232,13 @@
         </button>
       </div>
       <div id="promotion-options" class="promotion-options"></div>
+    </dialog>
+    <dialog id="move-choice-dialog" aria-labelledby="move-choice-title">
+      <div class="dialog-heading">
+        <h2 id="move-choice-title">Elige el tipo de jugada</h2>
+        <button type="button" data-close="move-choice-dialog" aria-label="Cancelar jugada">×</button>
+      </div>
+      <div id="move-choice-options" class="move-choice-options"></div>
     </dialog>
     <dialog id="result-dialog" aria-labelledby="result-title">
       <div id="result-card" class="result-card">

@@ -105,6 +105,34 @@ export function normalizeState(payload) {
     checkedColor: raw.checkedColor ?? null,
   };
 }
+// Preserve the backend's rule identifiers rather than deriving IDs from array order,
+// tile order, or the selected piece's sprite/moveset on the client.
+export function normalizeLegalMoves(payload) {
+  if (!payload || !Array.isArray(payload.moves))
+    throw new Error("El servidor no ha proporcionado movimientos legales válidos.");
+
+  const byDestination = new Map();
+  const seenIds = new Set();
+  for (const rule of payload.moves) {
+    if (!rule || !Number.isSafeInteger(rule.moveId) || rule.moveId < 0 ||
+        !Array.isArray(rule.tiles) || seenIds.has(rule.moveId))
+      throw new Error("El servidor ha enviado un identificador de movimiento no válido.");
+    seenIds.add(rule.moveId);
+    if (rule.label !== undefined && typeof rule.label !== "string")
+      throw new Error("El servidor ha enviado una descripción de movimiento no válida.");
+
+    for (const rawTile of rule.tiles) {
+      const tile = square(rawTile);
+      if (!tile) throw new Error("El servidor ha enviado una casilla legal no válida.");
+      if (!byDestination.has(tile)) byDestination.set(tile, []);
+      const options = byDestination.get(tile);
+      if (!options.some((option) => option.moveId === rule.moveId))
+        options.push({ moveId: rule.moveId, label: rule.label ?? null });
+    }
+  }
+  return byDestination;
+}
+
 export class GameStore {
   constructor() {
     this.reset();
@@ -115,7 +143,7 @@ export class GameStore {
     this.snapshots = new Map();
     this.reviewPly = null;
     this.selected = null;
-    this.targets = new Set();
+    this.clearLegalMoves();
     this.flipped = false;
   }
   apply(payload) {
@@ -140,8 +168,20 @@ export class GameStore {
     this.snapshots.set(next.moves.length, new Map(next.pieces));
     this.state = next;
     this.selected = null;
-    this.targets.clear();
+    this.clearLegalMoves();
     return next;
+  }
+  clearLegalMoves() {
+    this.moveOptionsByTile = new Map();
+    this.targets = new Set();
+  }
+  setLegalMoves(payload) {
+    const byTile = normalizeLegalMoves(payload);
+    this.moveOptionsByTile = byTile;
+    this.targets = new Set(byTile.keys());
+  }
+  moveOptionsAt(tile) {
+    return this.moveOptionsByTile.get(tile) ?? [];
   }
   get pieces() {
     return this.reviewPly === null

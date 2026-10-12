@@ -69,9 +69,12 @@ export class ChessApi {
       { from, ...(this.playerId ? { playerId: this.playerId } : {}) },
     );
   }
-  move(id, from, to, promotion) {
+  move(id, from, to, moveId, promotion) {
+    if (!Number.isSafeInteger(moveId) || moveId < 0)
+      throw new TypeError("La jugada necesita un moveId válido del servidor.");
     return this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
       from,
+      moveId,
       to,
       ...(this.playerId ? { playerId: this.playerId } : {}),
       ...(promotion ? { promotion } : {}),

@@ -809,6 +809,14 @@ dialog::backdrop {
   font-size: 13px;
   margin-bottom: 5px;
 }
+.move-choice-options {
+  display: grid;
+  gap: 8px;
+}
+.move-choice-options button {
+  padding: 10px;
+  text-align: left;
+}
 .result-card {
   text-align: center;
   padding: 25px;

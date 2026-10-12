@@ -8,7 +8,6 @@ import reivajh06.Sessions;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameUpdater;
 import reivajh06.model.Tile;
-import reivajh06.model.movement.Move;
 
 import java.util.*;
 
@@ -16,5 +15,30 @@ public class PostLegalMoves implements Handler {
 
 	@Override
 	public void handle(@NotNull Context ctx) {
+		Map<String, String> selectedPieceDetails = Json.fromJson(ctx.body(), Map.class);
+
+		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
+
+		GameUpdater updater = new GameUpdater(session);
+
+		Map<Integer, List<Tile>> pieceMoves = updater.pieceMoves(new Tile(selectedPieceDetails.get("from")));
+
+		ctx.status(200).result(jsonResponse(pieceMoves));
 	}
+
+	private String jsonResponse(Map<Integer, List<Tile>> pieceMoves) {
+		List<Map<String, Object>> moves = new ArrayList<>();
+
+		for(var entry : pieceMoves.entrySet()) {
+			if(entry.getValue().isEmpty()) continue;
+
+			moves.add(Map.of(
+					"moveId", entry.getKey(),
+					"tiles", entry.getValue()
+					));
+		}
+
+		return Json.toJson(Map.of("moves", moves));
+	}
+
 }

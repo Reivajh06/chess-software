@@ -1,5 +1,5 @@
 import { ChessApi } from "./modules/api.js";
-import { GameStore, unwrap, square, labels } from "./modules/state.js";
+import { GameStore, unwrap, labels } from "./modules/state.js";
 import { BoardView } from "./modules/board.js";
 import { pieceImage, logoUrl } from "./modules/assets.js";
 import { HistoryView } from "./modules/history.js";
@@ -23,6 +23,7 @@ let pendingMove = false;
 let sessionBusy = false;
 let joinMode = false;
 let pendingPromotion = null;
+let pendingMoveChoice = null;
 const announcedResults = new Set();
 const sessions = new SessionAccess(api);
 const launcher = new GameLauncher(preferences, (mode) => {
@@ -91,6 +92,10 @@ function applyGameState(payload) {
     pendingPromotion = null;
     byId("promotion-dialog").close();
   }
+  if (pendingMoveChoice) {
+    pendingMoveChoice = null;
+    byId("move-choice-dialog").close();
+  }
   selectionVersion++;
   if (before && state.moves.length > before.moves.length)
     audio.play(state.checkedColor ? "check" : state.moves.at(-1)?.capture ? "capture" : "move");
@@ -144,12 +149,12 @@ function reviewPosition(ply) {
   }
   selectionVersion++;
   store.selected = null;
-  store.targets.clear();
+  store.clearLegalMoves();
   renderGame();
 }
 
 async function selectSquare(tile) {
-  if (!store.interactive || pendingMove || pendingPromotion) return;
+  if (!store.interactive || pendingMove || pendingPromotion || pendingMoveChoice) return;
   if (store.selected && store.targets.has(tile)) {
     await requestMove(store.selected, tile);
     return;
@@ -157,7 +162,7 @@ async function selectSquare(tile) {
   const item = store.pieces.get(tile);
   const version = ++selectionVersion,
     generation = sessionVersion;
-  store.targets.clear();
+  store.clearLegalMoves();
   store.selected = store.canSelectPiece(item) ? tile : null;
   board.render();
   if (!store.selected) return;
@@ -165,12 +170,7 @@ async function selectSquare(tile) {
     const response = await api.legal(store.session.sessionId, tile);
     if (sessionVersion !== generation || selectionVersion !== version || store.selected !== tile)
       return;
-    const moves = response.moves ?? response.legalMoves ?? [];
-    store.targets = new Set(
-      moves
-        .map((move) => square(typeof move === "string" ? move : (move.to ?? move.square)))
-        .filter(Boolean),
-    );
+    store.setLegalMoves(response);
     board.render();
   } catch (error) {
     if (
@@ -185,9 +185,31 @@ async function selectSquare(tile) {
   }
 }
 
-async function requestMove(from, to, promotion) {
+function offerMoveChoice(from, to, options, promotion) {
+  pendingMoveChoice = { from, to };
+  const fragment = document.createDocumentFragment();
+  for (const option of options) {
+    const button = document.createElement("button");
+    button.type = "button";
+    // The optional server label distinguishes two rules leading to the same tile.
+    button.textContent = option.label || `Movimiento ${option.moveId + 1}`;
+    button.addEventListener("click", () => {
+      pendingMoveChoice = null;
+      byId("move-choice-dialog").close();
+      requestMove(from, to, promotion, option.moveId);
+    });
+    fragment.append(button);
+  }
+  byId("move-choice-options").replaceChildren(fragment);
+  byId("move-choice-dialog").showModal();
+}
+
+async function requestMove(from, to, promotion, chosenMoveId = null) {
   if (!store.interactive || pendingMove || !store.targets.has(to) || store.selected !== from)
     return;
+
+  // Promotion is not implemented in the current backend. The frontend keeps
+  // its promotion choice for when the moves endpoint supports it.
   if (!promotion && store.pieces.get(from)?.type === "PAWN" && ["1", "8"].includes(to[1])) {
     pendingPromotion = { from, to };
     const fragment = document.createDocumentFragment();
@@ -208,12 +230,22 @@ async function requestMove(from, to, promotion) {
     byId("promotion-dialog").showModal();
     return;
   }
+
+  const options = store.moveOptionsAt(to);
+  if (!options.length) return;
+  if (chosenMoveId === null && options.length > 1) {
+    offerMoveChoice(from, to, options, promotion);
+    return;
+  }
+  const moveId = chosenMoveId ?? options[0].moveId;
+  if (!options.some((option) => option.moveId === moveId)) return;
+
   pendingMove = true;
   liveSession.stop();
   api.cancel();
   const generation = sessionVersion;
   try {
-    const response = await api.move(store.session.sessionId, from, to, promotion);
+    const response = await api.move(store.session.sessionId, from, to, moveId, promotion);
     if (sessionVersion === generation) applyGameState(response);
   } catch (error) {
     if (sessionVersion === generation && error.name !== "AbortError")
@@ -222,7 +254,7 @@ async function requestMove(from, to, promotion) {
     if (sessionVersion === generation) {
       pendingMove = false;
       store.selected = null;
-      store.targets.clear();
+      store.clearLegalMoves();
       board.render();
       schedulePoll(0);
     }
@@ -244,10 +276,12 @@ function resetSession() {
   liveSession.stop();
   pendingMove = false;
   pendingPromotion = null;
+  pendingMoveChoice = null;
   store.reset();
   store.lastRaw = null;
   api.playerId = null;
-  for (const id of ["promotion-dialog", "result-dialog"]) byId(id).close();
+  for (const id of ["promotion-dialog", "move-choice-dialog", "result-dialog"])
+    byId(id).close();
 }
 
 function syncSetup() {
@@ -331,6 +365,9 @@ for (const button of document.querySelectorAll("[data-close]"))
   button.addEventListener("click", () => byId(button.dataset.close).close());
 byId("promotion-dialog").addEventListener("close", () => {
   pendingPromotion = null;
+});
+byId("move-choice-dialog").addEventListener("close", () => {
+  pendingMoveChoice = null;
 });
 byId("setup-dialog").addEventListener("cancel", (event) => {
   if (sessionBusy) event.preventDefault();

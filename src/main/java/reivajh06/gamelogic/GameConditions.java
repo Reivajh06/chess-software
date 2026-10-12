@@ -27,7 +27,7 @@ public class GameConditions {
         return true;
     }
 
-    public static boolean isKingCheckedBy(GameState gameState, Tile tile, Map<Move, List<Tile>> validPieceMoves) {
+    public static boolean isKingCheckedBy(GameState gameState, Tile tile, Map<Integer, List<Tile>> validPieceMoves) {
         PieceColor kingCheckedColor = PieceColor.rivalColor(gameState.board().pieceAt(tile).color());
 
         return validPieceMoves.values().stream().anyMatch(l -> l.contains(gameState.board().kingTile(kingCheckedColor)));
