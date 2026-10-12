@@ -29,5 +29,7 @@ public class PostMovePiece implements Handler {
 				new Tile((String) moveRequest.get("from")),
 				new Tile((String) moveRequest.get("to"))
 				);
+
+		System.out.println();
 	}
 }

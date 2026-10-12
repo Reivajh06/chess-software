@@ -13,7 +13,7 @@ export class ChessApi {
     for (const controller of this.controllers) controller.abort();
     this.controllers.clear();
   }
-  async request(path, body) {
+  async request(path, body, { allowEmpty = false } = {}) {
     const controller = new AbortController();
     this.controllers.add(controller);
     const timer = setTimeout(() => controller.abort("timeout"), 10000);
@@ -25,9 +25,16 @@ export class ChessApi {
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
+        // The browser must never replay a cached position after a move.
+        cache: "no-store",
       });
-      // The current server sends JSON through Context.result(), which may use text/plain.
-      const payload = await response.json().catch(() => null);
+      // The Java handlers use Context.result() for JSON and the move handler
+      // currently returns an empty 200 body. Do not mistake that for a state.
+      const bodyText = await response.text();
+      let payload = null;
+      if (bodyText.trim()) {
+        try { payload = JSON.parse(bodyText); } catch { /* Invalid response below. */ }
+      }
       if (!response.ok) {
         if ([404, 405, 501].includes(response.status))
           throw new ApiError(
@@ -41,6 +48,7 @@ export class ChessApi {
           response.status,
         );
       }
+      if (payload === null && allowEmpty && !bodyText.trim()) return null;
       if (!payload || typeof payload !== "object" || Array.isArray(payload))
         throw new ApiError("Respuesta del servidor no válida.");
       return payload;
@@ -61,7 +69,8 @@ export class ChessApi {
     return this.request(`/sessions/${encodeURIComponent(id)}/join`, { playerId });
   }
   state(id) {
-    return this.request(`/sessions/${encodeURIComponent(id)}`);
+    // GetReadCurrentState is currently registered as POST in ChessAPI.
+    return this.request(`/sessions/${encodeURIComponent(id)}`, {});
   }
   legal(id, from) {
     return this.request(
@@ -69,15 +78,21 @@ export class ChessApi {
       { from, ...(this.playerId ? { playerId: this.playerId } : {}) },
     );
   }
-  move(id, from, to, moveId, promotion) {
+  async move(id, from, to, moveId) {
     if (!Number.isSafeInteger(moveId) || moveId < 0)
       throw new TypeError("La jugada necesita un moveId válido del servidor.");
-    return this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
+    const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
       from,
       moveId,
       to,
       ...(this.playerId ? { playerId: this.playerId } : {}),
-      ...(promotion ? { promotion } : {}),
-    });
+    }, { allowEmpty: true });
+    // The move handler normally returns an empty 200. If a handler sends the
+    // updated GameState or GameSession instead, consume it without another read.
+    const state = response?.state ?? response?.gameState ??
+      response?.session?.gameState ?? response;
+    if (state && (state.fen != null || state.board != null ||
+        state.pieces != null || state.gameStateFen != null)) return response;
+    return this.state(id);
   }
 }

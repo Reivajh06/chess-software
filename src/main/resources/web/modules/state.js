@@ -8,7 +8,17 @@ export const labels = {
   PAWN: "peón",
 };
 export const initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-export const unwrap = (payload) => payload?.state ?? payload;
+// State reads may expose a GameState directly, wrap it in `state`, or return
+// Gson's GameSession shape (`gameState`). They are not different game formats.
+export function unwrap(payload) {
+  if (!payload || typeof payload !== "object") return payload;
+  if (payload.state != null) return unwrap(payload.state);
+  if (payload.gameState != null) return unwrap(payload.gameState);
+  if (payload.session != null && typeof payload.session === "object" &&
+      (payload.session.gameState != null || payload.session.state != null))
+    return unwrap(payload.session);
+  return payload;
+}
 export function square(value) {
   if (typeof value === "string") return /^[a-h][1-8]$/i.test(value) ? value.toLowerCase() : null;
   if (!value) return null;
@@ -65,46 +75,99 @@ export function normalizePieces(raw) {
   }
   return result;
 }
+// GameState.movesHistory is a Deque<MoveEvent>, populated with addFirst().
+// It therefore arrives newest-first when serialized. Preserve the event's
+// gameStateFen (the position AFTER that move) for history navigation.
+// The Java GameState record has `board`, NOT a `fen` field. Its newest-first
+// MoveEvent deque *does* store a complete post-move FEN per entry. For the
+// position after a move, that snapshot is authoritative when a standalone
+// FEN was not included in the response DTO.
 export function normalizeState(payload) {
   const raw = unwrap(payload);
-  if (!raw || (!raw.pieces && !raw.board && !raw.fen && !raw.gameStateFen))
+  if (!raw || typeof raw !== "object" ||
+      (raw.pieces == null && raw.board == null && raw.fen == null && raw.gameStateFen == null))
     throw new Error("El servidor no ha proporcionado el tablero.");
-  const javaHistory = !Array.isArray(raw.moves) && Array.isArray(raw.movesHistory);
-  const history = javaHistory
-    ? [...raw.movesHistory].reverse()
-    : (raw.moves ?? raw.moveHistory ?? []);
+
+  // GetReadCurrentState embeds its serialized history as a JSON string.
+  // Also accept an array when the endpoint returns structured history.
+  let events = raw.movesHistory ?? null;
+  if (typeof events === "string") {
+    try { events = JSON.parse(events); }
+    catch { throw new Error("El historial de movimientos no es válido."); }
+  }
+  if (raw.movesHistory != null && !Array.isArray(events))
+    throw new Error("El historial de movimientos no es válido.");
+  const history = events ? [...events].reverse() : (raw.moves ?? raw.moveHistory ?? []);
+  if (!Array.isArray(history))
+    throw new Error("El historial de movimientos no es válido.");
+
   const moves = history.map((entry, index) => {
-    const item = typeof entry === "string" ? { notation: entry } : entry;
-    const type =
-      typeof item.piece === "string"
-        ? item.piece
-        : (item.piece?.type ?? item.pieceType ?? item.pieceMoved?.type ?? "PAWN");
-    const from = square(item.from),
-      to = square(item.to);
-    const color = item.color ?? item.pieceMoved?.color ?? (index % 2 ? "BLACK" : "WHITE");
+    const event = typeof entry === "string" ? { notation: entry } : entry ?? {};
+    const movedPiece = event.pieceMoved ?? event.piece;
+    const type = typeof movedPiece === "string"
+      ? movedPiece : movedPiece?.type ?? event.pieceType ?? "PAWN";
+    const from = square(event.from);
+    const to = square(event.to);
+    const color = String(event.color ?? movedPiece?.color ?? (index % 2 ? "BLACK" : "WHITE")).toUpperCase();
+    const capturedPiece = piece(event.pieceCaptured ?? event.capturedPiece);
+    const capture = Boolean(event.capture ?? event.pieceCaptured ?? capturedPiece);
     return {
       ply: index + 1,
       color,
-      type,
+      type: String(type).toUpperCase(),
       from,
       to,
-      capture: !!(item.capture ?? item.pieceCaptured),
-      notation:
-        item.notation ??
-        `${from ?? ""}${item.capture || item.pieceCaptured ? "×" : "–"}${to ?? ""}`,
-      fen: item.gameStateFen ?? item.fen ?? null,
-      position: item.position ?? item.state ?? null,
+      capture,
+      capturedPiece,
+      notation: event.notation ?? `${from ?? ""}${capture ? "×" : "–"}${to ?? ""}`,
+      fen: event.gameStateFen ?? event.fen ?? null,
+      position: event.position ?? event.state ?? null,
     };
   });
+
+  const captures = {};
+  for (const color of ["WHITE", "BLACK"]) {
+    const items = raw.eatenPieces?.[color];
+    captures[color] = Array.isArray(items) ? items.map(piece).filter(Boolean) : [];
+  }
+
+  // Do not fall back to the *initial* board after a successful move. The
+  // final MoveEvent is the best available FEN for raw Java GameState responses.
+  const fen = raw.fen ?? raw.gameStateFen ?? moves.at(-1)?.fen ?? null;
+  const pieces = normalizePieces(fen ?? raw.pieces ?? raw.board);
+  // FEN can also be absent on a newly-created game, in which case parse the
+  // actual Board.tiles map supplied by GameState instead of assuming 32 pieces.
+  const turn = String(raw.turnColor ?? raw.turn ?? raw.colorTurn ??
+    (typeof fen === "string" && fen.split(/\s+/)[1] === "b" ? "BLACK" : "WHITE")).toUpperCase();
   return {
     ...raw,
-    pieces: normalizePieces(raw.fen ?? raw.gameStateFen ?? raw.pieces ?? raw.board),
+    fen,
+    pieces,
     moves,
-    turn: String(raw.turn ?? raw.turnColor ?? raw.colorTurn ?? "").toUpperCase(),
+    eatenPieces: captures,
+    turn,
     status: String(raw.status ?? "ACTIVE").toUpperCase(),
     checkedColor: raw.checkedColor ?? null,
+    waitingForOpponent: raw.waitingForOpponent ?? false,
   };
 }
+
+// Compare gameplay state, not raw Gson serialization: full GameSession JSON
+// can contain large Piece.moveset graphs and unstable map iteration order.
+// A repeated poll must not clear a piece selection or redraw the board.
+export function stateSignature(state) {
+  return JSON.stringify({
+    turn: state.turn,
+    status: state.status,
+    checkedColor: state.checkedColor,
+    waitingForOpponent: state.waitingForOpponent,
+    pieces: [...state.pieces].sort(([a], [b]) => a.localeCompare(b)),
+    moves: state.moves.map((m) => [m.color, m.type, m.from, m.to, m.capture,
+      m.capturedPiece?.color, m.capturedPiece?.type, m.fen, m.notation]),
+    eatenPieces: state.eatenPieces,
+  });
+}
+
 // Preserve the backend's rule identifiers rather than deriving IDs from array order,
 // tile order, or the selected piece's sprite/moveset on the client.
 export function normalizeLegalMoves(payload) {
@@ -147,10 +210,15 @@ export class GameStore {
     this.flipped = false;
   }
   apply(payload) {
-    const next = normalizeState(payload);
+    return this.applyNormalized(normalizeState(payload));
+  }
+  applyNormalized(next) {
+    // Rebuild snapshots from the authoritative history. Never retain obsolete
+    // plies after a reset, replay or a shortened server-side history.
+    this.snapshots = new Map();
     if (next.initialFen) this.snapshots.set(0, parseFen(next.initialFen));
     else if (!next.moves.length) this.snapshots.set(0, new Map(next.pieces));
-    else if (!this.snapshots.has(0)) this.snapshots.set(0, parseFen(initialFen));
+    else this.snapshots.set(0, parseFen(initialFen));
     for (const move of next.moves) {
       try {
         if (move.fen) this.snapshots.set(move.ply, parseFen(move.fen));
@@ -166,6 +234,11 @@ export class GameStore {
       }
     }
     this.snapshots.set(next.moves.length, new Map(next.pieces));
+    // The present backend incorrectly reports waitingForOpponent=true even
+    // for practice on creation; practice has no opposing human to join.
+    if (this.practice) next.waitingForOpponent = false;
+    if (this.reviewPly !== null && !this.snapshots.has(this.reviewPly))
+      this.reviewPly = null;
     this.state = next;
     this.selected = null;
     this.clearLegalMoves();
@@ -198,7 +271,9 @@ export class GameStore {
 
   canSelectPiece(piece) {
     return (
-      this.interactive && !!piece && (this.practice || piece.color === this.session.playerColor)
+      this.interactive && !!piece && (this.practice
+        ? piece.color === this.state.turn
+        : piece.color === this.session.playerColor)
     );
   }
 

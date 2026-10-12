@@ -9,80 +9,13 @@ export class BoardView {
     this.preferences = preferences;
     this.select = select;
     this.move = move;
-    this.drag = null;
-    this.touchGesture = null;
-    this.suppressClickUntil = 0;
     element.addEventListener("click", (event) => {
-      if (performance.now() < this.suppressClickUntil) return;
       const target = event.target.closest("[data-square]");
       if (target) this.select(target.dataset.square);
     });
-    element.addEventListener("dragstart", (event) => {
-      const target = event.target.closest("[data-square]");
-      const item = store.pieces?.get(target?.dataset.square);
-      if (!store.canSelectPiece(item)) {
-        event.preventDefault();
-        return;
-      }
-      this.drag = { from: target.dataset.square, ready: null };
-      this.drag.ready = this.select(target.dataset.square);
-      event.dataTransfer.setData("text/plain", target.dataset.square);
-      event.dataTransfer.effectAllowed = "move";
-    });
-    element.addEventListener("dragover", (event) => {
-      if (this.drag) {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "move";
-      }
-    });
-    element.addEventListener("drop", async (event) => {
-      event.preventDefault();
-      const target = event.target.closest("[data-square]");
-      const drag = this.drag;
-      this.drag = null;
-      if (!target || !drag) return;
-      await drag.ready;
-      if (store.selected === drag.from && store.targets.has(target.dataset.square))
-        this.move(drag.from, target.dataset.square);
-    });
-    element.addEventListener("dragend", () => {
-      this.drag = null;
-      this.render();
-    });
-    element.addEventListener("pointerdown", (event) => {
-      if (event.pointerType !== "touch") return;
-      const tile = event.target.closest("[data-square]")?.dataset.square;
-      if (!store.canSelectPiece(store.pieces?.get(tile))) return;
-      this.touchGesture = { from: tile, x: event.clientX, y: event.clientY, moved: false };
-    });
-    element.addEventListener("pointermove", (event) => {
-      if (!this.touchGesture) return;
-      const distance = Math.hypot(
-        event.clientX - this.touchGesture.x,
-        event.clientY - this.touchGesture.y,
-      );
-      if (distance > 8) {
-        this.touchGesture.moved = true;
-        element.setPointerCapture(event.pointerId);
-      }
-      if (this.touchGesture.moved && event.cancelable) event.preventDefault();
-    });
-    element.addEventListener("pointerup", async (event) => {
-      const gesture = this.touchGesture;
-      this.touchGesture = null;
-      if (!gesture?.moved) return;
-      this.suppressClickUntil = performance.now() + 400;
-      const destination = document
-        .elementFromPoint(event.clientX, event.clientY)
-        ?.closest("[data-square]")?.dataset.square;
-      if (!destination || destination === gesture.from) return;
-      await this.select(gesture.from);
-      if (store.selected === gesture.from && store.targets.has(destination))
-        this.move(gesture.from, destination);
-    });
-    element.addEventListener("pointercancel", () => {
-      this.touchGesture = null;
-    });
+    // Click/tap is the only movement gesture. Block native image and tile
+    // dragging, including the browser's ghost preview and drop behavior.
+    element.addEventListener("dragstart", (event) => event.preventDefault());
     element.addEventListener("keydown", (event) => {
       const buttons = [...element.querySelectorAll(".square")];
       const index = buttons.indexOf(document.activeElement);
@@ -94,7 +27,8 @@ export class BoardView {
     });
   }
   render() {
-    if (this.drag) return;
+    this.finishAnimation?.();
+    this.captureDelay = 0;
     const focused = document.activeElement?.dataset.square;
     const pieces = this.store.pieces ?? new Map();
     const black = this.store.orientation === "BLACK";
@@ -108,10 +42,22 @@ export class BoardView {
       this.lastReviewPly === null &&
       this.store.reviewPly === null &&
       ply === this.lastRenderedPly + 1 &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches &&
       last;
     const previousPosition = animateMove
       ? this.element.querySelector(`[data-square="${last.from}"] .piece`)?.getBoundingClientRect()
       : null;
+    // Preserve the removed sprite before replacing the authoritative board.
+    // Finding the vanished square also handles en-passant captures.
+    const captured = animateMove && last.capture
+      ? [...this.element.querySelectorAll(".square .piece")].find(image =>
+        image.dataset.color !== last.color &&
+        (image.parentElement.dataset.square === last.to || !pieces.has(image.parentElement.dataset.square)))
+      : null;
+    const capture = captured ? {
+      tile: captured.parentElement.dataset.square,
+      image: captured.cloneNode(true),
+    } : null;
     this.element.dataset.theme = this.preferences.theme;
     setBoardTiles(this.element, this.preferences.theme);
     this.element.setAttribute("aria-label", `Tablero, ${black ? "negras" : "blancas"} abajo`);
@@ -127,6 +73,7 @@ export class BoardView {
         if (("abcdefgh".indexOf(file) + Number(rank)) % 2 === 1) button.classList.add("dark");
 
         if (last?.from === tile || last?.to === tile) button.classList.add("last-move");
+        if (this.store.selected === tile) button.classList.add("selected");
         if (this.store.targets.has(tile))
           button.classList.add("legal", ...(item ? ["capture"] : []));
         if (
@@ -143,7 +90,7 @@ export class BoardView {
           const image = pieceImage(item.type, item.color, this.preferences.theme);
           image.classList.add("piece");
           image.dataset.pieceType = item.type;
-          image.draggable = this.store.canSelectPiece(item);
+          image.draggable = false;
           button.append(image);
         }
         if (!column) {
@@ -162,7 +109,7 @@ export class BoardView {
       }),
     );
     this.element.replaceChildren(fragment);
-    if (previousPosition) this.animatePiece(previousPosition, last);
+    if (previousPosition) this.animatePiece(previousPosition, last, capture);
     this.lastSessionId = this.store.session?.sessionId;
     this.lastRenderedPly = ply;
     this.lastReviewPly = this.store.reviewPly;
@@ -170,7 +117,7 @@ export class BoardView {
     if (focused)
       this.element.querySelector(`[data-square="${focused}"]`)?.focus({ preventScroll: true });
   }
-  async animatePiece(origin, move) {
+  async animatePiece(origin, move, capture = null) {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const destination = this.element.querySelector(`[data-square="${move.to}"] .piece`);
     if (!destination) return;
@@ -178,25 +125,75 @@ export class BoardView {
     const offsetX = origin.x - position.x;
     const offsetY = origin.y - position.y;
     const jumping = destination.dataset.pieceType === "KNIGHT";
+    const distance = Math.hypot(offsetX, offsetY) / position.width;
+    const travelDuration = jumping ? 360 : Math.min(420, 240 + distance * 24);
+    const collision = move.capture && capture;
+    const duration = collision ? travelDuration + 220 : travelDuration;
+    const contactTime = travelDuration * 0.82;
+    const contactOffset = contactTime / duration;
+    const captureTile = collision
+      ? this.element.querySelector(`[data-square="${capture.tile}"]`) : null;
+    const victimPosition = captureTile?.getBoundingClientRect() ?? position;
+    const victimX = victimPosition.x + victimPosition.width / 2 - (position.x + position.width / 2);
+    const victimY = victimPosition.y + victimPosition.height / 2 - (position.y + position.height / 2);
+    const approachLength = Math.hypot(victimX - offsetX, victimY - offsetY) || 1;
+    const directionX = (victimX - offsetX) / approachLength;
+    const directionY = (victimY - offsetY) / approachLength;
+    const contactX = victimX - directionX * position.width * 0.3;
+    const contactY = victimY - directionY * position.height * 0.3;
+    const fallDirection = Math.abs(directionX) > 0.1 ? Math.sign(directionX) : Math.sign(directionY) || 1;
     const frames = [{ transform: `translate(${offsetX}px, ${offsetY}px)` }];
     if (jumping) {
       frames.push({
-        offset: 0.5,
-        transform: `translate(${offsetX / 2}px, ${offsetY / 2 - position.height * 0.45}px) scale(1.08)`,
+        offset: collision ? contactOffset * 0.5 : 0.5,
+        transform: `translate(${(offsetX + (collision ? contactX : 0)) / 2}px, ${(offsetY + (collision ? contactY : 0)) / 2 - position.height * 0.45}px)`,
       });
+    }
+    if (collision) {
+      frames.push({ offset: contactOffset, transform: `translate(${contactX}px, ${contactY}px)` });
+      frames.push({
+        offset: contactOffset + 0.08,
+        transform: `translate(${contactX - directionX * 5}px, ${contactY - directionY * 5}px) rotate(${-fallDirection * 2}deg)`,
+      });
+      frames.push({ offset: 0.92, transform: "translate(0, 0) rotate(0deg)" });
+      this.captureDelay = contactTime / 1000;
+    } else {
+      frames.push({ offset: 0.84, transform: "translate(0, 0)" });
     }
     frames.push({ transform: "translate(0, 0)" });
     const tile = destination.parentElement;
     tile.style.zIndex = "4";
-    const animation = destination.animate(frames, {
-      duration: jumping ? 320 : 220,
-      easing: "ease-in-out",
-    });
-    try {
-      await animation.finished;
-    } catch {
-    } finally {
+    destination.classList.add("piece-in-motion");
+    const animations = [destination.animate(frames, { duration, easing: collision ? "linear" : "cubic-bezier(.2,.65,.3,1)" })];
+    let ghost = null;
+    if (collision) {
+      ghost = capture.image;
+      ghost.classList.remove("piece");
+      ghost.classList.add("capture-ghost");
+      captureTile.append(ghost);
+      const fallX = fallDirection * position.width * 0.22;
+      const fallY = directionY * position.height * 0.14 + position.height * 0.08;
+      animations.push(ghost.animate([
+        { opacity: 1, transform: "translate(0, 0) rotate(0deg)", easing: "ease-in" },
+        { offset: 0.18, opacity: 1, transform: `translate(${fallX * 0.12}px, ${fallY * 0.12}px) rotate(${fallDirection * 15}deg)`, easing: "ease-in" },
+        { offset: 0.6, opacity: 1, transform: `translate(${fallX * 0.85}px, ${fallY}px) rotate(${fallDirection * 96}deg)`, easing: "ease-out" },
+        { offset: 0.78, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 88}deg)` },
+        { offset: 0.88, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 90}deg)` },
+        { opacity: 0, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 90}deg)` },
+      ], { duration: 480, delay: contactTime, fill: "both", easing: "linear" }));
+    }
+    const cleanup = () => {
+      animations.forEach(animation => animation.cancel());
+      ghost?.remove();
+      destination.classList.remove("piece-in-motion");
       tile.style.removeProperty("z-index");
+      if (this.finishAnimation === cleanup) this.finishAnimation = null;
+    };
+    this.finishAnimation = cleanup;
+    try {
+      await Promise.allSettled(animations.map(animation => animation.finished));
+    } finally {
+      cleanup();
     }
   }
 }

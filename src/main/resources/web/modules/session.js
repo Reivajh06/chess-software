@@ -32,7 +32,7 @@ export class SessionAccess {
     // The creator registers its randomly assigned PvP ID; practice has no join step.
     if (!sessionId && gamemode === "PVP") {
       const joined = await this.api.join(resolvedSessionId, playerId);
-      response.state = joined.state ?? response.state;
+      response.state = joined.state ?? joined.gameState ?? response.state ?? response.gameState;
     }
     const session = {
       sessionId: resolvedSessionId,
@@ -49,7 +49,7 @@ export class SessionAccess {
 
     this.api.playerId = session.playerId;
     const state =
-      response.state ??
+      response.state ?? response.gameState ??
       (response.pieces || response.board || response.fen
         ? response
         : await this.api.state(session.sessionId));

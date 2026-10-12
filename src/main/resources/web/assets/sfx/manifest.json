@@ -1,0 +1,91 @@
+{
+  "formatVersion": 1,
+  "basename": "/assets/sfx",
+  "license": "Original synthesized sounds; project may use, modify and redistribute as part of ArchChess.",
+  "styles": {
+    "8bit": {
+      "select": {
+        "wav": "8bit/select.wav",
+        "mp3": "8bit/select.mp3",
+        "durationSeconds": 0.145
+      },
+      "move": {
+        "wav": "8bit/move.wav",
+        "mp3": "8bit/move.mp3",
+        "durationSeconds": 0.22
+      },
+      "king_move": {
+        "wav": "8bit/king_move.wav",
+        "mp3": "8bit/king_move.mp3",
+        "durationSeconds": 0.285
+      },
+      "capture": {
+        "wav": "8bit/capture.wav",
+        "mp3": "8bit/capture.mp3",
+        "durationSeconds": 0.31
+      },
+      "check": {
+        "wav": "8bit/check.wav",
+        "mp3": "8bit/check.mp3",
+        "durationSeconds": 0.43
+      },
+      "win": {
+        "wav": "8bit/win.wav",
+        "mp3": "8bit/win.mp3",
+        "durationSeconds": 1.12
+      },
+      "draw": {
+        "wav": "8bit/draw.wav",
+        "mp3": "8bit/draw.mp3",
+        "durationSeconds": 0.84
+      },
+      "lose": {
+        "wav": "8bit/lose.wav",
+        "mp3": "8bit/lose.mp3",
+        "durationSeconds": 1.05
+      }
+    },
+    "16bit": {
+      "select": {
+        "wav": "16bit/select.wav",
+        "mp3": "16bit/select.mp3",
+        "durationSeconds": 0.18
+      },
+      "move": {
+        "wav": "16bit/move.wav",
+        "mp3": "16bit/move.mp3",
+        "durationSeconds": 0.28
+      },
+      "king_move": {
+        "wav": "16bit/king_move.wav",
+        "mp3": "16bit/king_move.mp3",
+        "durationSeconds": 0.37
+      },
+      "capture": {
+        "wav": "16bit/capture.wav",
+        "mp3": "16bit/capture.mp3",
+        "durationSeconds": 0.43
+      },
+      "check": {
+        "wav": "16bit/check.wav",
+        "mp3": "16bit/check.mp3",
+        "durationSeconds": 0.56
+      },
+      "win": {
+        "wav": "16bit/win.wav",
+        "mp3": "16bit/win.mp3",
+        "durationSeconds": 1.49
+      },
+      "draw": {
+        "wav": "16bit/draw.wav",
+        "mp3": "16bit/draw.mp3",
+        "durationSeconds": 1.04
+      },
+      "lose": {
+        "wav": "16bit/lose.wav",
+        "mp3": "16bit/lose.mp3",
+        "durationSeconds": 1.38
+      }
+    }
+  }
+}

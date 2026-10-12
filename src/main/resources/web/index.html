@@ -8,7 +8,7 @@
     <link rel="icon" href="./assets/archchess_logo.png" />
     <link rel="preload" href="./assets/pixelify-sans.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
-    <script type="module" src="./app.js?v=grouped-legal-moves"></script>
+    <script type="module" src="./app.js?v=game-state-envelope-sync"></script>
   </head>
   <body>
     <header class="topbar">
@@ -65,6 +65,10 @@
         </div>
         <div class="board-frame">
           <div id="board" class="board" role="group" aria-label="Tablero"></div>
+          <div id="move-warning" class="move-warning" role="alert" hidden>
+            <span class="warning-glyph" aria-hidden="true">!</span>
+            <span id="move-warning-text"></span>
+          </div>
         </div>
         <div class="player">
           <span id="player-avatar" class="avatar"></span>
@@ -131,7 +135,8 @@
             <h3>Movimientos</h3>
             <span id="move-count" class="badge">0</span>
           </div>
-          <div id="move-history" class="move-history"></div>
+          <p class="history-order">De la primera a la última jugada</p>
+          <div id="move-history" class="move-history" role="list" aria-label="Jugadas en orden cronológico"></div>
           <nav class="history-controls" aria-label="Revisar movimientos">
             <button id="history-start" aria-label="Posición inicial" title="Inicio">|‹</button
             ><button id="history-prev" aria-label="Movimiento anterior" title="Anterior">‹</button
@@ -191,9 +196,9 @@
     </main>
     <footer class="page-footer"><span>ARCHCHESS <span class="footer-dot">◆</span> Cada partida, una nueva historia.</span><span>Hecho para disfrutar del ajedrez</span></footer>
     <dialog id="settings-dialog" aria-labelledby="settings-title">
-      <div class="dialog-heading"><h2 id="settings-title">Estilo del tablero</h2><button type="button" data-close="settings-dialog" aria-label="Cerrar ajustes">×</button></div>
+      <div class="dialog-heading"><h2 id="settings-title">Ajustes</h2><button type="button" data-close="settings-dialog" aria-label="Cerrar ajustes">×</button></div>
       <section id="appearance"><label for="theme-select">Tema</label><select id="theme-select"></select><div id="theme-preview" class="theme-preview" aria-hidden="true"></div></section>
-      <section class="sound-settings"><h3>Sonido</h3><label class="inline"><input id="muted" type="checkbox" />Silenciar</label><label for="volume">Volumen</label><input id="volume" type="range" min="0" max="100" /></section>
+      <section class="sound-settings"><label for="soundset-select">Sonidos</label><select id="soundset-select"></select><label class="inline"><input id="muted" type="checkbox" />Silenciar</label><label for="volume">Volumen</label><input id="volume" type="range" min="0" max="100" /></section>
     </dialog>
     <dialog id="setup-dialog" aria-labelledby="setup-title">
       <form id="setup-form">

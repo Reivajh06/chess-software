@@ -1,11 +1,12 @@
 import { ChessApi } from "./modules/api.js";
-import { GameStore, unwrap, labels } from "./modules/state.js";
+import { GameStore, normalizeState, stateSignature } from "./modules/state.js";
 import { BoardView } from "./modules/board.js";
 import { pieceImage, logoUrl } from "./modules/assets.js";
 import { HistoryView } from "./modules/history.js";
 import { loadPreferences, savePreferences, parseInvitation, invitationPlayer } from "./modules/preferences.js";
 import { SessionAccess, SessionPolling } from "./modules/session.js";
 import { GameAudio } from "./modules/audio.js";
+import { populateSoundSets } from "./modules/soundsets.js";
 import { applyTheme, populateThemes } from "./modules/themes.js";
 import { modeDefinition } from "./modules/modes.js";
 import { GameLauncher, renderMatch, renderAppearance } from "./modules/interface.js";
@@ -20,6 +21,8 @@ const historyView = new HistoryView(byId("move-history"), store, preferences, re
 let sessionVersion = 0;
 let selectionVersion = 0;
 let pendingMove = false;
+let selectionLoading = false;
+let warningTimer = null;
 let sessionBusy = false;
 let joinMode = false;
 let pendingPromotion = null;
@@ -31,6 +34,7 @@ const launcher = new GameLauncher(preferences, (mode) => {
   syncSetup();
 });
 populateThemes(byId("theme-select"));
+populateSoundSets(byId("soundset-select"));
 applyTheme(preferences.theme);
 const liveSession = new SessionPolling(api, {
   sessionId: () => store.session?.sessionId,
@@ -54,6 +58,20 @@ function setNotice(message = "", retry = false) {
   byId("notice").textContent = message;
   byId("notice").hidden = !message;
   byId("retry").hidden = !retry;
+}
+
+function clearMoveWarning() {
+  clearTimeout(warningTimer);
+  warningTimer = null;
+  byId("move-warning").hidden = true;
+  byId("move-warning-text").textContent = "";
+}
+
+function showMoveWarning(message) {
+  clearTimeout(warningTimer);
+  byId("move-warning-text").textContent = message;
+  byId("move-warning").hidden = false;
+  warningTimer = setTimeout(clearMoveWarning, 2800);
 }
 
 function setConnection(text, state = "") {
@@ -84,10 +102,13 @@ function renderGame() {
 
 function applyGameState(payload) {
   const before = store.state;
-  const raw = unwrap(payload);
-  if (before && JSON.stringify(raw) === store.lastRaw) return;
-  const state = store.apply(payload);
-  store.lastRaw = JSON.stringify(raw);
+  // Work with the actual Java GameState regardless of its API envelope.
+  const next = normalizeState(payload);
+  const signature = stateSignature(next);
+  if (before && signature === store.lastStateSignature) return false;
+  const state = store.applyNormalized(next);
+  store.lastStateSignature = signature;
+  clearMoveWarning();
   if (pendingPromotion) {
     pendingPromotion = null;
     byId("promotion-dialog").close();
@@ -97,12 +118,17 @@ function applyGameState(payload) {
     byId("move-choice-dialog").close();
   }
   selectionVersion++;
-  if (before && state.moves.length > before.moves.length)
-    audio.play(state.checkedColor ? "check" : state.moves.at(-1)?.capture ? "capture" : "move");
   renderGame();
+  if (before && state.moves.length > before.moves.length) {
+    const move = state.moves.at(-1);
+    const contactDelay = move?.capture ? board.captureDelay : 0;
+    audio.play(move?.capture ? "capture" : move?.type === "KING" ? "king_move" : "move", contactDelay);
+    if (state.status === "ACTIVE" && state.checkedColor) audio.play("check", contactDelay + 0.35);
+  }
   if (["WHITE_WIN", "BLACK_WIN", "DRAW"].includes(state.status)) showResult(state.status);
   else if (store.reviewPly === null)
     setNotice(state.waitingForOpponent ? "Esperando oponente" : state.checkedColor ? "Jaque" : "");
+  return true;
 }
 
 function showResult(status) {
@@ -112,7 +138,9 @@ function showResult(status) {
   const winner = status === "WHITE_WIN" ? "WHITE" : status === "BLACK_WIN" ? "BLACK" : null;
   const title = !winner
     ? "Empate"
-    : store.session.playerColor
+    : store.practice
+      ? "Partida terminada"
+      : store.session.playerColor
       ? winner === store.session.playerColor
         ? "Victoria"
         : "Derrota"
@@ -131,7 +159,7 @@ function showResult(status) {
     resultImage.alt = "";
   }
   byId("result-image").replaceChildren(resultImage);
-  audio.play(!winner ? "draw" : title === "Derrota" ? "defeat" : "victory");
+  audio.play(!winner ? "draw" : title === "Derrota" ? "defeat" : "victory", 0.45);
   if (!byId("result-dialog").open) byId("result-dialog").showModal();
 }
 
@@ -148,44 +176,64 @@ function reviewPosition(ply) {
     return;
   }
   selectionVersion++;
+  selectionLoading = false;
   store.selected = null;
   store.clearLegalMoves();
+  clearMoveWarning();
   renderGame();
 }
 
 async function selectSquare(tile) {
   if (!store.interactive || pendingMove || pendingPromotion || pendingMoveChoice) return;
-  if (store.selected && store.targets.has(tile)) {
+  if (store.selected && store.targets.has(tile) && !selectionLoading) {
+    clearMoveWarning();
     await requestMove(store.selected, tile);
     return;
   }
+
   const item = store.pieces.get(tile);
-  const version = ++selectionVersion,
-    generation = sessionVersion;
+  if (store.selected && !store.canSelectPiece(item)) {
+    showMoveWarning(selectionLoading
+      ? "Consultando los movimientos legales de la pieza…"
+      : `La casilla ${tile.toUpperCase()} no está en los movimientos legales de esta pieza.`);
+    return;
+  }
+  if (!store.canSelectPiece(item)) return;
+
+  const version = ++selectionVersion;
+  const generation = sessionVersion;
+  // Clicking the already selected piece deselects it; clicking a different
+  // friendly piece selects that one instead of attempting an illegal move.
+  const deselect = store.selected === tile;
   store.clearLegalMoves();
-  store.selected = store.canSelectPiece(item) ? tile : null;
+  store.selected = deselect ? null : tile;
+  selectionLoading = !deselect;
+  clearMoveWarning();
   board.render();
-  if (!store.selected) return;
+  if (deselect) return;
+  audio.play("select");
+
   try {
     const response = await api.legal(store.session.sessionId, tile);
     if (sessionVersion !== generation || selectionVersion !== version || store.selected !== tile)
       return;
     store.setLegalMoves(response);
+    if (!store.targets.size)
+      showMoveWarning("Esta pieza no tiene movimientos legales en la posición actual.");
     board.render();
   } catch (error) {
-    if (
-      sessionVersion !== generation ||
-      selectionVersion !== version ||
-      error.name === "AbortError"
-    )
+    if (sessionVersion !== generation || selectionVersion !== version || error.name === "AbortError")
       return;
     store.selected = null;
     setNotice(errorMessage(error));
     board.render();
+  } finally {
+    if (sessionVersion === generation && selectionVersion === version)
+      selectionLoading = false;
   }
 }
 
-function offerMoveChoice(from, to, options, promotion) {
+function offerMoveChoice(from, to, options) {
   pendingMoveChoice = { from, to };
   const fragment = document.createDocumentFragment();
   for (const option of options) {
@@ -196,7 +244,7 @@ function offerMoveChoice(from, to, options, promotion) {
     button.addEventListener("click", () => {
       pendingMoveChoice = null;
       byId("move-choice-dialog").close();
-      requestMove(from, to, promotion, option.moveId);
+      requestMove(from, to, option.moveId);
     });
     fragment.append(button);
   }
@@ -204,58 +252,54 @@ function offerMoveChoice(from, to, options, promotion) {
   byId("move-choice-dialog").showModal();
 }
 
-async function requestMove(from, to, promotion, chosenMoveId = null) {
-  if (!store.interactive || pendingMove || !store.targets.has(to) || store.selected !== from)
-    return;
-
-  // Promotion is not implemented in the current backend. The frontend keeps
-  // its promotion choice for when the moves endpoint supports it.
-  if (!promotion && store.pieces.get(from)?.type === "PAWN" && ["1", "8"].includes(to[1])) {
-    pendingPromotion = { from, to };
-    const fragment = document.createDocumentFragment();
-    for (const type of ["QUEEN", "ROOK", "BISHOP", "KNIGHT"]) {
-      const button = document.createElement("button");
-      button.append(pieceImage(type, store.pieces.get(from).color, preferences.theme));
-      const label = document.createElement("span");
-      label.textContent = labels[type];
-      button.append(label);
-      button.addEventListener("click", () => {
-        pendingPromotion = null;
-        byId("promotion-dialog").close();
-        requestMove(from, to, type);
-      });
-      fragment.append(button);
-    }
-    byId("promotion-options").replaceChildren(fragment);
-    byId("promotion-dialog").showModal();
+async function requestMove(from, to, chosenMoveId = null) {
+  if (!store.interactive || pendingMove || store.selected !== from) return;
+  if (!store.targets.has(to)) {
+    showMoveWarning(`La casilla ${to.toUpperCase()} no es un movimiento legal.`);
     return;
   }
-
+  // The existing Java updater does not apply promotion. Avoid sending an
+  // unsupported field or allowing a visually incorrect promoted position.
+  if (store.pieces.get(from)?.type === "PAWN" && ["1", "8"].includes(to[1])) {
+    showMoveWarning("La promoción de peones todavía no está implementada en el servidor.");
+    return;
+  }
   const options = store.moveOptionsAt(to);
-  if (!options.length) return;
+  if (!options.length) {
+    showMoveWarning("Este movimiento ya no es válido. Vuelve a seleccionar la pieza.");
+    return;
+  }
   if (chosenMoveId === null && options.length > 1) {
-    offerMoveChoice(from, to, options, promotion);
+    offerMoveChoice(from, to, options);
     return;
   }
   const moveId = chosenMoveId ?? options[0].moveId;
   if (!options.some((option) => option.moveId === moveId)) return;
 
   pendingMove = true;
+  selectionLoading = false;
+  clearMoveWarning();
   liveSession.stop();
   api.cancel();
   const generation = sessionVersion;
+  let stateApplied = false;
   try {
-    const response = await api.move(store.session.sessionId, from, to, moveId, promotion);
-    if (sessionVersion === generation) applyGameState(response);
+    // ChessApi.move() reads current state after PostMovePiece's empty 200.
+    // Do not clear the board or invent an optimistic position before it arrives.
+    const response = await api.move(store.session.sessionId, from, to, moveId);
+    if (sessionVersion === generation) stateApplied = applyGameState(response);
   } catch (error) {
     if (sessionVersion === generation && error.name !== "AbortError")
-      setNotice(errorMessage(error), true);
+      setNotice(error.status === 404
+        ? "La jugada se envió, pero falta la consulta de estado para actualizar el tablero."
+        : errorMessage(error), true);
   } finally {
     if (sessionVersion === generation) {
       pendingMove = false;
       store.selected = null;
       store.clearLegalMoves();
-      board.render();
+      // State application already rendered; a second render cuts off the animation.
+      if (!stateApplied) board.render();
       schedulePoll(0);
     }
   }
@@ -275,10 +319,12 @@ function resetSession() {
   api.cancel();
   liveSession.stop();
   pendingMove = false;
+  selectionLoading = false;
+  clearMoveWarning();
   pendingPromotion = null;
   pendingMoveChoice = null;
   store.reset();
-  store.lastRaw = null;
+  store.lastStateSignature = null;
   api.playerId = null;
   for (const id of ["promotion-dialog", "move-choice-dialog", "result-dialog"])
     byId(id).close();
@@ -403,6 +449,7 @@ byId("invite").addEventListener("click", async () => {
 });
 for (const [id, key] of [
   ["theme-select", "theme"],
+  ["soundset-select", "soundSet"],
   ["panel-view", "view"],
   ["volume", "volume"],
   ["muted", "muted"],
@@ -414,6 +461,8 @@ for (const [id, key] of [
     preferences[key] =
       key === "muted" ? element.checked : key === "volume" ? Number(element.value) : element.value;
     if (key === "theme") applyTheme(preferences.theme);
+    if (["soundSet", "volume", "muted"].includes(key)) audio.updatePreferences();
+    if (key === "soundSet") audio.play("move");
     savePreferences(preferences);
     renderGame();
   });
@@ -428,6 +477,7 @@ for (const tab of document.querySelectorAll("[data-view]")) {
 byId("sound-toggle").addEventListener("click", () => {
   preferences.muted = !preferences.muted;
   byId("muted").checked = preferences.muted;
+  audio.updatePreferences();
   savePreferences(preferences);
   renderAppearance(preferences);
 });

@@ -429,6 +429,7 @@ label.inline input {
   height: 19px;
 }
 .board-frame {
+  position: relative;
   padding: 9px;
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
   border-radius: 7px;
@@ -458,6 +459,22 @@ label.inline input {
   background-position: var(--tile-light-x) var(--tile-y);
   background-repeat: no-repeat;
   transition: none;
+}
+.board .square, .board .square:hover, .board .square:active {
+  cursor: default;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.board img, .board .piece, .board .piece-sprite {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+.square.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
 }
 .square.dark {
   background-color: var(--dark);
@@ -495,6 +512,19 @@ label.inline input {
   height: 96%;
   z-index: 1;
   user-select: none;
+}
+.piece-in-motion {
+  filter: drop-shadow(0 4px 2px #0005);
+}
+/* Keep capture copies out of the tile's grid, even with .piece-sprite styles. */
+.board .capture-ghost {
+  position: absolute;
+  inset: 2%;
+  width: 96%;
+  height: 96%;
+  z-index: 2;
+  pointer-events: none;
+  transform-origin: 50% 92%;
 }
 .coordinate {
   font-family: "Segoe UI", sans-serif;
@@ -626,6 +656,14 @@ label.inline input {
   overflow: auto;
   scrollbar-width: thin;
   font-family: "Segoe UI", sans-serif;
+  padding: 8px;
+  scroll-padding-block: 8px;
+}
+.history-order {
+  flex-shrink: 0;
+  margin: -3px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
 }
 .empty {
   color: var(--muted);
@@ -636,37 +674,138 @@ label.inline input {
 }
 .move-row {
   display: grid;
-  grid-template-columns: 25px 1fr 1fr;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  margin-bottom: 9px;
 }
 .move-number {
+  display: grid;
+  place-items: center;
+  height: 24px;
+  margin-top: 13px;
   color: var(--muted);
   font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  background: var(--panel);
 }
 .move-button {
-  display: flex;
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 65%, var(--panel)), var(--panel));
+  box-shadow: inset 0 1px #ffffff0a;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.move-identity {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-width: 0;
+}
+.move-identity > .piece-sprite {
+  grid-row: span 2;
+  width: 30px;
+  height: 30px;
+}
+.move-piece-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.move-side {
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-width: 0;
-  border-color: transparent;
-  background: transparent;
-  padding: 7px 5px;
-  font-size: 13px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
 }
-.move-button > .piece-sprite {
-  width: 25px;
-  height: 25px;
+.move-side::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--muted);
+  background: #172030;
 }
-.move-button > span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.move-side[data-color="WHITE"]::before {
+  background: #edf4ff;
+}
+.move-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+.move-endpoint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 5px 7px;
+  background: color-mix(in srgb, var(--bg) 65%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+}
+.move-square-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.move-square {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.move-arrow {
+  color: var(--accent);
+  font-size: 17px;
+}
+.move-capture {
+  display: grid;
+  gap: 4px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+.move-capture-label {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+}
+.move-capture-piece {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.move-capture-piece > .piece-sprite {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+}
+.move-captured-name {
+  color: var(--muted);
+  font-weight: 400;
+  overflow-wrap: anywhere;
 }
 .move-button.active {
-  background: var(--accent);
-  color: var(--bg);
+  border-color: var(--accent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 15%, var(--panel)), var(--panel));
+  color: var(--text);
+  box-shadow: inset 3px 0 var(--accent), inset 0 1px #ffffff10;
+}
+.move-row:has(.move-button.active) .move-number {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .history-controls {
   display: flex;
@@ -997,9 +1136,6 @@ dialog::backdrop {
   }
 }
 
-.piece[draggable="true"] {
-  touch-action: none;
-}
 
 /* Arcade UI: reference artwork frames live controls; board sprites stay theme-specific. */
 :root { --radius: 2px; }
@@ -1099,8 +1235,6 @@ input[type="checkbox"] { width: 17px; height: 17px; }
 .empty-art { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; }
 .empty strong { color: var(--text); font-size: 20px; line-height: 1.2; font-weight: 500; }
 .empty p { color: var(--muted); font-size: 15px; }
-.move-row { padding: 3px 5px; margin: 0; }
-.move-row:nth-child(even) { background: #9ebfff08; }
 .history-controls { margin-top: 12px; }
 .chat-form input { min-width: 0; width: 100%; }
 .chat-form button { padding: 3px; }
@@ -1240,4 +1374,39 @@ body { height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-temp
   .brand img { width: 42px; height: 48px; }
   .main-nav button { min-width: auto; }
   .guest, #connection { display: none; }
+}
+
+/* Short, accessible, nonmodal feedback above the board, with an arcade icon. */
+.move-warning[hidden] { display: none; }
+.move-warning {
+  position: absolute;
+  z-index: 8;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 20px);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  background: #222636;
+  color: #fff4d9;
+  border: 2px solid #ffce79;
+  box-shadow: 0 4px 0 #10131d, inset 0 2px #fff3;
+  font-size: 14px;
+  line-height: 1.2;
+  text-align: left;
+  pointer-events: none;
+}
+.warning-glyph {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  background: #ffcc6b;
+  border: 2px solid #7b431d;
+  color: #432910;
+  font: 900 18px/1 monospace;
+  box-shadow: inset 2px 2px #fff7;
 }

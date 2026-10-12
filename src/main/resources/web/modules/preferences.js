@@ -1,4 +1,5 @@
 import { themes } from "./themes.js";
+import { selectedSoundSet } from "./soundsets.js";
 
 export function loadPreferences() {
   let saved = {};
@@ -12,6 +13,7 @@ export function loadPreferences() {
       : "history",
     volume: Number.isFinite(saved.volume) ? Math.max(0, Math.min(100, saved.volume)) : 55,
     muted: saved.muted === true,
+    soundSet: selectedSoundSet(saved),
   };
 }
 export function savePreferences(preferences) {
