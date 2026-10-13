@@ -79,6 +79,8 @@ public class MoveRules {
 
 		Piece king = board.pieceAt(ctx.from());
 
+		if(king.color() == PieceColor.BLACK && ctx.gameState().blackCastling().getLast() == null) return false;
+		if(king.color() == PieceColor.WHITE && ctx.gameState().whiteCastling().getLast() == null) return false;
 		if(king.timesMoved() != 0) return false;
 		if(checkedColor == king.color()) return false;
 
@@ -110,6 +112,8 @@ public class MoveRules {
 
 		Piece king = board.pieceAt(ctx.from());
 
+		if(king.color() == PieceColor.BLACK && ctx.gameState().blackCastling().getFirst() == null) return false;
+		if(king.color() == PieceColor.WHITE && ctx.gameState().whiteCastling().getFirst() == null) return false;
 		if(king.timesMoved() != 0) return false;
 		if(checkedColor == king.color()) return false;
 
