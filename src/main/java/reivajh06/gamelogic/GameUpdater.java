@@ -19,7 +19,11 @@ public class GameUpdater {
 	public Map<Integer, List<Tile>> pieceMoves(Tile location) {
 		Piece pieceToMove = session.gameState().board().pieceAt(location);
 
-		if(pieceToMove == null || pieceToMove.color() != session.gameState().turnColor()) return new HashMap<>();
+		if(pieceToMove == null) return new HashMap<>();
+
+		if(session.gamemode() != Gamemode.PRACTICE) {
+			if(pieceToMove.color() != session.gameState().turnColor()) return new HashMap<>();
+		}
 
 		return GameController.legalPieceMoves(session.gameState(), location);
 	}
@@ -34,7 +38,6 @@ public class GameUpdater {
 		Piece movedPiece = session.gameState().board().pieceAt(from);
 
 		if(movedPiece == null) return;
-		if(movedPiece.color() != session.gameState().turnColor()) return;
 
 		Piece capturedPiece = GameController.movePiece(session.gameState(), move, from, to);
 
@@ -77,13 +80,19 @@ public class GameUpdater {
 		List<Castling> blackCastling = new ArrayList<>(currentState.blackCastling());
 
 		if(movedPiece.color() == PieceColor.WHITE) {
-			if(movedPiece.type() == PieceType.KING) whiteCastling = new ArrayList<>();
+			if(movedPiece.type() == PieceType.KING) {
+				whiteCastling.set(0, null);
+				whiteCastling.set(1, null);
+			}
 
 			else whiteCastling = updateCastlingRights(movedPiece);
 		}
 
 		else {
-			if(movedPiece.type() == PieceType.KING) blackCastling = new ArrayList<>();
+			if(movedPiece.type() == PieceType.KING) {
+				blackCastling.set(0, null);
+				blackCastling.set(1, null);
+			}
 
 			else blackCastling = updateCastlingRights(movedPiece);
 		}
