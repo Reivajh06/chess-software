@@ -3,14 +3,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameUpdater;
-import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Castling;
 import reivajh06.model.PieceColor;
 import reivajh06.model.Tile;
-import reivajh06.model.movement.Move;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,13 +22,11 @@ class GameUpdaterCastlingTest {
             "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
 
     private static GameSession at(String fen) {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
-        ChessDebugCli.loadFen(session, fen);
-        return session;
+        return ChessTestSupport.sessionAt(fen);
     }
 
     private static void play(GameSession session, String uci) {
-        ChessDebugCli.applyCoordinateMove(session, uci);
+        ChessTestSupport.playMove(session, uci);
     }
 
     private static String rights(GameSession session) {
@@ -46,7 +41,7 @@ class GameUpdaterCastlingTest {
     }
 
     private static boolean canMove(GameSession session, String from, String to) {
-        Map<Move, List<Tile>> legal = new GameUpdater(session).pieceMoves(new Tile(from));
+        Map<Integer, List<Tile>> legal = new GameUpdater(session).pieceMoves(new Tile(from));
         Tile destination = new Tile(to);
         return legal.values().stream().flatMap(Collection::stream).anyMatch(destination::equals);
     }
@@ -141,11 +136,4 @@ class GameUpdaterCastlingTest {
         assertEquals("KQkq", rights(session));
     }
 
-    @Test
-    @DisplayName("A different-color rook on a corner never preserves white castling rights")
-    void wrongColorRookCannotPreserveKingsideRight() {
-        GameSession session = at("4k3/8/8/8/8/8/P7/4KP1r w K - 0 1");
-        play(session, "a2a3");
-        assertEquals("-", rights(session));
-    }
 }

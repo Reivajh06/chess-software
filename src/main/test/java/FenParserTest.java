@@ -5,6 +5,7 @@ import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Board;
+import reivajh06.model.PieceColor;
 import reivajh06.model.PieceType;
 import reivajh06.model.Tile;
 
@@ -36,8 +37,10 @@ class FenParserTest {
     @DisplayName("Board FEN import must initialize derived king-square tracking")
     void boardImportInitializesKingLocations() {
         Board board = FenParser.fenToBoard("4k3/8/8/8/8/8/8/4K3");
-        assertEquals(new Tile("e1"), board.kingTile(reivajh06.model.PieceColor.WHITE));
-        assertEquals(new Tile("e8"), board.kingTile(reivajh06.model.PieceColor.BLACK));
+        assertAll(
+                () -> assertEquals(new Tile("e1"), board.kingTile(PieceColor.WHITE)),
+                () -> assertEquals(new Tile("e8"), board.kingTile(PieceColor.BLACK))
+        );
     }
 
     @Test
@@ -48,10 +51,12 @@ class FenParserTest {
         Board copy = board.copy();
         assertNotSame(board, copy);
         assertEquals(FenParser.boardToFen(board), FenParser.boardToFen(copy));
-        assertEquals(new Tile("e1"), copy.kingTile(reivajh06.model.PieceColor.WHITE));
-        assertEquals(new Tile("e8"), copy.kingTile(reivajh06.model.PieceColor.BLACK));
-        assertEquals(1, copy.pieceAt(new Tile("h1")).timesMoved());
-        assertNotSame(board.pieceAt(new Tile("h1")), copy.pieceAt(new Tile("h1")));
+        assertAll(
+                () -> assertEquals(new Tile("e1"), copy.kingTile(PieceColor.WHITE)),
+                () -> assertEquals(new Tile("e8"), copy.kingTile(PieceColor.BLACK)),
+                () -> assertEquals(1, copy.pieceAt(new Tile("h1")).timesMoved()),
+                () -> assertNotSame(board.pieceAt(new Tile("h1")), copy.pieceAt(new Tile("h1")))
+        );
     }
 
     @Test
@@ -59,7 +64,7 @@ class FenParserTest {
     void sixFieldsRemainExact() {
         GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
         String fen = "r3k2r/8/8/8/8/8/8/R3K2R w Qk - 17 34";
-        ChessDebugCli.loadFen(session, fen);
+        ChessTestSupport.loadFen(session, fen);
         assertEquals(fen, session.toFEN());
     }
 }

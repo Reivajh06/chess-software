@@ -161,7 +161,7 @@ The current `PostMovePiece` does not revalidate `to` against the legal destinati
 
 ## 5. UI behavior connected to this contract
 
-- A selected piece is visually outlined. When its legal-moves response is empty, the player receives an accessible warning. When a non-highlighted empty/enemy tile is clicked while a piece is selected, a brief warning explains that it is not a legal destination; selecting another friendly piece switches selection.
+- A selected piece is visually outlined and its legal destinations are highlighted. Selecting a piece of the other color or one with no legal moves produces no warning; an empty legal-moves response simply leaves no destination highlights. Clicking an empty square outside the available destinations is also silent.
 - Board movement uses **click/tap**, not drag and drop. Native piece/tile image dragging is disabled; the board uses the regular mouse cursor rather than the hand cursor.
 - The Web Audio module uses the supplied 8-bit and 16-bit samples for piece selection, ordinary moves, king moves, captures, checks, and win/draw/lose. The soundset selector sits alongside the board theme in settings and persists with volume and mute. Samples are cached and decoded after a user gesture; switching sets or muting stops queued sounds. A move/check/result sound is triggered by an actual new state/history transition, not every state poll.
 - Live moves slide into place (knights hop). During a capture the attacker makes contact and briefly recoils, then the captured piece tips onto its side and slides away before disappearing. The capture sound is timed to contact. Animations respect reduced-motion preferences and are skipped for history review or session restoration.

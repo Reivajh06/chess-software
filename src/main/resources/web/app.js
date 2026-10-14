@@ -304,16 +304,8 @@ async function selectSquare(tile) {
 
   const item = store.pieces.get(tile);
 
-  if (store.selected && !store.canSelectPiece(item)) {
-    showMoveWarning(
-        selectionLoading
-            ? "Consultando los movimientos legales de la pieza…"
-            : `La casilla ${tile.toUpperCase()} no está en los movimientos legales de esta pieza.`
-    );
-    return;
-  }
-
   if (!store.canSelectPiece(item)) {
+    clearMoveWarning();
     return;
   }
 
@@ -346,12 +338,6 @@ async function selectSquare(tile) {
     }
 
     store.setLegalMoves(response);
-
-    if (!store.targets.size) {
-      showMoveWarning(
-          "Esta pieza no tiene movimientos legales en la posición actual."
-      );
-    }
 
     board.render();
   } catch (error) {
