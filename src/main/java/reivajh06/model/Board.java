@@ -74,6 +74,12 @@ public class Board {
 	}
 
 	public void addPiece(Tile tile, Piece piece) {
+		if(piece.type() == PieceType.KING) {
+			if(piece.color() == PieceColor.BLACK) blackKingTile = tile;
+
+			else whiteKingTile = tile;
+		}
+
 		tiles.put(tile, piece);
 	}
 
@@ -127,20 +133,29 @@ public class Board {
 	}
 
 	public Board copy() {
-		return FenParser.fenToBoard(FenParser.boardToFen(this));
-	}
+		Board copy = new Board();
+		asStream().forEach(t -> {
+			Piece piece = pieceAt(t);
 
-	public Tile kingTile(PieceColor kingColor) {
-		return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
-	}
+			if(piece == null) return;
 
-	public Board blackKingTile(Tile blackKingTile) {
-		this.blackKingTile = blackKingTile;
-		return this;
-	}
+			copy.addPiece(t, piece.copy());
+		});
 
-	public Board whiteKingTile(Tile whiteKingTile) {
-		this.whiteKingTile = whiteKingTile;
-		return this;
-	}
+		return copy;
+}
+
+public Tile kingTile(PieceColor kingColor) {
+	return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
+}
+
+public Board blackKingTile(Tile blackKingTile) {
+	this.blackKingTile = blackKingTile;
+	return this;
+}
+
+public Board whiteKingTile(Tile whiteKingTile) {
+	this.whiteKingTile = whiteKingTile;
+	return this;
+}
 }
