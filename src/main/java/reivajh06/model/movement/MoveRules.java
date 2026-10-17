@@ -41,10 +41,7 @@ public class MoveRules {
 			List<Move> moveset = rivalPiece.moveset();
 
 			for(Move move : moveset) {
-				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.gameState(), rivalPiece.color(), rivalTile, move).stream()
-						.filter(t -> t.equals(ctx.to()))
-						.findFirst()
-						.orElse(null) != null;
+				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.gameState(), rivalPiece.color(), rivalTile, move).contains(ctx.to());
 
 				if(isTileCompromised) return false;
 			}
@@ -91,7 +88,7 @@ public class MoveRules {
 		if(rook.type() != PieceType.ROOK) return false;
 		if(rook.timesMoved() != 0) return false;
 
-		for(File file = File.B; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
+		for(File file = File.C; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
 
 			if(board.pieceAt(tile) != null) return false;
