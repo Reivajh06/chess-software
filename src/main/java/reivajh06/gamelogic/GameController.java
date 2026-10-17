@@ -78,7 +78,13 @@ public class GameController {
 			Move move = piece.moveset().get(moveEntry.getKey());
 			List<Tile> moveTiles = new ArrayList<>(moveEntry.getValue());
 
-			moveTiles.removeIf(tile -> !GameConditions.moveUnchecksKing(gameState, move, location, tile));
+			moveTiles.removeIf(tile -> {
+				Piece pieceAtTile = gameState.board().pieceAt(tile);
+
+				boolean unchecksKing = !GameConditions.moveUnchecksKing(gameState, move, location, tile);
+
+				return (pieceAtTile != null && pieceAtTile.type() == PieceType.KING) || unchecksKing;
+			});
 
 			legalMoveset.put(moveEntry.getKey(), moveTiles);
 		}
