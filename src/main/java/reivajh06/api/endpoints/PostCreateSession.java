@@ -32,6 +32,8 @@ public class PostCreateSession implements Handler {
 		GameSession session = new GameSession(gamemode, difficulty);
 		PieceColor creatorColor = session.assignColor(creatorId);
 
+		if(gamemode == Gamemode.PRACTICE) creatorColor = PieceColor.WHITE;
+
 		Sessions.registerSession(session);
 
 		ctx.status(SUCCESS).result(jsonResponse(creatorId, creatorColor, session));
