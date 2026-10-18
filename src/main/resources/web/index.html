@@ -8,250 +8,237 @@
     <link rel="icon" href="./assets/archchess_logo.png" />
     <link rel="preload" href="./assets/pixelify-sans.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
-    <script type="module" src="./app.js?v=game-state-envelope-sync"></script>
+    <script type="module" src="./app.js"></script>
   </head>
-  <body>
+  <body data-screen="title">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="ArchChess"
-        ><img src="./assets/archchess_logo.png" alt="ArchChess"
-      /><span class="brand-wordmark">ARCH<span>CHESS</span></span></a>
-      <nav class="main-nav" aria-label="Navegación">
-        <button id="nav-play" aria-current="page">Jugar</button
-        ><button id="nav-watch">Observar</button>
-      </nav>
+      <button id="menu-button" class="brand" type="button" aria-label="Volver al menú principal">
+        <img src="./assets/archchess_logo.png" alt="" /><span class="brand-wordmark">ARCH<span>CHESS</span></span>
+      </button>
       <div class="header-tools">
-        <span class="guest">Invitado</span><span id="connection" role="status">Sin sesión</span
-        ><button id="sound-toggle" aria-label="Silenciar sonido" title="Sonido">♪</button
-        ><button id="settings-open" class="art-button" aria-label="Abrir apariencia" title="Apariencia"><img class="ui-icon" src="./assets/ui/settings.png" alt="" /></button>
+        <span id="connection" role="status">Sin sesión</span>
+        <button id="music-toggle" class="icon-button tool-button" type="button" aria-pressed="false" aria-label="Activar música" title="Música"><span class="pixel-icon" data-icon="music"></span></button>
+        <button id="sound-toggle" class="icon-button tool-button" type="button" aria-label="Silenciar sonido" title="Sonido"><span class="pixel-icon" data-icon="sound"></span></button>
+        <button id="settings-open" class="icon-button tool-button" type="button" aria-label="Abrir ajustes" title="Ajustes"><span class="pixel-icon" data-icon="settings"></span></button>
       </div>
     </header>
-    <div class="page-intro"><div><span class="eyebrow">TU SIGUIENTE PARTIDA</span><h1>Una buena jugada lo cambia todo.</h1><p>Desafía a alguien. Explora una posición. Encuentra tu estilo.</p></div><span class="intro-tag"><span></span> A tu ritmo, a tu manera</span></div>
-    <main class="layout">
-      <nav class="compact-panels" aria-label="Paneles de partida"><button data-panel-open="utilities">Nueva partida</button><button data-panel-open="activity">Jugadas y chat</button></nav>
-      <aside class="panel utilities" aria-label="Configurar partida">
-        <button class="panel-close" aria-label="Cerrar configuración">×</button>
-        <div class="panel-heading">
-          <span class="eyebrow">Jugar</span>
-          <h2>Nueva partida</h2>
+
+    <main id="title-screen" class="title-screen" aria-labelledby="title-heading">
+      <div class="title-layout">
+        <section class="title-hero">
+          <div class="title-brand">
+            <img class="title-logo" src="./assets/archchess_logo.png" alt="" />
+            <div>
+              <h1 id="title-heading" class="title-wordmark">ARCH<span>CHESS</span></h1>
+              <p class="title-tagline">Ajedrez en pixel art</p>
+            </div>
+          </div>
+          <div id="title-mascot" class="mascot mascot-large">
+            <button class="mascot-sprite" type="button" aria-label="Hablar con Alfi" title="Alfi"></button>
+            <div class="mascot-bubble" hidden><button class="mascot-dismiss" type="button" aria-label="Ocultar a Alfi" title="Ocultar a Alfi (se recupera en Ajustes)">×</button><span class="mascot-name">ALFI</span><p class="mascot-text" aria-live="polite"></p></div>
+          </div>
+        </section>
+        <section class="title-card pixel-frame">
+          <h2 class="title-card-heading">Elige modo</h2>
+          <nav id="title-menu" class="title-menu" aria-label="Modalidades"></nav>
+          <form id="join-form" class="join-form" hidden>
+            <label for="join-id">Pega el enlace o el ID de la invitación</label>
+            <input id="join-id" autocomplete="off" spellcheck="false" />
+            <div class="join-actions">
+              <button id="join-back" type="button">Volver</button>
+              <button id="join-submit" class="primary" type="submit">Unirse</button>
+            </div>
+          </form>
+          <p id="title-error" class="title-error" role="alert" hidden></p>
+          <p class="title-hint" aria-hidden="true">↑ ↓ ELEGIR · ENTER CONFIRMAR</p>
+        </section>
+      </div>
+    </main>
+
+    <main id="game-screen" class="game-screen">
+      <aside class="match-panel pixel-frame" aria-label="Partida">
+        <div class="mode-card">
+          <img id="arena-icon" class="mode-icon" src="./assets/ui/mode-practice.png" alt="" />
+          <div class="mode-text">
+            <span id="arena-mode" class="badge">—</span>
+            <strong id="arena-name">Sin partida</strong>
+            <span id="arena-status" class="arena-status">Sin partida</span>
+          </div>
         </div>
-        <div id="mode-cards" class="mode-cards" role="group" aria-label="Modalidad"></div>
-        <div class="launcher-configuration">
-          <span id="launcher-badge" class="badge">PvP</span>
-          <p id="launcher-detail">Sala privada e invitación</p>
-          <p id="launcher-unavailable" class="unavailable" hidden></p>
-        </div>
-        <p class="backend-note" title="La creación de práctica está implementada. PvP, consulta de estado y movimientos necesitan endpoints adicionales."><span>EN DESARROLLO</span> PvP y jugadas: API pendiente.</p>
-        <button id="new-game" class="primary">Crear sala</button>
-        <button id="join-game" class="secondary">Tengo una invitación</button>
-      </aside>
-      <section class="play-area" aria-label="Partida">
-        <div class="arena-heading">
-          <span class="arena-label"><img class="heading-icon" src="./assets/ui/duel.png" alt="" /><span id="arena-mode" class="badge">Tablero</span></span
-          ><span id="arena-status">Sin partida</span>
-        </div>
+
         <div id="spectator-banner" class="spectator-banner" hidden>
-          <span>Espectador</span><strong id="thinking-status">Partida entre modelos</strong
-          ><small>Los controles revisan el historial de la partida.</small>
+          <span>Espectador</span><strong id="thinking-status">Partida entre modelos</strong>
         </div>
-        <div class="player">
+
+        <section class="turn-card" aria-live="polite">
+          <span id="turn-eyebrow" class="eyebrow">Mueven</span>
+          <div class="turn-display">
+            <span id="turn-avatar" class="turn-avatar"></span>
+            <strong id="turn-name">—</strong>
+          </div>
+          <div id="notice" class="notice" role="status" hidden></div>
+          <button id="retry" type="button" hidden>Reintentar</button>
+        </section>
+
+        <section class="score-card" aria-label="Material">
+          <div class="score-heading">
+            <span class="eyebrow">Material</span>
+            <span id="score-lead" class="score-lead">Igualado</span>
+          </div>
+          <div class="material-bar" aria-hidden="true">
+            <span id="material-white" class="material-white"></span>
+          </div>
+          <div class="score-sides" aria-hidden="true">
+            <span>Blancas</span><span>Negras</span>
+          </div>
+        </section>
+
+        <section id="last-move-card" class="last-move-card" hidden>
+          <span class="eyebrow">Última jugada</span>
+          <div class="last-move-body">
+            <span id="last-move-piece" class="last-move-piece"></span>
+            <div class="last-move-text">
+              <strong id="last-move-route"></strong>
+              <small id="last-move-detail"></small>
+            </div>
+          </div>
+        </section>
+
+        <div id="game-mascot" class="mascot mascot-small">
+          <button class="mascot-sprite" type="button" aria-label="Pedir un consejo a Alfi" title="Alfi"></button>
+          <div class="mascot-bubble" hidden><button class="mascot-dismiss" type="button" aria-label="Ocultar a Alfi" title="Ocultar a Alfi (se recupera en Ajustes)">×</button><span class="mascot-name">ALFI</span><p class="mascot-text" aria-live="polite"></p></div>
+        </div>
+
+        <div id="review-banner" class="review-banner" hidden>
+          <span class="eyebrow">Modo revisión</span>
+          <strong id="review-label">Posición</strong>
+          <button id="return-live" class="primary" type="button">Volver a la partida</button>
+        </div>
+
+        <nav class="match-actions" aria-label="Acciones">
+          <button id="flip" type="button"><span aria-hidden="true">⇅</span> Girar tablero</button>
+          <button id="invite" type="button" hidden><span aria-hidden="true">✉</span> Copiar invitación</button>
+          <button id="leave" type="button"><span aria-hidden="true">◄</span> Menú principal</button>
+        </nav>
+
+        <div id="session-details" class="session-details" hidden>
+          <span class="eyebrow">Sesión</span>
+          <code id="session-id"></code>
+        </div>
+      </aside>
+
+      <section class="play-area" aria-label="Tablero de juego">
+        <div class="player" data-side="opponent">
           <span id="opponent-avatar" class="avatar"></span>
           <div class="player-identity">
-            <strong id="opponent-name">Oponente</strong
-            ><small id="opponent-detail">Sin partida</small>
-            <div id="opponent-captured" class="captured" hidden></div>
+            <strong id="opponent-name">Oponente</strong><small id="opponent-detail"></small>
+            <div class="captured-row">
+              <div id="opponent-captured" class="captured"></div>
+              <span id="opponent-advantage" class="advantage" hidden></span>
+            </div>
           </div>
-          <span id="opponent-turn" class="turn" hidden>Turno</span
-          ><time id="opponent-clock" class="clock" hidden></time>
+          <span id="opponent-turn" class="turn" hidden>TURNO</span>
+          <time id="opponent-clock" class="clock" hidden></time>
         </div>
-        <div class="board-frame">
+        <div class="board-frame pixel-frame">
           <div id="board" class="board" role="group" aria-label="Tablero"></div>
+          <div id="promotion-layer" class="promotion-layer" hidden>
+            <div id="promotion-picker" class="promotion-picker" role="dialog" aria-label="Elige la pieza de coronación"></div>
+          </div>
           <div id="move-warning" class="move-warning" role="alert" hidden>
             <span class="warning-glyph" aria-hidden="true">!</span>
             <span id="move-warning-text"></span>
           </div>
         </div>
-        <div class="player">
+        <div class="player" data-side="player">
           <span id="player-avatar" class="avatar"></span>
           <div class="player-identity">
-            <strong id="player-name">Tú</strong><small id="player-detail">Sin partida</small>
-            <div id="player-captured" class="captured" hidden></div>
+            <strong id="player-name">Tú</strong><small id="player-detail"></small>
+            <div class="captured-row">
+              <div id="player-captured" class="captured"></div>
+              <span id="player-advantage" class="advantage" hidden></span>
+            </div>
           </div>
-          <span id="player-turn" class="turn" hidden>Turno</span
-          ><time id="player-clock" class="clock" hidden></time>
+          <span id="player-turn" class="turn" hidden>TURNO</span>
+          <time id="player-clock" class="clock" hidden></time>
         </div>
-        <div class="game-controls">
-          <button id="flip" title="Invertir tablero" aria-label="Invertir tablero">⇅</button
-          ><button id="review-open" title="Revisar movimientos" aria-label="Revisar movimientos">
-            ↶</button
-          ><span class="control-divider"></span
-          ><button
-            disabled
-            title="El servidor no admite rendición"
-            aria-label="Rendirse, no disponible"
-          >
-            ⚑</button
-          ><button
-            disabled
-            title="El servidor no admite ofertas de tablas"
-            aria-label="Ofrecer tablas, no disponible"
-          >
-            ½</button
-          ><button
-            disabled
-            title="El servidor no admite deshacer jugadas"
-            aria-label="Deshacer jugada, no disponible"
-          >
-            ↩
-          </button>
-        </div>
-        <div id="review-banner" class="notice review" hidden>
-          <span>Revisando posición</span><button id="return-live">Volver a la partida</button>
-        </div>
-        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
-        <button id="retry" hidden>Reintentar</button>
       </section>
-      <aside class="panel activity" aria-label="Centro de partida">
-        <button class="panel-close" aria-label="Cerrar centro de partida">×</button>
-        <div class="panel-heading">
-          <span class="eyebrow">Partida</span>
-          <h2>Centro de partida</h2>
+
+      <aside class="side-panel pixel-frame" aria-label="Historial de jugadas">
+        <div class="section-title">
+          <h2>Jugadas</h2>
+          <span id="move-count" class="badge">0</span>
         </div>
-        <div class="match-tabs" role="group" aria-label="Contenido">
-          <button data-view="history" aria-pressed="true">Jugadas</button
-          ><button data-view="chat" aria-pressed="false">Chat</button
-          ><button data-view="info" aria-pressed="false">Info</button
-          ><button data-view="analysis" aria-pressed="false">Análisis</button>
-        </div>
-        <label class="sr-only" for="panel-view">Panel derecho</label
-        ><select id="panel-view" class="sr-only">
-          <option value="history">Historial</option>
-          <option value="chat">Chat</option>
-          <option value="info">Información</option>
-          <option value="analysis">Análisis</option>
-          <option value="both">Historial y chat</option>
-        </select>
-        <section id="history-panel">
-          <div class="section-title">
-            <h3>Movimientos</h3>
-            <span id="move-count" class="badge">0</span>
-          </div>
-          <p class="history-order">De la primera a la última jugada</p>
-          <div id="move-history" class="move-history" role="list" aria-label="Jugadas en orden cronológico"></div>
-          <nav class="history-controls" aria-label="Revisar movimientos">
-            <button id="history-start" aria-label="Posición inicial" title="Inicio">|‹</button
-            ><button id="history-prev" aria-label="Movimiento anterior" title="Anterior">‹</button
-            ><button id="history-next" aria-label="Movimiento siguiente" title="Siguiente">›</button
-            ><button id="history-live" aria-label="Posición actual" title="Volver a la partida">
-              ›|
-            </button>
-          </nav>
-        </section>
-        <section id="chat-panel" hidden>
-          <h3>Chat</h3>
-          <div class="empty-state">
-            <img class="empty-art" src="./assets/ui/chat.png" alt="" /><strong>Chat no disponible</strong>
-            <p>El servidor todavía no admite mensajes entre jugadores.</p>
-          </div>
-          <form class="chat-form">
-            <label class="sr-only" for="chat-message">Mensaje</label
-            ><input id="chat-message" placeholder="Mensaje" disabled /><button disabled>
-              <img class="ui-icon" src="./assets/ui/send.png" alt="Enviar" />
-            </button>
-          </form>
-        </section>
-        <section id="info-panel" hidden>
-          <h3>Información</h3>
-          <dl class="match-info">
-            <div>
-              <dt>Modalidad</dt>
-              <dd id="info-mode">Sin partida</dd>
-            </div>
-            <div>
-              <dt>Estado</dt>
-              <dd id="info-status">Sin partida</dd>
-            </div>
-            <div>
-              <dt>Reloj</dt>
-              <dd id="info-time">Sin reloj</dd>
-            </div>
-            <div>
-              <dt>Jugadores</dt>
-              <dd id="info-players">Sin partida</dd>
-            </div>
-          </dl>
-          <div id="session-details" hidden>
-            <h3>Sesión</h3>
-            <code id="session-id"></code><small id="session-mode"></small
-            ><button id="invite">Copiar invitación</button>
-          </div>
-        </section>
-        <section id="analysis-panel" hidden>
-          <h3>Análisis</h3>
-          <div class="empty-state">
-            <img class="empty-art" src="./assets/ui/ai.png" alt="" /><strong>Análisis no disponible</strong>
-            <p>El servidor todavía no proporciona evaluaciones ni sugerencias.</p>
-          </div>
-        </section>
+        <div id="move-history" class="move-history" role="list" aria-label="Jugadas en orden cronológico"></div>
+        <nav class="history-controls" aria-label="Revisar movimientos">
+          <button id="history-start" type="button" aria-label="Posición inicial" title="Inicio">|‹</button
+          ><button id="history-prev" type="button" aria-label="Movimiento anterior" title="Anterior (←)">‹</button
+          ><button id="history-next" type="button" aria-label="Movimiento siguiente" title="Siguiente (→)">›</button
+          ><button id="history-live" type="button" aria-label="Posición actual" title="Volver a la partida">›|</button>
+        </nav>
       </aside>
     </main>
-    <footer class="page-footer"><span>ARCHCHESS <span class="footer-dot">◆</span> Cada partida, una nueva historia.</span><span>Hecho para disfrutar del ajedrez</span></footer>
-    <dialog id="settings-dialog" aria-labelledby="settings-title">
-      <div class="dialog-heading"><h2 id="settings-title">Ajustes</h2><button type="button" data-close="settings-dialog" aria-label="Cerrar ajustes">×</button></div>
-      <section id="appearance"><label for="theme-select">Tema</label><select id="theme-select"></select><div id="theme-preview" class="theme-preview" aria-hidden="true"></div></section>
-      <section class="sound-settings"><label for="soundset-select">Sonidos</label><select id="soundset-select"></select><label class="inline"><input id="muted" type="checkbox" />Silenciar</label><label for="volume">Volumen</label><input id="volume" type="range" min="0" max="100" /></section>
-    </dialog>
-    <dialog id="setup-dialog" aria-labelledby="setup-title">
-      <form id="setup-form">
-        <div class="dialog-heading">
-          <h2 id="setup-title">Nueva partida</h2>
-          <button type="button" data-close="setup-dialog" aria-label="Cerrar">×</button>
-        </div>
-        <label id="mode-field">Modalidad<select id="mode"></select></label>
-        <p id="mode-explanation" class="unavailable" hidden></p>
-        <p class="setup-backend-note">Puedes crear una práctica. PvP y las jugadas requieren endpoints adicionales en el servidor.</p>
-        <div id="ai-fields" hidden>
-          <label
-            >Modelo Ollama<select disabled>
-              <option>No disponible</option>
-            </select></label
-          ><label
-            >Dificultad<select id="difficulty" disabled>
-              <option value="EASY">Fácil</option>
-              <option value="MEDIUM">Media</option>
-              <option value="HARD">Difícil</option>
-            </select></label
-          >
-        </div>
-        <label id="join-field" hidden
-          >ID o enlace de sesión<input id="join-id" autocomplete="off"
-        /></label>
-        <p id="setup-error" role="alert" hidden></p>
-        <button id="setup-submit" class="primary">Crear sala</button>
-      </form>
-    </dialog>
-    <dialog id="promotion-dialog" aria-labelledby="promotion-title">
+
+    <dialog id="settings-dialog" class="pixel-frame settings-dialog" aria-labelledby="settings-title">
       <div class="dialog-heading">
-        <h2 id="promotion-title">Promoción</h2>
-        <button type="button" data-close="promotion-dialog" aria-label="Cancelar promoción">
-          ×
-        </button>
+        <h2 id="settings-title">Ajustes</h2>
+        <button type="button" data-close="settings-dialog" aria-label="Cerrar ajustes">×</button>
       </div>
-      <div id="promotion-options" class="promotion-options"></div>
+      <div class="settings-tabs" role="tablist" aria-label="Secciones de ajustes">
+        <button id="tab-look" type="button" role="tab" aria-selected="true" aria-controls="panel-look">Aspecto</button
+        ><button id="tab-sound" type="button" role="tab" aria-selected="false" aria-controls="panel-sound" tabindex="-1">Sonido</button
+        ><button id="tab-mascot" type="button" role="tab" aria-selected="false" aria-controls="panel-mascot" tabindex="-1">Alfi</button>
+      </div>
+
+      <section id="panel-look" class="settings-panel" role="tabpanel" aria-labelledby="tab-look">
+        <span class="settings-label" id="theme-label">Tema del tablero</span>
+        <div id="theme-grid" class="choice-grid theme-grid" role="radiogroup" aria-labelledby="theme-label"></div>
+        <select id="theme-select" hidden></select>
+      </section>
+
+      <section id="panel-sound" class="settings-panel" role="tabpanel" aria-labelledby="tab-sound" hidden>
+        <div class="setting-row">
+          <label for="volume">Efectos</label><output id="volume-value" for="volume"></output>
+        </div>
+        <input id="volume" class="pixel-range" type="range" min="0" max="100" />
+        <label class="switch-row"><span>Música de fondo</span><input id="music-enabled" class="switch" type="checkbox" /></label>
+        <div class="setting-row">
+          <label for="music-volume">Volumen de música</label><output id="music-volume-value" for="music-volume"></output>
+        </div>
+        <input id="music-volume" class="pixel-range" type="range" min="0" max="100" />
+        <label class="switch-row danger"><span>Silenciar todo</span><input id="muted" class="switch" type="checkbox" /></label>
+      </section>
+
+      <section id="panel-mascot" class="settings-panel" role="tabpanel" aria-labelledby="tab-mascot" hidden>
+        <label class="switch-row"><span>Mostrar a Alfi, la mascota</span><input id="mascot-enabled" class="switch" type="checkbox" /></label>
+        <p class="settings-note">Alfi comenta la partida: avisa de jaques y capturas, celebra los buenos golpes y se ríe un poco de los errores.</p>
+      </section>
     </dialog>
-    <dialog id="move-choice-dialog" aria-labelledby="move-choice-title">
+
+    <dialog id="move-choice-dialog" class="pixel-frame" aria-labelledby="move-choice-title">
       <div class="dialog-heading">
         <h2 id="move-choice-title">Elige el tipo de jugada</h2>
         <button type="button" data-close="move-choice-dialog" aria-label="Cancelar jugada">×</button>
       </div>
       <div id="move-choice-options" class="move-choice-options"></div>
     </dialog>
-    <dialog id="result-dialog" aria-labelledby="result-title">
+
+    <dialog id="result-dialog" class="pixel-frame" aria-labelledby="result-title">
       <div id="result-card" class="result-card">
         <div id="result-image" class="result-image" aria-hidden="true"></div>
         <h2 id="result-title"></h2>
         <p id="result-detail"></p>
-        <button id="result-new" class="primary">Nueva partida</button
-        ><button data-close="result-dialog">Ver tablero</button>
+        <dl class="result-stats">
+          <div><dt>Jugadas</dt><dd id="stat-moves">0</dd></div>
+          <div><dt>Capturas</dt><dd id="stat-captures">0 · 0</dd></div>
+          <div><dt>Material</dt><dd id="stat-material">=</dd></div>
+        </dl>
+        <button id="result-rematch" class="primary" type="button">Revancha</button>
+        <div class="result-secondary">
+          <button type="button" data-close="result-dialog">Ver tablero</button
+          ><button id="result-new" type="button">Menú principal</button>
+        </div>
+        <div class="confetti" aria-hidden="true"></div>
       </div>
     </dialog>
   </body>

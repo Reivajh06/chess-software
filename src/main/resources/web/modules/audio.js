@@ -1,14 +1,13 @@
-import { selectedSoundSet, soundFiles } from "./soundsets.js";
+import { synthCues } from "./sfx-synth.js";
 
+// Every effect is synthesized on the fly (see sfx-synth.js): no files to
+// download, and each event keeps a distinct chiptune timbre.
 export class GameAudio {
   constructor(preferences) {
     this.preferences = preferences;
     this.context = null;
     this.output = null;
-    this.buffers = new Map();
-    this.sources = new Set();
-    this.soundSet = selectedSoundSet(preferences);
-    this.generation = 0;
+    this.voices = new Set();
   }
   async unlock() {
     try {
@@ -19,70 +18,34 @@ export class GameAudio {
         this.updatePreferences();
       }
       if (this.context.state === "suspended") await this.context.resume();
-      this.preload();
     } catch { /* Audio support or autoplay permission may be unavailable. */ }
   }
 
   updatePreferences() {
-    const next = selectedSoundSet(this.preferences);
-    const changed = next !== this.soundSet;
-    this.soundSet = next;
     const volume = this.preferences.muted ? 0 : this.preferences.volume / 100;
     if (this.output) this.output.gain.setTargetAtTime(volume, this.context.currentTime, 0.01);
-    if (changed || !volume) {
-      this.generation++;
-      for (const source of this.sources) source.stop();
-      this.sources.clear();
+    if (!volume) {
+      for (const voice of this.voices) {
+        try { voice.stop(); } catch { /* Already stopped. */ }
+      }
+      this.voices.clear();
     }
-    if (changed) this.preload();
-  }
-
-  load(soundSet, kind) {
-    const file = soundFiles[kind];
-    const key = `${soundSet}:${file}`;
-    if (!this.buffers.has(key)) {
-      const url = new URL(`../assets/sfx/${soundSet}/${file}.mp3`, import.meta.url);
-      const buffer = fetch(url)
-        .then(response => {
-          if (!response.ok) throw new Error("Sound unavailable");
-          return response.arrayBuffer();
-        })
-        .then(data => this.context.decodeAudioData(data))
-        .catch(error => {
-          this.buffers.delete(key);
-          throw error;
-        });
-      this.buffers.set(key, buffer);
-    }
-    return this.buffers.get(key);
-  }
-
-  preload() {
-    if (!this.context) return;
-    // Share in-flight loads with playback, so the first click is not lost.
-    void Promise.allSettled(Object.keys(soundFiles).map(kind => this.load(this.soundSet, kind)));
   }
 
   async play(kind, delay = 0) {
-    if (!this.context || this.preferences.muted || !this.preferences.volume || !soundFiles[kind]) return;
+    if (!this.context || this.preferences.muted || !this.preferences.volume || !synthCues[kind]) return;
     this.updatePreferences();
-    const generation = this.generation;
-    const soundSet = this.soundSet;
-    const start = this.context.currentTime + delay;
     try {
       if (this.context.state === "suspended") await this.context.resume();
-      const buffer = await this.load(soundSet, kind);
-      if (generation !== this.generation || this.preferences.muted || !this.preferences.volume ||
-          soundSet !== selectedSoundSet(this.preferences) || this.context.state !== "running") return;
-      const source = this.context.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.output);
-      source.onended = () => {
-        this.sources.delete(source);
-        source.disconnect();
-      };
-      this.sources.add(source);
-      source.start(Math.max(start, this.context.currentTime));
-    } catch { /* A missing sound must not interrupt a game. */ }
+      if (this.context.state !== "running" || this.preferences.muted) return;
+      const start = Math.max(this.context.currentTime + delay, this.context.currentTime);
+      for (const voice of synthCues[kind](this.context, this.output, start)) {
+        this.voices.add(voice);
+        voice.onended = () => {
+          this.voices.delete(voice);
+          voice.disconnect();
+        };
+      }
+    } catch { /* A sound must never interrupt a game. */ }
   }
 }

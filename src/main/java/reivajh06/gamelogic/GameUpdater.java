@@ -169,7 +169,7 @@ public class GameUpdater {
 	}
 
 	private Tile updateEnPassantTile(Move move, Tile location) {
-		if(!move.conditions().contains(MoveRules.START_TWO_FORWARD)) return session.gameState().enPassantDestination();
+		if(!move.condition().equals(MoveRules.START_TWO_FORWARD)) return session.gameState().enPassantDestination();
 
 		Board board = session.gameState().board();
 

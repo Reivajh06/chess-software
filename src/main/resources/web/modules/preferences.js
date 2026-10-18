@@ -1,5 +1,4 @@
 import { themes } from "./themes.js";
-import { selectedSoundSet } from "./soundsets.js";
 
 export function loadPreferences() {
   let saved = {};
@@ -8,14 +7,18 @@ export function loadPreferences() {
   } catch {}
   return {
     theme: saved.theme in themes ? saved.theme : saved.board in themes ? saved.board : "classic",
-    view: ["both", "history", "chat", "info", "analysis"].includes(saved.view)
-      ? saved.view
-      : "history",
-    volume: Number.isFinite(saved.volume) ? Math.max(0, Math.min(100, saved.volume)) : 55,
+    volume: percentage(saved.volume, 55),
     muted: saved.muted === true,
-    soundSet: selectedSoundSet(saved),
+    music: saved.music === true,
+    musicVolume: percentage(saved.musicVolume, 40),
+    mascot: saved.mascot !== false,
   };
 }
+
+function percentage(value, fallback) {
+  return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : fallback;
+}
+
 export function savePreferences(preferences) {
   try {
     localStorage.setItem("archchess.preferences", JSON.stringify(preferences));

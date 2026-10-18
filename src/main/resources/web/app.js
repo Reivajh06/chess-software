@@ -1,5 +1,5 @@
 import { ChessApi } from "./modules/api.js";
-import { GameStore, normalizeState, stateSignature } from "./modules/state.js";
+import { GameStore, labels, normalizeState, stateSignature } from "./modules/state.js";
 import { BoardView } from "./modules/board.js";
 import { pieceImage, logoUrl } from "./modules/assets.js";
 import { HistoryView } from "./modules/history.js";
@@ -11,13 +11,18 @@ import {
 } from "./modules/preferences.js";
 import { SessionAccess, SessionPolling } from "./modules/session.js";
 import { GameAudio } from "./modules/audio.js";
-import { populateSoundSets } from "./modules/soundsets.js";
+import { BackgroundMusic } from "./modules/music.js";
 import { applyTheme, populateThemes } from "./modules/themes.js";
 import { modeDefinition } from "./modules/modes.js";
+import { Mascot } from "./modules/mascot.js";
+import { Commentator } from "./modules/commentary.js";
 import {
-  GameLauncher,
+  TitleScreen,
   renderMatch,
   renderAppearance,
+  materialBalance,
+  populateThemeGrid,
+  markChoice,
 } from "./modules/interface.js";
 
 const byId = (id) => document.getElementById(id);
@@ -26,13 +31,13 @@ const preferences = loadPreferences();
 const store = new GameStore();
 const api = new ChessApi();
 const audio = new GameAudio(preferences);
+const music = new BackgroundMusic(audio, preferences);
 
 const board = new BoardView(
     byId("board"),
     store,
     preferences,
-    selectSquare,
-    requestMove
+    selectSquare
 );
 
 const historyView = new HistoryView(
@@ -43,25 +48,118 @@ const historyView = new HistoryView(
 );
 
 let sessionVersion = 0;
-let selectionVersion = 0;
-let pendingMove = false;
-let selectionLoading = false;
 let warningTimer = null;
 let sessionBusy = false;
-let joinMode = false;
-let pendingPromotion = null;
-let pendingMoveChoice = null;
 
 const announcedResults = new Set();
 const sessions = new SessionAccess(api);
 
-const launcher = new GameLauncher(preferences, (mode) => {
-  byId("mode").value = mode;
-  syncSetup();
+const titleMascot = new Mascot(byId("title-mascot"), audio, preferences);
+const gameMascot = new Mascot(byId("game-mascot"), audio, preferences);
+let hoveredEntry = null;
+
+const title = new TitleScreen({
+  onStart: (mode) => openSession(null, mode),
+  onJoin: joinSession,
+  onContinue: () => showScreen("game"),
+  onError: () => titleMascot.say(titleMascot.line("error"), 2),
+  onHover: (id, hint) => {
+    if (id === hoveredEntry) return;
+    hoveredEntry = id;
+    titleMascot.say(hint);
+  },
 });
 
+const commentator = new Commentator();
+
+// Alfi comments after the move's own sound, so blips never mask it.
+function mascotReact(kind, priority = 1, delay = 650, options = {}, vars = {}) {
+  setTimeout(() => {
+    if (document.body.dataset.screen === "game") gameMascot.say(gameMascot.line(kind, vars), priority, options);
+  }, delay);
+}
+
 populateThemes(byId("theme-select"));
-populateSoundSets(byId("soundset-select"));
+
+// Visual pickers drive the hidden <select>s, so the settings loop below
+// keeps a single code path for every preference.
+function pickOption(selectId, value) {
+  const select = byId(selectId);
+  if (select.value === value) return;
+  select.value = value;
+  select.dispatchEvent(new Event("input"));
+}
+
+populateThemeGrid(byId("theme-grid"), (id) => pickOption("theme-select", id));
+
+
+// Interface sounds: a tick on hover/focus, a chirp on confirm. Throttled so
+// sweeping the pointer across a list does not machine-gun the tick.
+let lastHover = 0;
+function hoverSound() {
+  const now = performance.now();
+  if (now - lastHover < 60) return;
+  lastHover = now;
+  audio.play("hover");
+}
+
+const interfaceTargets = ".title-option, .choice, [role='tab'], .match-actions button, .result-card button, .promotion-choice, .tool-button";
+for (const type of ["pointerover", "focusin"]) {
+  document.addEventListener(type, (event) => {
+    const target = event.target.closest?.(interfaceTargets);
+    if (!target || target.disabled || target.contains(event.relatedTarget)) return;
+    hoverSound();
+  });
+}
+document.addEventListener("click", (event) => {
+  const target = event.target.closest?.(".title-option, .choice, .result-card button, .promotion-choice");
+  if (target && !target.disabled) audio.play("confirm");
+});
+
+// Arrow keys move between options inside a radio grid.
+for (const grid of document.querySelectorAll(".choice-grid")) {
+  grid.addEventListener("keydown", (event) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    const options = [...grid.children];
+    const next = options[(options.indexOf(document.activeElement) + step + options.length) % options.length];
+    next.focus();
+    next.click();
+  });
+}
+
+function syncSettings() {
+  markChoice(byId("theme-grid"), preferences.theme);
+  for (const id of ["volume", "music-volume"]) {
+    const input = byId(id);
+    input.style.setProperty("--fill", `${input.value}%`);
+    byId(`${id}-value`).textContent = `${input.value}%`;
+  }
+  byId("music-volume").disabled = !preferences.music;
+  byId("volume").disabled = preferences.muted;
+}
+
+const settingsTabs = ["look", "sound", "mascot"];
+function showSettingsTab(name, focus = false) {
+  for (const tab of settingsTabs) {
+    const selected = tab === name;
+    byId(`tab-${tab}`).setAttribute("aria-selected", String(selected));
+    byId(`tab-${tab}`).tabIndex = selected ? 0 : -1;
+    byId(`panel-${tab}`).hidden = !selected;
+  }
+  if (focus) byId(`tab-${name}`).focus();
+}
+
+for (const tab of settingsTabs) {
+  byId(`tab-${tab}`).addEventListener("click", () => showSettingsTab(tab));
+  byId(`tab-${tab}`).addEventListener("keydown", (event) => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    if (!step) return;
+    const index = settingsTabs.indexOf(tab);
+    showSettingsTab(settingsTabs[(index + step + settingsTabs.length) % settingsTabs.length], true);
+  });
+}
 applyTheme(preferences.theme);
 
 const liveSession = new SessionPolling(api, {
@@ -70,7 +168,7 @@ const liveSession = new SessionPolling(api, {
   canPoll: () =>
       !!store.session &&
       store.state?.status === "ACTIVE" &&
-      !pendingMove,
+      !store.selection.busy,
 
   onState: (response) => {
     setConnection("Conectado", "online");
@@ -120,11 +218,6 @@ function setConnection(text, state = "") {
   byId("connection").dataset.state = state;
 }
 
-function setSetupError(message = "") {
-  byId("setup-error").textContent = message;
-  byId("setup-error").hidden = !message;
-}
-
 function errorMessage(error) {
   return error.status === 404 && store.session
       ? "La sesión no existe o el servidor todavía no admite esta función."
@@ -138,7 +231,6 @@ function renderGame() {
   historyView.render();
   renderMatch(store, preferences);
   renderAppearance(preferences);
-  launcher.render();
 }
 
 function applyGameState(payload) {
@@ -150,39 +242,64 @@ function applyGameState(payload) {
     return false;
   }
 
+  const moved = before && next.moves.length !== before.moves.length;
   const state = store.applyNormalized(next);
+
+  // Legal targets were computed for the previous position: drop them so a
+  // stale map can never send a move that is no longer legal.
+  if (moved && !store.selection.busy) {
+    store.selection.reset();
+    closePromotionPicker();
+  }
   store.lastStateSignature = signature;
 
   clearMoveWarning();
-
-  if (pendingPromotion) {
-    pendingPromotion = null;
-    byId("promotion-dialog").close();
-  }
-
-  if (pendingMoveChoice) {
-    pendingMoveChoice = null;
-    byId("move-choice-dialog").close();
-  }
-
-  selectionVersion++;
+  byId("move-choice-dialog").close();
   renderGame();
 
   if (before && state.moves.length > before.moves.length) {
     const move = state.moves.at(-1);
     const contactDelay = move?.capture ? board.captureDelay : 0;
 
+    const promotion =
+        move?.type === "PAWN" && /[18]$/.test(move.to ?? "") || !!move?.promotion;
+
+    // Each event keeps its own cue; a capture still crunches before the
+    // promotion jingle or the check alarm that follows it.
     audio.play(
         move?.capture
             ? "capture"
-            : move?.type === "KING"
-                ? "king_move"
-                : "move",
+            : promotion
+                ? "promotion"
+                : move?.type === "KING"
+                    ? "king_move"
+                    : "move",
         contactDelay
     );
 
+    if (promotion && move?.capture) {
+      audio.play("promotion", contactDelay + 0.18);
+    }
+
     if (state.status === "ACTIVE" && state.checkedColor) {
-      audio.play("check", contactDelay + 0.35);
+      audio.play("check", contactDelay + (promotion ? 0.45 : 0.22));
+    }
+
+    if (state.checkedColor) {
+      shakeBoard(contactDelay);
+    }
+
+    const reaction = commentator.react({
+      move,
+      before,
+      after: state,
+      userColors: store.practice
+          ? ["WHITE", "BLACK"]
+          : store.session?.playerColor ? [store.session.playerColor] : [],
+    });
+
+    if (reaction) {
+      mascotReact(reaction.kind, reaction.priority, 650, { stare: reaction.stare }, reaction.vars);
     }
   }
 
@@ -199,6 +316,36 @@ function applyGameState(payload) {
   }
 
   return true;
+}
+
+// A short stepped jolt of the board frame on check, like a 16-bit hit.
+function shakeBoard(delay = 0) {
+  const frame = document.querySelector(".board-frame");
+  setTimeout(() => {
+    frame.classList.remove("shake");
+    void frame.offsetWidth;
+    frame.classList.add("shake");
+  }, delay * 1000 + 120);
+}
+
+function renderResultStats(winner) {
+  const moves = store.state?.moves ?? [];
+  const captures = (color) => moves.filter((move) => move.capture && move.color === color).length;
+  const { lead } = materialBalance(store.state?.pieces);
+  byId("stat-moves").textContent = String(Math.ceil(moves.length / 2));
+  byId("stat-captures").textContent = `${captures("WHITE")} · ${captures("BLACK")}`;
+  byId("stat-material").textContent = !lead ? "=" : `${lead > 0 ? "B" : "N"} +${Math.abs(lead)}`;
+  byId("result-rematch").textContent = store.session?.gamemode === "PVP" ? "Nueva sala" : "Revancha";
+  const confetti = document.querySelector(".confetti");
+  confetti.replaceChildren(
+    ...(winner ? Array.from({ length: 18 }, (_, index) => {
+      const bit = document.createElement("i");
+      bit.style.left = `${(index * 37) % 100}%`;
+      bit.style.animationDelay = `${(index % 6) * 0.12}s`;
+      bit.style.background = ["var(--accent)", "#edf4ff", "#e05a5a", "#6fc4ff"][index % 4];
+      return bit;
+    }) : []),
+  );
 }
 
 function showResult(status) {
@@ -232,6 +379,8 @@ function showResult(status) {
       ? `Ganan las ${winner === "WHITE" ? "blancas" : "negras"}`
       : "Tablas";
 
+  renderResultStats(winner);
+
   byId("result-card").className =
       `result-card ${winner === "BLACK" ? "black" : winner ? "white" : "draw"}`;
 
@@ -255,13 +404,15 @@ function showResult(status) {
       0.45
   );
 
+  mascotReact(!winner ? "draw" : title === "Derrota" ? "defeat" : "victory", 3, 0);
+
   if (!byId("result-dialog").open) {
     byId("result-dialog").showModal();
   }
 }
 
 function reviewPosition(ply) {
-  if (pendingMove || pendingPromotion) {
+  if (store.selection.busy) {
     return;
   }
 
@@ -276,107 +427,140 @@ function reviewPosition(ply) {
     return;
   }
 
-  selectionVersion++;
-  selectionLoading = false;
-
-  store.selected = null;
-  store.clearLegalMoves();
-
+  store.selection.reset();
   clearMoveWarning();
   renderGame();
 }
 
-async function selectSquare(tile) {
-  if (
-      !store.interactive ||
-      pendingMove ||
-      pendingPromotion ||
-      pendingMoveChoice
-  ) {
+function selectSquare(tile) {
+  const command = store.selection.click(tile, {
+    pieces: store.pieces,
+    movableColors: store.movableColors,
+  });
+
+  if (command.type === "ignore") {
     return;
   }
-
-  if (store.selected && store.targets.has(tile) && !selectionLoading) {
-    clearMoveWarning();
-    await requestMove(store.selected, tile);
-    return;
-  }
-
-  const item = store.pieces.get(tile);
-
-  if (!store.canSelectPiece(item)) {
-    clearMoveWarning();
-    return;
-  }
-
-  const version = ++selectionVersion;
-  const generation = sessionVersion;
-  const deselect = store.selected === tile;
-
-  store.clearLegalMoves();
-  store.selected = deselect ? null : tile;
-  selectionLoading = !deselect;
 
   clearMoveWarning();
-  board.render();
 
-  if (deselect) {
-    return;
+  switch (command.type) {
+    case "load":
+      audio.play("select");
+      board.render();
+      return loadLegalMoves(command);
+    case "deselect":
+      board.render();
+      return;
+    case "blocked":
+      showPromotionPicker(command.to);
+      return;
+    case "choose":
+      offerMoveChoice(command);
+      return;
+    case "move":
+      return submitMove(command);
   }
+}
 
-  audio.play("select");
+async function loadLegalMoves({ from, token }) {
+  const generation = sessionVersion;
 
   try {
-    const response = await api.legal(store.session.sessionId, tile);
+    const response = await api.legal(store.session.sessionId, from);
 
-    if (
-        sessionVersion !== generation ||
-        selectionVersion !== version ||
-        store.selected !== tile
-    ) {
-      return;
+    if (sessionVersion === generation && store.selection.loaded(token, response)) {
+      board.render();
     }
-
-    store.setLegalMoves(response);
-
-    board.render();
   } catch (error) {
-    if (
-        sessionVersion !== generation ||
-        selectionVersion !== version ||
-        error.name === "AbortError"
-    ) {
+    if (sessionVersion !== generation || error.name === "AbortError") {
       return;
     }
 
-    store.selected = null;
-    setNotice(errorMessage(error));
-    board.render();
-  } finally {
-    if (
-        sessionVersion === generation &&
-        selectionVersion === version
-    ) {
-      selectionLoading = false;
+    if (store.selection.failed(token)) {
+      setNotice(errorMessage(error));
+      board.render();
     }
   }
 }
 
-function offerMoveChoice(from, to, options) {
-  pendingMoveChoice = { from, to };
+// Chess.com-style picker: a column of pieces unfolding from the promotion
+// square over a dimmed board. The server has no promotion endpoint yet, so
+// the choice is only announced for now.
+const promotionPieces = ["QUEEN", "KNIGHT", "ROOK", "BISHOP"];
 
+function showPromotionPicker(to) {
+  const color = store.pieces.get(store.selection.from)?.color ?? "WHITE";
+  const square = board.element.querySelector(`[data-square="${to}"]`);
+  const size = square.offsetWidth;
+  // Unfold away from the board edge the square sits on.
+  const downwards = square.offsetTop < board.element.offsetHeight / 2;
+  const picker = byId("promotion-picker");
+  picker.style.left = `${square.offsetLeft}px`;
+  picker.style.width = `${size}px`;
+  picker.style.top = downwards ? `${square.offsetTop}px` : "auto";
+  picker.style.bottom = downwards ? "auto" : `${board.element.offsetHeight - square.offsetTop - size}px`;
+  picker.classList.toggle("upwards", !downwards);
+
+  const buttons = promotionPieces.map((type) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "promotion-choice";
+    button.style.height = `${size}px`;
+    button.setAttribute("aria-label", `Coronar como ${labels[type]}`);
+    button.append(pieceImage(type, color, preferences.theme));
+    button.addEventListener("click", () => {
+      closePromotionPicker();
+      showMoveWarning(`Has elegido ${labels[type]}. El servidor aún no admite la coronación.`);
+    });
+    return button;
+  });
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "promotion-cancel";
+  cancel.textContent = "×";
+  cancel.setAttribute("aria-label", "Cancelar coronación");
+  cancel.addEventListener("click", closePromotionPicker);
+  picker.replaceChildren(...(downwards ? [...buttons, cancel] : [cancel, ...buttons.reverse()]));
+  byId("promotion-layer").hidden = false;
+  audio.play("select");
+  buttons[0].focus({ preventScroll: true });
+}
+
+function closePromotionPicker() {
+  if (byId("promotion-layer").hidden) return;
+  byId("promotion-layer").hidden = true;
+  store.selection.reset();
+  board.render();
+}
+
+byId("promotion-layer").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) closePromotionPicker();
+});
+byId("promotion-layer").addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closePromotionPicker();
+});
+
+function offerMoveChoice({ options }) {
   const fragment = document.createDocumentFragment();
 
   for (const option of options) {
     const button = document.createElement("button");
+    const name = document.createElement("span");
 
     button.type = "button";
-    button.textContent = option.label || `Movimiento ${option.moveId + 1}`;
+    button.className = "choice";
+    name.className = "choice-name";
+    name.textContent = option.label || `Movimiento ${option.moveId + 1}`;
+    button.append(name);
 
     button.addEventListener("click", () => {
-      pendingMoveChoice = null;
+      const command = store.selection.choose(option.moveId);
       byId("move-choice-dialog").close();
-      requestMove(from, to, option.moveId);
+
+      if (command) {
+        submitMove(command);
+      }
     });
 
     fragment.append(button);
@@ -386,58 +570,11 @@ function offerMoveChoice(from, to, options) {
   byId("move-choice-dialog").showModal();
 }
 
-async function requestMove(from, to, chosenMoveId = null) {
-  if (
-      !store.interactive ||
-      pendingMove ||
-      store.selected !== from
-  ) {
-    return;
-  }
-
-  if (!store.targets.has(to)) {
-    showMoveWarning(
-        `La casilla ${to.toUpperCase()} no es un movimiento legal.`
-    );
-    return;
-  }
-
-  if (
-      store.pieces.get(from)?.type === "PAWN" &&
-      ["1", "8"].includes(to[1])
-  ) {
-    showMoveWarning(
-        "La promoción de peones todavía no está implementada en el servidor."
-    );
-    return;
-  }
-
-  const options = store.moveOptionsAt(to);
-
-  if (!options.length) {
-    showMoveWarning(
-        "Este movimiento ya no es válido. Vuelve a seleccionar la pieza."
-    );
-    return;
-  }
-
-  if (chosenMoveId === null && options.length > 1) {
-    offerMoveChoice(from, to, options);
-    return;
-  }
-
-  const moveId = chosenMoveId ?? options[0].moveId;
-
-  if (!options.some((option) => option.moveId === moveId)) {
-    return;
-  }
-
-  pendingMove = true;
-  selectionLoading = false;
-
+async function submitMove({ from, to, moveId }) {
   clearMoveWarning();
   liveSession.stop();
   api.cancel();
+  board.render();
 
   const generation = sessionVersion;
   let stateApplied = false;
@@ -467,9 +604,7 @@ async function requestMove(from, to, chosenMoveId = null) {
     }
   } finally {
     if (sessionVersion === generation) {
-      pendingMove = false;
-      store.selected = null;
-      store.clearLegalMoves();
+      store.selection.reset();
 
       if (!stateApplied) {
         board.render();
@@ -490,25 +625,19 @@ function refresh() {
 
 function resetSession() {
   sessionVersion++;
-  selectionVersion++;
+  commentator.reset();
 
   api.cancel();
   liveSession.stop();
-
-  pendingMove = false;
-  selectionLoading = false;
-
   clearMoveWarning();
-
-  pendingPromotion = null;
-  pendingMoveChoice = null;
 
   store.reset();
   store.lastStateSignature = null;
   api.playerId = null;
 
+  byId("promotion-layer").hidden = true;
+
   for (const id of [
-    "promotion-dialog",
     "move-choice-dialog",
     "result-dialog",
   ]) {
@@ -516,89 +645,53 @@ function resetSession() {
   }
 }
 
-function syncSetup() {
-  const mode = modeDefinition(byId("mode").value);
+function showScreen(screen) {
+  document.body.dataset.screen = screen;
+  (screen === "title" ? gameMascot : titleMascot).silence();
 
-  byId("ai-fields").hidden =
-      joinMode ||
-      !["PVAI", "AIVAI", "PVCPU"].includes(byId("mode").value);
-
-  byId("mode-field").hidden = joinMode;
-  byId("join-field").hidden = !joinMode;
-  byId("mode-explanation").hidden = joinMode || mode.available;
-  byId("mode-explanation").textContent = mode.reason ?? "";
-
-  byId("setup-submit").disabled =
-      sessionBusy || (!joinMode && !mode.available);
-
-  byId("setup-submit").textContent = sessionBusy
-      ? "Conectando…"
-      : joinMode
-          ? "Unirse"
-          : mode.available
-              ? mode.action
-              : "No disponible";
-}
-
-function openSetup(join = false, id = "") {
-  joinMode = join;
-
-  byId("setup-title").textContent = join
-      ? "Unirse a una partida"
-      : "Nueva partida";
-
-  byId("join-id").value = id;
-
-  setSetupError();
-  syncSetup();
-
-  if (!byId("setup-dialog").open) {
-    byId("setup-dialog").showModal();
+  if (screen === "title") {
+    title.canContinue = !!store.session;
+    title.render();
+    title.showMenu();
+    hoveredEntry = null;
+    titleMascot.say(titleMascot.line("greeting"));
   }
 }
 
 async function activateSession(session, state) {
-  delete document.body.dataset.panel;
-
   store.session = session;
   api.playerId = session.playerId ?? null;
 
   applyGameState(state);
   sessions.persist(session);
-
-  byId("setup-dialog").close();
-
-  if (matchMedia("(max-width: 750px)").matches) {
-    byId("board").scrollIntoView({ block: "center" });
-  }
+  showScreen("game");
+  gameMascot.say(gameMascot.line(store.state?.moves.length ? "idle" : "start"), 1);
 
   setConnection("Conectado", "online");
   schedulePoll();
 }
 
-async function handleSessionSubmit(event) {
-  event.preventDefault();
+function joinSession(value) {
+  const id = parseInvitation(value);
 
-  if (
-      sessionBusy ||
-      (!joinMode && !modeDefinition(byId("mode").value).available)
-  ) {
+  if (!id) {
+    title.setError("Introduce un ID o enlace válido.");
     return;
   }
 
-  const id = joinMode
-      ? parseInvitation(byId("join-id").value)
-      : null;
+  const invited = invitationPlayer(value);
+  return openSession(id, "PVP", invited);
+}
 
-  if (joinMode && !id) {
-    setSetupError("Introduce un ID o enlace válido.");
+async function openSession(id, mode, invited = { playerId: null, playerColor: "WHITE" }) {
+  if (sessionBusy || (!id && !modeDefinition(mode).available)) {
     return;
   }
 
   sessionBusy = true;
-
-  setSetupError();
-  syncSetup();
+  title.setBusy(true, id ? "join" : mode);
+  titleMascot.say(titleMascot.line("loading"), 1);
+  title.setError();
   resetSession();
 
   const generation = sessionVersion;
@@ -606,11 +699,9 @@ async function handleSessionSubmit(event) {
   renderGame();
 
   try {
-    const invited = invitationPlayer(byId("join-id").value);
-
     const { session, state } = await sessions.open(
         id,
-        joinMode ? "PVP" : byId("mode").value,
+        mode,
         invited.playerId,
         invited.playerColor
     );
@@ -623,33 +714,31 @@ async function handleSessionSubmit(event) {
         generation === sessionVersion &&
         error.name !== "AbortError"
     ) {
-      setSetupError(errorMessage(error));
-      setNotice(errorMessage(error));
+      if (document.body.dataset.screen !== "title") showScreen("title");
+      title.setError(errorMessage(error));
       setConnection("No disponible");
     }
   } finally {
     sessionBusy = false;
-    syncSetup();
+    title.setBusy(false);
   }
 }
 
-byId("setup-form").addEventListener("submit", handleSessionSubmit);
-
-byId("mode").addEventListener("change", () => {
-  launcher.select(byId("mode").value);
+byId("menu-button").addEventListener("click", () => {
+  if (!sessionBusy) {
+    showScreen("title");
+  }
 });
 
-byId("new-game").addEventListener("click", () => {
-  openSetup();
-});
-
-byId("join-game").addEventListener("click", () => {
-  openSetup(true);
+byId("result-rematch").addEventListener("click", () => {
+  const mode = store.session?.gamemode ?? "PRACTICE";
+  byId("result-dialog").close();
+  openSession(null, mode);
 });
 
 byId("result-new").addEventListener("click", () => {
   byId("result-dialog").close();
-  openSetup();
+  showScreen("title");
 });
 
 for (const button of document.querySelectorAll("[data-close]")) {
@@ -658,23 +747,15 @@ for (const button of document.querySelectorAll("[data-close]")) {
   });
 }
 
-byId("promotion-dialog").addEventListener("close", () => {
-  pendingPromotion = null;
-});
-
 byId("move-choice-dialog").addEventListener("close", () => {
-  pendingMoveChoice = null;
-});
-
-byId("setup-dialog").addEventListener("cancel", (event) => {
-  if (sessionBusy) {
-    event.preventDefault();
+  if (store.selection.cancelChoice()) {
+    board.render();
   }
 });
 
 byId("flip").addEventListener("click", () => {
   store.flipped = !store.flipped;
-  board.render();
+  renderGame();
 });
 
 byId("return-live").addEventListener("click", () => {
@@ -706,13 +787,43 @@ byId("history-next").addEventListener("click", () => {
   );
 });
 
+// ← → step through the history, Home/End jump to the start or the live position.
+document.addEventListener("keydown", (event) => {
+  if (
+      document.body.dataset.screen !== "game" ||
+      event.altKey || event.ctrlKey || event.metaKey ||
+      document.querySelector("dialog[open]") ||
+      event.target.closest?.("input, select, textarea, .board")
+  ) {
+    return;
+  }
+
+  const button = byId({
+    ArrowLeft: "history-prev",
+    ArrowRight: "history-next",
+    Home: "history-start",
+    End: "history-live",
+  }[event.key]);
+
+  if (button && !button.disabled) {
+    event.preventDefault();
+    button.click();
+  }
+});
+
+byId("leave").addEventListener("click", () => {
+  if (!sessionBusy) {
+    showScreen("title");
+  }
+});
+
 byId("retry").addEventListener("click", () => {
   liveSession.failures = 0;
 
   if (store.session) {
     refresh();
   } else {
-    openSetup();
+    showScreen("title");
   }
 });
 
@@ -731,134 +842,140 @@ byId("invite").addEventListener("click", async () => {
   }
 });
 
+function applyMascot() {
+  document.body.dataset.mascot = preferences.mascot ? "on" : "off";
+  if (!preferences.mascot) {
+    titleMascot.silence();
+    gameMascot.silence();
+  }
+  byId("mascot-enabled").checked = preferences.mascot;
+}
+
+// The × on each bubble hides Alfi; Ajustes brings him back.
+for (const button of document.querySelectorAll(".mascot-dismiss")) {
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    preferences.mascot = false;
+    applyMascot();
+    savePreferences(preferences);
+  });
+}
+
+function updateAudio() {
+  audio.updatePreferences();
+  music.sync();
+  savePreferences(preferences);
+  renderAppearance(preferences);
+  syncSettings();
+}
+
 for (const [id, key] of [
   ["theme-select", "theme"],
-  ["soundset-select", "soundSet"],
-  ["panel-view", "view"],
   ["volume", "volume"],
+  ["music-volume", "musicVolume"],
+  ["music-enabled", "music"],
   ["muted", "muted"],
+  ["mascot-enabled", "mascot"],
 ]) {
   const element = byId(id);
+  const checkbox = element.type === "checkbox";
+  const numeric = element.type === "range";
 
-  if (key === "muted") {
+  if (checkbox) {
     element.checked = preferences[key];
   } else {
     element.value = preferences[key];
   }
 
   element.addEventListener("input", () => {
-    preferences[key] = key === "muted"
+    preferences[key] = checkbox
         ? element.checked
-        : key === "volume"
+        : numeric
             ? Number(element.value)
             : element.value;
 
+    syncSettings();
+
+    if (key === "mascot") {
+      applyMascot();
+      savePreferences(preferences);
+      if (preferences.mascot) {
+        const mascot = document.body.dataset.screen === "game" ? gameMascot : titleMascot;
+        mascot.say(mascot.line("greeting"));
+      }
+      return;
+    }
+
     if (key === "theme") {
       applyTheme(preferences.theme);
+      savePreferences(preferences);
+      renderGame();
+      return;
     }
 
-    if (["soundSet", "volume", "muted"].includes(key)) {
-      audio.updatePreferences();
-    }
-
-    if (key === "soundSet") {
-      audio.play("move");
-    }
-
-    savePreferences(preferences);
-    renderGame();
+    updateAudio();
   });
 }
 
-for (const tab of document.querySelectorAll("[data-view]")) {
-  tab.addEventListener("click", () => {
-    preferences.view = tab.dataset.view;
-    savePreferences(preferences);
-    renderGame();
-  });
-}
+// Preview the effects volume once the slider is released.
+byId("volume").addEventListener("change", () => audio.play("move"));
 
 byId("sound-toggle").addEventListener("click", () => {
   preferences.muted = !preferences.muted;
   byId("muted").checked = preferences.muted;
+  updateAudio();
+});
 
-  audio.updatePreferences();
-  savePreferences(preferences);
-  renderAppearance(preferences);
+byId("music-toggle").addEventListener("click", async () => {
+  preferences.music = !preferences.music;
+  byId("music-enabled").checked = preferences.music;
+  await audio.unlock();
+  updateAudio();
 });
 
 byId("settings-open").addEventListener("click", () => {
+  syncSettings();
   byId("settings-dialog").showModal();
-  byId("theme-select").focus({ preventScroll: true });
+  byId("settings-dialog").querySelector('[role="tab"][aria-selected="true"]').focus({ preventScroll: true });
 });
 
-for (const button of document.querySelectorAll("[data-panel-open]")) {
-  button.addEventListener("click", () => {
-    document.body.dataset.panel = button.dataset.panelOpen;
-
-    document
-        .querySelector(`.${button.dataset.panelOpen} .panel-close`)
-        .focus();
-  });
+async function unlockAudio() {
+  await audio.unlock();
+  music.sync();
 }
 
-for (const button of document.querySelectorAll(".panel-close")) {
-  button.addEventListener("click", () => {
-    delete document.body.dataset.panel;
-  });
+document.addEventListener("pointerdown", unlockAudio, { once: true });
+document.addEventListener("keydown", unlockAudio, { once: true });
+
+// Leaving the page or hiding it (another tab, minimized) silences the music
+// and effects; coming back resumes them.
+function pauseAudio() {
+  music.stop();
+  audio.context?.suspend().catch(() => {});
 }
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    delete document.body.dataset.panel;
+document.addEventListener("visibilitychange", async () => {
+  if (document.hidden) {
+    pauseAudio();
+    return;
   }
+
+  try {
+    await audio.context?.resume();
+  } catch { /* Autoplay rules may need a new gesture; unlockAudio handles it. */ }
+  music.sync();
 });
-
-byId("nav-play").addEventListener("click", () => {
-  if (matchMedia("(max-width: 850px)").matches) {
-    document.body.dataset.panel = "utilities";
-  } else {
-    byId("mode-cards")
-        .querySelector('[aria-pressed="true"]')
-        ?.focus();
-  }
-});
-
-byId("nav-watch").addEventListener("click", () => {
-  launcher.select("AIVAI");
-
-  if (matchMedia("(max-width: 850px)").matches) {
-    document.body.dataset.panel = "utilities";
-  }
-});
-
-byId("review-open").addEventListener("click", () => {
-  preferences.view = "history";
-  renderGame();
-
-  if (matchMedia("(max-width: 850px)").matches) {
-    document.body.dataset.panel = "activity";
-  }
-});
-
-document.addEventListener(
-    "pointerdown",
-    () => audio.unlock(),
-    { once: true }
-);
-
-document.addEventListener(
-    "keydown",
-    () => audio.unlock(),
-    { once: true }
-);
 
 window.addEventListener("pagehide", () => {
   api.cancel();
   liveSession.stop();
+  pauseAudio();
 });
 
+applyMascot();
+syncSettings();
 renderGame();
+showScreen("title");
 
 const invitation = parseInvitation(
     new URL(location.href).searchParams.get("session") ?? ""
@@ -886,11 +1003,11 @@ if (invitation) {
               generation === sessionVersion &&
               error.name !== "AbortError"
           ) {
-            openSetup(true, location.href);
-            setSetupError(errorMessage(error));
+            title.showJoin(location.href);
+            title.setError(errorMessage(error));
           }
         });
   } else {
-    openSetup(true, location.href);
+    title.showJoin(location.href);
   }
 }

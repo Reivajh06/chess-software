@@ -199,6 +199,63 @@ export function applyTheme(id) {
     document.documentElement.style.setProperty(tokens[name], color);
   }
   document.querySelector('meta[name="theme-color"]').content = theme.colors.background;
+  paintFrame(id, theme.colors);
+}
+
+let frameSource = null;
+
+function loadFrame() {
+  frameSource ??= new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = "./assets/ui/frame.png";
+  });
+  return frameSource;
+}
+
+function rgb(hex) {
+  const value = parseInt(hex.slice(1), 16);
+  return [value >> 16, (value >> 8) & 255, value & 255];
+}
+
+// frame.png is drawn in blue tones. Map each pixel's brightness onto the
+// theme's palette so the same 9-slice artwork matches every theme.
+async function paintFrame(id, colors) {
+  let image;
+  try {
+    image = await loadFrame();
+  } catch {
+    return;
+  }
+  if (document.documentElement.dataset.theme !== id) return;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  const stops = [
+    [0, rgb(colors.background)],
+    [0.14, rgb(colors.panel)],
+    [0.45, rgb(colors.border)],
+    [0.95, rgb(colors.accentHover)],
+  ];
+  const data = pixels.data;
+  for (let index = 0; index < data.length; index += 4) {
+    const light = (0.2126 * data[index] + 0.7152 * data[index + 1] + 0.0722 * data[index + 2]) / 255;
+    const found = stops.findIndex(([offset]) => offset >= light);
+    const upper = found === -1 ? stops.length - 1 : found;
+    const [startOffset, start] = stops[Math.max(0, upper - 1)];
+    const [endOffset, end] = stops[upper];
+    const mix = Math.min(1, endOffset === startOffset ? 1 : (light - startOffset) / (endOffset - startOffset));
+    for (let channel = 0; channel < 3; channel++) {
+      data[index + channel] = Math.round(start[channel] + (end[channel] - start[channel]) * mix);
+    }
+  }
+  context.putImageData(pixels, 0, 0);
+  document.documentElement.style.setProperty("--frame", `url("${canvas.toDataURL()}")`);
 }
 
 export function populateThemes(select) {

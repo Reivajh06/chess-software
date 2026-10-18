@@ -3,12 +3,11 @@ import { pieceImage, setBoardTiles } from "./assets.js";
 export { pieceImage } from "./assets.js";
 
 export class BoardView {
-  constructor(element, store, preferences, select, move) {
+  constructor(element, store, preferences, select) {
     this.element = element;
     this.store = store;
     this.preferences = preferences;
     this.select = select;
-    this.move = move;
     element.addEventListener("click", (event) => {
       const target = event.target.closest("[data-square]");
       if (target) this.select(target.dataset.square);
@@ -27,8 +26,14 @@ export class BoardView {
     });
   }
   render() {
-    this.finishAnimation?.();
+    // A running slide is left alone: cancelling it on every re-render (poll,
+    // selection) made the piece snap to its square mid-flight.
     this.captureDelay = 0;
+    if (this.store.reviewPly !== this.lastReviewPly || this.store.session?.sessionId !== this.lastSessionId ||
+        this.preferences.theme !== this.lastTheme) {
+      this.finishAnimation?.();
+    }
+    this.lastTheme = this.preferences.theme;
     const focused = document.activeElement?.dataset.square;
     const pieces = this.store.pieces ?? new Map();
     const black = this.store.orientation === "BLACK";
@@ -61,55 +66,63 @@ export class BoardView {
     this.element.dataset.theme = this.preferences.theme;
     setBoardTiles(this.element, this.preferences.theme);
     this.element.setAttribute("aria-label", `Tablero, ${black ? "negras" : "blancas"} abajo`);
-    const fragment = document.createDocumentFragment();
-    [...ranks].forEach((rank, row) =>
-      [...files].forEach((file, column) => {
-        const tile = file + rank;
-        const item = pieces.get(tile);
-        const button = document.createElement("button");
-        button.type = "button";
-        button.dataset.square = tile;
-        button.className = "square";
-        if (("abcdefgh".indexOf(file) + Number(rank)) % 2 === 1) button.classList.add("dark");
-
-        if (last?.from === tile || last?.to === tile) button.classList.add("last-move");
-        if (this.store.selected === tile) button.classList.add("selected");
-        if (this.store.targets.has(tile))
-          button.classList.add("legal", ...(item ? ["capture"] : []));
-        if (
-          this.store.reviewPly === null &&
-          item?.type === "KING" &&
-          item.color === this.store.state?.checkedColor
-        )
-          button.classList.add("in-check");
-        button.setAttribute(
-          "aria-label",
-          `${tile}${item ? `, ${labels[item.type]} ${item.color === "WHITE" ? "blanco" : "negro"}` : ""}`,
-        );
-        if (item) {
-          const image = pieceImage(item.type, item.color, this.preferences.theme);
-          image.classList.add("piece");
-          image.dataset.pieceType = item.type;
-          image.draggable = false;
-          button.append(image);
-        }
-        if (!column) {
-          const coordinate = document.createElement("span");
-          coordinate.className = "coordinate rank";
-          coordinate.textContent = rank;
-          button.append(coordinate);
-        }
-        if (row === 7) {
-          const coordinate = document.createElement("span");
-          coordinate.className = "coordinate file";
-          coordinate.textContent = file;
-          button.append(coordinate);
-        }
-        fragment.append(button);
-      }),
-    );
-    this.element.replaceChildren(fragment);
-    if (previousPosition) this.animatePiece(previousPosition, last, capture);
+    const targets = this.store.targets;
+    const movable = this.store.movableColors ?? [];
+    // Squares and sprites are reused between renders: rebuilding 64 buttons
+    // and their <img> sprites on every click made the board blink.
+    const layout = `${files}${ranks}`;
+    if (this.layout !== layout) {
+      this.finishAnimation?.();
+      this.layout = layout;
+      const fragment = document.createDocumentFragment();
+      [...ranks].forEach((rank, row) =>
+        [...files].forEach((file, column) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.square = file + rank;
+          button.className = "square";
+          if (("abcdefgh".indexOf(file) + Number(rank)) % 2 === 1) button.classList.add("dark");
+          if (!column) button.append(Object.assign(document.createElement("span"), { className: "coordinate rank", textContent: rank }));
+          if (row === 7) button.append(Object.assign(document.createElement("span"), { className: "coordinate file", textContent: file }));
+          fragment.append(button);
+        }),
+      );
+      this.element.replaceChildren(fragment);
+    }
+    for (const button of this.element.children) {
+      const tile = button.dataset.square;
+      const item = pieces.get(tile);
+      button.classList.toggle("last-move", last?.from === tile || last?.to === tile);
+      button.classList.toggle("selected", this.store.selected === tile);
+      button.classList.toggle("movable", !!item && movable.includes(item.color));
+      button.classList.toggle("legal", targets.has(tile));
+      button.classList.toggle("capture", targets.has(tile) && !!item);
+      button.classList.toggle("in-check",
+        this.store.reviewPly === null &&
+        item?.type === "KING" &&
+        item.color === this.store.state?.checkedColor);
+      const state = this.store.selected === tile
+        ? ", seleccionada"
+        : targets.has(tile) ? (item ? ", captura posible" : ", destino legal") : "";
+      const label = `${tile}${item ? `, ${labels[item.type]} ${item.color === "WHITE" ? "blanc" : "negr"}${["QUEEN", "ROOK"].includes(item.type) ? "a" : "o"}` : ""}${state}`;
+      if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
+      const current = button.querySelector(".piece");
+      const key = item ? `${item.type}:${item.color}:${this.preferences.theme}` : null;
+      if ((current?.dataset.key ?? null) === key) continue;
+      current?.remove();
+      if (item) {
+        const image = pieceImage(item.type, item.color, this.preferences.theme);
+        image.classList.add("piece");
+        image.dataset.pieceType = item.type;
+        image.dataset.key = key;
+        image.draggable = false;
+        button.prepend(image);
+      }
+    }
+    if (previousPosition) {
+      this.finishAnimation?.();
+      this.animatePiece(previousPosition, last, capture);
+    }
     this.lastSessionId = this.store.session?.sessionId;
     this.lastRenderedPly = ply;
     this.lastReviewPly = this.store.reviewPly;
@@ -126,7 +139,7 @@ export class BoardView {
     const offsetY = origin.y - position.y;
     const jumping = destination.dataset.pieceType === "KNIGHT";
     const distance = Math.hypot(offsetX, offsetY) / position.width;
-    const travelDuration = jumping ? 360 : Math.min(420, 240 + distance * 24);
+    const travelDuration = jumping ? 400 : Math.min(460, 280 + distance * 26);
     const collision = move.capture && capture;
     const duration = collision ? travelDuration + 220 : travelDuration;
     const contactTime = travelDuration * 0.82;
@@ -142,7 +155,11 @@ export class BoardView {
     const contactX = victimX - directionX * position.width * 0.3;
     const contactY = victimY - directionY * position.height * 0.3;
     const fallDirection = Math.abs(directionX) > 0.1 ? Math.sign(directionX) : Math.sign(directionY) || 1;
-    const frames = [{ transform: `translate(${offsetX}px, ${offsetY}px)` }];
+    // Collisions accelerate into the victim; plain slides ease out softly.
+    const frames = [{
+      transform: `translate(${offsetX}px, ${offsetY}px)`,
+      easing: collision ? "cubic-bezier(.5,0,.8,.6)" : "cubic-bezier(.22,.8,.3,1)",
+    }];
     if (jumping) {
       frames.push({
         offset: collision ? contactOffset * 0.5 : 0.5,
@@ -158,13 +175,12 @@ export class BoardView {
       frames.push({ offset: 0.92, transform: "translate(0, 0) rotate(0deg)" });
       this.captureDelay = contactTime / 1000;
     } else {
-      frames.push({ offset: 0.84, transform: "translate(0, 0)" });
     }
     frames.push({ transform: "translate(0, 0)" });
     const tile = destination.parentElement;
     tile.style.zIndex = "4";
     destination.classList.add("piece-in-motion");
-    const animations = [destination.animate(frames, { duration, easing: collision ? "linear" : "cubic-bezier(.2,.65,.3,1)" })];
+    const animations = [destination.animate(frames, { duration, easing: "linear" })];
     let ghost = null;
     if (collision) {
       ghost = capture.image;
@@ -178,7 +194,7 @@ export class BoardView {
         { offset: 0.18, opacity: 1, transform: `translate(${fallX * 0.12}px, ${fallY * 0.12}px) rotate(${fallDirection * 15}deg)`, easing: "ease-in" },
         { offset: 0.6, opacity: 1, transform: `translate(${fallX * 0.85}px, ${fallY}px) rotate(${fallDirection * 96}deg)`, easing: "ease-out" },
         { offset: 0.78, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 88}deg)` },
-        { offset: 0.88, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 90}deg)` },
+        { offset: 0.88, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 90}deg)`, easing: "steps(3)" },
         { opacity: 0, transform: `translate(${fallX}px, ${fallY}px) rotate(${fallDirection * 90}deg)` },
       ], { duration: 480, delay: contactTime, fill: "both", easing: "linear" }));
     }

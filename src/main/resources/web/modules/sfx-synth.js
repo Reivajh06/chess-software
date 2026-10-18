@@ -1,0 +1,145 @@
+// Chiptune cues synthesized with Web Audio.
+// Each cue has its own timbre so the important events read by ear alone:
+// select = tiny blip, move = wooden tick, king = low two-note fanfare,
+// capture = noise crunch with a falling zap, check = alarm, promotion = arpeggio,
+// and short result jingles for victory, defeat and draw.
+
+const note = (midi) => 440 * 2 ** ((midi - 69) / 12);
+
+function tone(context, output, { type = "square", from, to = from, start, length, volume = 0.2, attack = 0.004 }) {
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(from, start);
+  if (to !== from) oscillator.frequency.exponentialRampToValueAtTime(to, start + length);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + length);
+  oscillator.connect(gain).connect(output);
+  oscillator.start(start);
+  oscillator.stop(start + length + 0.02);
+  return oscillator;
+}
+
+let noiseBuffer = null;
+function noise(context, output, { start, length, volume = 0.2, frequency = 2000, to = frequency, q = 1.2 }) {
+  if (!noiseBuffer || noiseBuffer.sampleRate !== context.sampleRate) {
+    noiseBuffer = context.createBuffer(1, context.sampleRate * 0.5, context.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    // Held random steps sound like the NES noise channel, not white hiss.
+    let value = 0;
+    for (let index = 0; index < data.length; index++) {
+      if (index % 6 === 0) value = Math.random() * 2 - 1;
+      data[index] = value;
+    }
+  }
+  const source = context.createBufferSource();
+  const filter = context.createBiquadFilter();
+  const gain = context.createGain();
+  source.buffer = noiseBuffer;
+  filter.type = "bandpass";
+  filter.Q.value = q;
+  filter.frequency.setValueAtTime(frequency, start);
+  if (to !== frequency) filter.frequency.exponentialRampToValueAtTime(to, start + length);
+  gain.gain.setValueAtTime(volume, start);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + length);
+  source.connect(filter).connect(gain).connect(output);
+  source.start(start);
+  source.stop(start + length + 0.02);
+  return source;
+}
+
+// Slight pitch variation keeps a long game of identical moves from droning.
+const vary = (value, amount = 0.04) => value * (1 + (Math.random() * 2 - 1) * amount);
+
+export const synthCues = {
+  select(context, output, start) {
+    return [
+      tone(context, output, { from: note(84), start, length: 0.035, volume: 0.1 }),
+      tone(context, output, { from: note(91), start: start + 0.035, length: 0.05, volume: 0.09 }),
+    ];
+  },
+  move(context, output, start) {
+    const pitch = vary(520);
+    return [
+      tone(context, output, { type: "triangle", from: pitch, to: pitch * 0.34, start, length: 0.09, volume: 0.38 }),
+      noise(context, output, { start, length: 0.03, volume: 0.12, frequency: 3200 }),
+    ];
+  },
+  king_move(context, output, start) {
+    return [
+      tone(context, output, { type: "triangle", from: note(55), start, length: 0.12, volume: 0.4 }),
+      tone(context, output, { from: note(55), start, length: 0.1, volume: 0.06 }),
+      tone(context, output, { type: "triangle", from: note(62), start: start + 0.11, length: 0.2, volume: 0.4 }),
+      tone(context, output, { from: note(67), start: start + 0.11, length: 0.18, volume: 0.05 }),
+      noise(context, output, { start, length: 0.03, volume: 0.1, frequency: 2600 }),
+    ];
+  },
+  capture(context, output, start) {
+    return [
+      noise(context, output, { start, length: 0.16, volume: 0.32, frequency: 2600, to: 500, q: 0.8 }),
+      tone(context, output, { from: vary(880, 0.03), to: 90, start, length: 0.16, volume: 0.14 }),
+      tone(context, output, { type: "triangle", from: 180, to: 60, start, length: 0.12, volume: 0.4 }),
+    ];
+  },
+  check(context, output, start) {
+    return [0, 1, 2, 3].map((index) =>
+      tone(context, output, {
+        from: note(index % 2 ? 76 : 83),
+        start: start + index * 0.075,
+        length: 0.07,
+        volume: 0.22,
+        attack: 0.002,
+      }));
+  },
+  promotion(context, output, start) {
+    return [72, 76, 79, 84, 88].flatMap((midi, index) => [
+      tone(context, output, { from: note(midi), start: start + index * 0.06, length: 0.14, volume: 0.09 }),
+      tone(context, output, { type: "triangle", from: note(midi - 12), start: start + index * 0.06, length: 0.14, volume: 0.22 }),
+    ]);
+  },
+};
+
+// Melody (square lead) over a triangle bass, one entry per note: [midi, beats].
+function jingle(context, output, start, lead, bass, beat = 0.11) {
+  const voices = [];
+  let time = start;
+  for (const [midi, beats] of lead) {
+    if (midi) voices.push(tone(context, output, { from: note(midi), start: time, length: beats * beat * 0.95, volume: 0.09 }));
+    time += beats * beat;
+  }
+  time = start;
+  for (const [midi, beats] of bass) {
+    if (midi) voices.push(tone(context, output, { type: "triangle", from: note(midi), start: time, length: beats * beat * 0.9, volume: 0.26 }));
+    time += beats * beat;
+  }
+  return voices;
+}
+
+Object.assign(synthCues, {
+  // Interface: a soft tick when the pointer or focus lands on an option...
+  hover(context, output, start) {
+    return [tone(context, output, { type: "triangle", from: 1320, to: 1180, start, length: 0.03, volume: 0.05 })];
+  },
+  // ...and a bright two-note chirp when one is chosen.
+  confirm(context, output, start) {
+    return [
+      tone(context, output, { from: note(79), start, length: 0.05, volume: 0.06 }),
+      tone(context, output, { from: note(86), start: start + 0.05, length: 0.08, volume: 0.06 }),
+    ];
+  },
+  // Mascot voice: one short blip per letter on a random pitch, Balatro style.
+  talk(context, output, start) {
+    const pitch = note(62 + Math.floor(Math.random() * 7));
+    return [tone(context, output, { from: pitch * 1.06, to: pitch, start, length: 0.045, volume: 0.07 })];
+  },
+  victory: (context, output, start) => jingle(context, output, start,
+    [[72, 1], [76, 1], [79, 1], [84, 2], [79, 1], [84, 4]],
+    [[48, 3], [55, 3], [48, 4]]),
+  defeat: (context, output, start) => jingle(context, output, start,
+    [[71, 2], [67, 2], [64, 2], [63, 5]],
+    [[43, 4], [40, 2], [39, 5]], 0.14),
+  draw: (context, output, start) => jingle(context, output, start,
+    [[72, 1], [74, 1], [72, 1], [null, 1], [67, 1], [72, 3]],
+    [[48, 4], [43, 4]], 0.12),
+});

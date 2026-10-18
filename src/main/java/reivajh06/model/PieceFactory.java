@@ -11,12 +11,12 @@ public class PieceFactory {
 
 	public static Piece createPawn(PieceColor color) {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().conditions(MoveRules.DESTINATION_EMPTY).build(),
-				new MoveBuilder().forward().forward().conditions(MoveRules.START_TWO_FORWARD).build(),
-				new MoveBuilder().forwardLeft().conditions(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
-				new MoveBuilder().forwardLeft().conditions(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build(),
-				new MoveBuilder().forwardRight().conditions(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
-				new MoveBuilder().forwardRight().conditions(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build()
+				new MoveBuilder().forward().condition(MoveRules.DESTINATION_EMPTY).build(),
+				new MoveBuilder().forward().forward().condition(MoveRules.START_TWO_FORWARD).build(),
+				new MoveBuilder().forwardLeft().condition(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
+				new MoveBuilder().forwardLeft().condition(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build(),
+				new MoveBuilder().forwardRight().condition(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
+				new MoveBuilder().forwardRight().condition(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build()
 		)));
 	}
 
@@ -40,16 +40,16 @@ public class PieceFactory {
 
 	public static Piece createKing(PieceColor color) {
 		return new Piece(PieceType.KING, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().left().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().right().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().backward().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().forwardLeft().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().forwardRight().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().backwardLeft().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().backwardRight().conditions(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().left().left().conditions(MoveRules.QUEENSIDE_CASTLING).effect(MoveEffect.QUEENSIDE_CASTLING).build(),
-				new MoveBuilder().right().right().conditions(MoveRules.KINGSIDE_CASTLING).effect(MoveEffect.KINGSIDE_CASTLING).build()
+				new MoveBuilder().forward().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().left().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().right().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().backward().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().forwardLeft().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().forwardRight().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().backwardLeft().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().backwardRight().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().left().left().condition(MoveRules.QUEENSIDE_CASTLING).effect(MoveEffect.QUEENSIDE_CASTLING).build(),
+				new MoveBuilder().right().right().condition(MoveRules.KINGSIDE_CASTLING).effect(MoveEffect.KINGSIDE_CASTLING).build()
 		)));
 	}
 

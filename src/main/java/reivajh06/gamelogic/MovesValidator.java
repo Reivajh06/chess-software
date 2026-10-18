@@ -14,13 +14,12 @@ public class MovesValidator {
 	public static List<Tile> filterMoveTiles(GameState gameState, Move move, Tile from, List<Tile> pendingTiles, MoveEvent lastMove) {
 		return pendingTiles.stream().filter(pendingTile -> {
 			Piece p = gameState.board().pieceAt(pendingTile);
-			List<MoveCondition> conditions = move.conditions();
+			MoveCondition condition = move.condition();
 
 			if(p != null && p.color() == gameState.board().pieceAt(from).color()) return false;
 
-			for(MoveCondition condition : conditions) {
-				if(condition.satisfies(new MoveContext(gameState, from, pendingTile, lastMove))) return true;
-			}
+			if(condition.satisfies(new MoveContext(gameState, from, pendingTile, lastMove))) return true;
+
 
 			return false;
 		}).toList();

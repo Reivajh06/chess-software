@@ -1,4 +1,11 @@
+import { square } from "./squares.js";
+import { Selection, movableColors, normalizeLegalMoves } from "./selection.js";
+
+export { square, normalizeLegalMoves };
+
 export const types = ["KING", "QUEEN", "ROOK", "BISHOP", "KNIGHT", "PAWN"];
+
+export const pieceValues = { PAWN: 1, KNIGHT: 3, BISHOP: 3, ROOK: 5, QUEEN: 9, KING: 0 };
 
 export const labels = {
   KING: "rey",
@@ -25,24 +32,6 @@ export function unwrap(payload) {
   }
 
   return payload;
-}
-
-export function square(value) {
-  if (typeof value === "string") {
-    return /^[a-h][1-8]$/i.test(value) ? value.toLowerCase() : null;
-  }
-
-  if (!value) return null;
-
-  const file = String(value.file?.name ?? value.file ?? "")
-      .replace(/^File\./i, "")
-      .toLowerCase();
-
-  const rank = String(
-      value.rank?.number ?? value.rank?.name ?? value.rank ?? ""
-  ).replace(/^R/i, "");
-
-  return square(file + rank);
 }
 
 export function piece(value) {
@@ -257,56 +246,6 @@ export function stateSignature(state) {
   });
 }
 
-export function normalizeLegalMoves(payload) {
-  if (!payload || !Array.isArray(payload.moves)) {
-    throw new Error("El servidor no ha proporcionado movimientos legales válidos.");
-  }
-
-  const byDestination = new Map();
-  const seenIds = new Set();
-
-  for (const rule of payload.moves) {
-    if (
-        !rule ||
-        !Number.isSafeInteger(rule.moveId) ||
-        rule.moveId < 0 ||
-        !Array.isArray(rule.tiles) ||
-        seenIds.has(rule.moveId)
-    ) {
-      throw new Error("El servidor ha enviado un identificador de movimiento no válido.");
-    }
-
-    seenIds.add(rule.moveId);
-
-    if (rule.label !== undefined && typeof rule.label !== "string") {
-      throw new Error("El servidor ha enviado una descripción de movimiento no válida.");
-    }
-
-    for (const rawTile of rule.tiles) {
-      const tile = square(rawTile);
-
-      if (!tile) {
-        throw new Error("El servidor ha enviado una casilla legal no válida.");
-      }
-
-      if (!byDestination.has(tile)) {
-        byDestination.set(tile, []);
-      }
-
-      const options = byDestination.get(tile);
-
-      if (!options.some((option) => option.moveId === rule.moveId)) {
-        options.push({
-          moveId: rule.moveId,
-          label: rule.label ?? null,
-        });
-      }
-    }
-  }
-
-  return byDestination;
-}
-
 export class GameStore {
   constructor() {
     this.reset();
@@ -317,8 +256,8 @@ export class GameStore {
     this.state = null;
     this.snapshots = new Map();
     this.reviewPly = null;
-    this.selected = null;
-    this.clearLegalMoves();
+    this.selection ??= new Selection();
+    this.selection.reset();
     this.flipped = false;
   }
 
@@ -368,25 +307,17 @@ export class GameStore {
     }
 
     this.state = next;
-    this.selected = null;
-    this.clearLegalMoves();
+    this.selection.reset();
 
     return next;
   }
 
-  clearLegalMoves() {
-    this.moveOptionsByTile = new Map();
-    this.targets = new Set();
+  get selected() {
+    return this.selection.selected;
   }
 
-  setLegalMoves(payload) {
-    const byTile = normalizeLegalMoves(payload);
-    this.moveOptionsByTile = byTile;
-    this.targets = new Set(byTile.keys());
-  }
-
-  moveOptionsAt(tile) {
-    return this.moveOptionsByTile.get(tile) ?? [];
+  get targets() {
+    return this.selection.targets;
   }
 
   get pieces() {
@@ -404,15 +335,11 @@ export class GameStore {
     return this.session?.gamemode === "PRACTICE";
   }
 
-  canSelectPiece(piece) {
-    return this.interactive && !!piece;
+  get movableColors() {
+    return this.reviewPly === null ? movableColors(this.session, this.state) : [];
   }
 
   get interactive() {
-    return (
-        this.session?.gamemode !== "AIVAI" &&
-        this.reviewPly === null &&
-        this.state?.status === "ACTIVE"
-    );
+    return this.movableColors.length > 0;
   }
 }

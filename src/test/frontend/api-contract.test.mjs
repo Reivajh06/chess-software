@@ -106,9 +106,13 @@ test("empty move responses refresh the board, chronological history and captures
   store.apply(state);
   const moves = [["e2", "e4", 1], ["d7", "d5", 1], ["e4", "d5", 2]];
   for (const [index, [from, to, moveId]] of moves.entries()) {
-    store.selected = from;
-    store.setLegalMoves({ moves: [{ moveId, tiles: [to] }] });
-    store.apply(await api.move(created.sessionId, from, to, moveId));
+    const context = () => ({ pieces: store.pieces, movableColors: store.movableColors });
+    const load = store.selection.click(from, context());
+    assert.equal(load.type, "load");
+    assert.ok(store.selection.loaded(load.token, { moves: [{ moveId, tiles: [to] }] }));
+    const command = store.selection.click(to, context());
+    assert.deepEqual(command, { type: "move", from, to, moveId });
+    store.apply(await api.move(created.sessionId, command.from, command.to, command.moveId));
     assert.equal(store.pieces.has(from), false);
     assert.deepEqual(store.pieces.get(to), events[index].pieceMoved);
     assert.equal(store.state.moves.length, index + 1);

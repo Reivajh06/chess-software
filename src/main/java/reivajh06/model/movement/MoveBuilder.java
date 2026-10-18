@@ -1,7 +1,5 @@
 package reivajh06.model.movement;
 
-import java.util.List;
-
 public class MoveBuilder {
 
 	private static final int MAX_POSSIBLE_REPETITIONS = 8;
@@ -9,7 +7,7 @@ public class MoveBuilder {
 	private int x;
 	private int y;
 	private int nRepetitions = 1;
-	private List<MoveCondition> conditions;
+	private MoveCondition condition;
 	private MoveEffect effect = MoveEffect.DIRECT_CAPTURE;
 
 	public MoveBuilder forward() {
@@ -65,8 +63,8 @@ public class MoveBuilder {
 		return repetitions(MAX_POSSIBLE_REPETITIONS);
 	}
 
-	public MoveBuilder conditions(MoveCondition... conditions) {
-		this.conditions = List.of(conditions);
+	public MoveBuilder condition(MoveCondition condition) {
+		this.condition = condition;
 		return this;
 	}
 
@@ -76,6 +74,6 @@ public class MoveBuilder {
 	}
 
 	public Move build() {
-		return new Move(x, y, nRepetitions, conditions == null ? MoveCondition.NO_CONDITIONS : conditions, effect);
+		return new Move(x, y, nRepetitions, condition == null ? MoveCondition.NO_CONDITION : condition, effect);
 	}
 }

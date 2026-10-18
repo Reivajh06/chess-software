@@ -20,9 +20,20 @@ export class HistoryView {
     this.store = store;
     this.preferences = preferences;
     this.review = review;
+    this.signature = null;
   }
   render() {
     const moves = this.store.state?.moves ?? [];
+    const signature = [
+      this.preferences.theme,
+      this.store.reviewPly,
+      ...moves.map(move => [move.ply, move.from, move.to, move.type, move.color, move.capture,
+        move.capturedPiece?.type, move.capturedPiece?.color].join(":")),
+    ].join("|");
+    // Rebuilding the list re-decodes every sprite, so skip identical renders.
+    if (signature === this.signature) return;
+    this.signature = signature;
+
     const focusedPly = this.element.contains(document.activeElement)
       ? document.activeElement.dataset.ply : null;
     const previousScroll = this.element.scrollTop;
@@ -35,7 +46,7 @@ export class HistoryView {
       const title = document.createElement("strong");
       title.textContent = "Tu próxima jugada empieza aquí";
       const detail = document.createElement("p");
-      detail.textContent = "Los movimientos de tu partida aparecerán aquí después de cada jugada.";
+      detail.textContent = "Toca una pieza para ver sus casillas legales.";
       empty.append(uiIcon("duel", "empty-art"), title, detail);
       fragment.append(empty);
     }
@@ -50,6 +61,7 @@ export class HistoryView {
       button.type = "button";
       button.className = "move-button";
       button.dataset.ply = move.ply;
+      button.dataset.color = move.color;
       const selected =
         this.store.reviewPly === move.ply ||
         (this.store.reviewPly === null && move.ply === moves.length);
@@ -105,8 +117,12 @@ export class HistoryView {
       fragment.append(row);
     }
     this.element.replaceChildren(fragment);
-    this.element.scrollTop =
-      this.store.reviewPly === null && following ? this.element.scrollHeight : previousScroll;
+    if (this.store.reviewPly === null && following) this.element.scrollTop = this.element.scrollHeight;
+    else {
+      this.element.scrollTop = previousScroll;
+      if (this.store.reviewPly !== null)
+        this.element.querySelector(".move-button.active")?.scrollIntoView({ block: "nearest" });
+    }
     if (focusedPly)
       this.element.querySelector(`[data-ply="${focusedPly}"]`)?.focus({ preventScroll: true });
   }
