@@ -1,9 +1,3 @@
-// Chiptune cues synthesized with Web Audio.
-// Each cue has its own timbre so the important events read by ear alone:
-// select = tiny blip, move = wooden tick, king = low two-note fanfare,
-// capture = noise crunch with a falling zap, check = alarm, promotion = arpeggio,
-// and short result jingles for victory, defeat and draw.
-
 const note = (midi) => 440 * 2 ** ((midi - 69) / 12);
 
 function tone(context, output, { type = "square", from, to = from, start, length, volume = 0.2, attack = 0.004 }) {
@@ -26,7 +20,6 @@ function noise(context, output, { start, length, volume = 0.2, frequency = 2000,
   if (!noiseBuffer || noiseBuffer.sampleRate !== context.sampleRate) {
     noiseBuffer = context.createBuffer(1, context.sampleRate * 0.5, context.sampleRate);
     const data = noiseBuffer.getChannelData(0);
-    // Held random steps sound like the NES noise channel, not white hiss.
     let value = 0;
     for (let index = 0; index < data.length; index++) {
       if (index % 6 === 0) value = Math.random() * 2 - 1;
@@ -49,7 +42,6 @@ function noise(context, output, { start, length, volume = 0.2, frequency = 2000,
   return source;
 }
 
-// Slight pitch variation keeps a long game of identical moves from droning.
 const vary = (value, amount = 0.04) => value * (1 + (Math.random() * 2 - 1) * amount);
 
 export const synthCues = {
@@ -100,7 +92,6 @@ export const synthCues = {
   },
 };
 
-// Melody (square lead) over a triangle bass, one entry per note: [midi, beats].
 function jingle(context, output, start, lead, bass, beat = 0.11) {
   const voices = [];
   let time = start;
@@ -117,18 +108,15 @@ function jingle(context, output, start, lead, bass, beat = 0.11) {
 }
 
 Object.assign(synthCues, {
-  // Interface: a soft tick when the pointer or focus lands on an option...
   hover(context, output, start) {
     return [tone(context, output, { type: "triangle", from: 1320, to: 1180, start, length: 0.03, volume: 0.05 })];
   },
-  // ...and a bright two-note chirp when one is chosen.
   confirm(context, output, start) {
     return [
       tone(context, output, { from: note(79), start, length: 0.05, volume: 0.06 }),
       tone(context, output, { from: note(86), start: start + 0.05, length: 0.08, volume: 0.06 }),
     ];
   },
-  // Mascot voice: one short blip per letter on a random pitch, Balatro style.
   talk(context, output, start) {
     const pitch = note(62 + Math.floor(Math.random() * 7));
     return [tone(context, output, { from: pitch * 1.06, to: pitch, start, length: 0.045, volume: 0.07 })];

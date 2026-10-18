@@ -11,7 +11,6 @@
   font-display: swap;
 }
 
-/* ---------- Tokens (colors are overwritten per theme by themes.js) ---------- */
 :root {
   color-scheme: dark;
   --bg: #14171d;
@@ -48,7 +47,6 @@ body {
   overflow: hidden;
   color: var(--text);
   background-color: var(--bg);
-  /* A faint oversized chessboard behind everything. */
   background-image:
     radial-gradient(ellipse at 50% 40%, transparent 30%, var(--bg) 80%),
     conic-gradient(
@@ -85,9 +83,6 @@ select {
   font-weight: 400;
 }
 
-/* ---------- Pixel art primitives ---------- */
-
-/* 9-slice frame: frame.png, recolored per theme into --frame. */
 .pixel-frame {
   border: 20px solid transparent;
   border-image: var(--frame) 20 fill / 20px / 0 stretch;
@@ -95,7 +90,6 @@ select {
   background: none;
 }
 
-/* Stepped-corner pixel border built from four offset shadows. */
 button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel),
 select,
 input:not([type="checkbox"], [type="range"]) {
@@ -154,7 +148,6 @@ button.primary:hover:not(:disabled) {
 .icon-button:hover {
   color: var(--accent);
 }
-/* Header tools: framed pixel slots sharing one look across every theme. */
 .tool-button {
   width: 36px;
   height: 36px;
@@ -179,7 +172,6 @@ button.primary:hover:not(:disabled) {
 #music-toggle[aria-pressed="true"]:not(.is-muted) {
   color: var(--accent);
 }
-/* 12x12 pixel icons drawn as SVG masks, tinted with currentColor. */
 .pixel-icon {
   display: block;
   width: 24px;
@@ -228,7 +220,6 @@ input[type="checkbox"] {
   accent-color: var(--accent);
 }
 
-/* ---------- Header ---------- */
 .topbar {
   display: flex;
   align-items: center;
@@ -301,13 +292,11 @@ body[data-screen="title"] .brand {
   background: #7fd46a;
 }
 
-/* ---------- Screens ---------- */
 body[data-screen="title"] #game-screen,
 body[data-screen="game"] #title-screen {
   display: none;
 }
 
-/* ---------- Title screen ---------- */
 .title-screen {
   display: grid;
   place-items: center;
@@ -409,7 +398,6 @@ body[data-screen="game"] #title-screen {
   color: var(--muted);
   font-size: 15px;
 }
-/* The option being opened keeps its color and shows animated dots. */
 .title-option.is-loading:disabled {
   opacity: 1;
   background: var(--surface-hover);
@@ -480,7 +468,6 @@ body[data-screen="game"] #title-screen {
   color: var(--muted);
 }
 
-/* ---------- Game screen: match panel | board | move list ---------- */
 .game-screen {
   display: grid;
   grid-template-columns: clamp(230px, 19vw, 290px) minmax(0, 1fr) clamp(240px, 20vw, 300px);
@@ -501,7 +488,6 @@ body[data-screen="game"] #title-screen {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  /* Board side length, so the player bars share its width. */
   --board-fit: min(100cqw, calc(100cqh - 124px));
 }
 .play-area > * {
@@ -593,7 +579,6 @@ body[data-screen="game"] #title-screen {
   background: var(--accent);
 }
 
-/* ---------- Match panel (left) ---------- */
 .match-panel,
 .side-panel {
   min-height: 0;
@@ -713,7 +698,6 @@ body[data-screen="game"] #title-screen {
   font: 12px Silkscreen, monospace;
   color: var(--accent);
 }
-/* A fighting-game style balance bar: white fills from the left. */
 .material-bar {
   height: 14px;
   background: #1a2130;
@@ -826,7 +810,6 @@ body[data-screen="game"] #title-screen {
   color: var(--muted);
 }
 
-/* ---------- Move list (right) ---------- */
 .section-title {
   display: flex;
   align-items: center;
@@ -981,7 +964,6 @@ body[data-screen="game"] #title-screen {
   font-size: 23px;
 }
 
-/* ---------- Board (sprites and tiles come from the theme sheets) ---------- */
 .board-frame {
   position: relative;
   aspect-ratio: 1;
@@ -1026,7 +1008,6 @@ body[data-screen="game"] #title-screen {
 .square.legal {
   cursor: pointer;
 }
-/* Selected: tinted tile with a hard accent frame and the piece lifted. */
 .square.selected {
   background-color: color-mix(in srgb, var(--accent) 35%, var(--light));
   box-shadow: inset 0 0 0 var(--pixel) var(--accent), inset 0 0 0 calc(2 * var(--pixel)) #0006;
@@ -1052,11 +1033,9 @@ body[data-screen="game"] #title-screen {
   background: var(--highlight);
   pointer-events: none;
 }
-/* Hard-edged double ring instead of a blurry glow. */
 .square.in-check {
   box-shadow: inset 0 0 0 var(--pixel) #ff5a5a, inset 0 0 0 calc(3 * var(--pixel)) #b1303099;
 }
-/* Legal target: an accent pixel gem with a dark rim, readable on both tiles. */
 .square.legal::before {
   content: "";
   position: absolute;
@@ -1067,7 +1046,6 @@ body[data-screen="game"] #title-screen {
   box-shadow: 0 0 0 var(--pixel) #000a, inset 0 calc(-1 * var(--pixel)) #0004;
   pointer-events: none;
 }
-/* Capture target: four pixel corner brackets around the victim. */
 .square.capture::before {
   inset: 4%;
   width: auto;
@@ -1096,14 +1074,11 @@ body[data-screen="game"] #title-screen {
   z-index: 1;
   width: 96%;
   height: 96%;
-  /* Own compositor layer: pixelated sprites shimmer when repainted at
-     fractional offsets, a cached layer slides cleanly. */
   will-change: transform;
 }
 .piece-in-motion {
   filter: drop-shadow(0 4px 0 #0006);
 }
-/* Keep capture copies out of the tile's grid, even with .piece-sprite styles. */
 .board .capture-ghost {
   position: absolute;
   inset: 2%;
@@ -1177,7 +1152,6 @@ body[data-screen="game"] #title-screen {
   background: var(--accent);
 }
 
-/* ---------- Move history entries ---------- */
 .empty {
   display: flex;
   flex-direction: column;
@@ -1204,7 +1178,6 @@ body[data-screen="game"] #title-screen {
   font-size: 16px;
   line-height: 1.4;
 }
-/* ---------- Dialogs ---------- */
 dialog {
   width: min(420px, calc(100% - 32px));
   padding: 6px 8px;
@@ -1228,7 +1201,6 @@ dialog::backdrop {
   padding: 0 10px;
   font-size: 25px;
 }
-/* ---------- Invitation ---------- */
 .invite-field {
   margin-bottom: 14px;
 }
@@ -1246,7 +1218,6 @@ dialog::backdrop {
 #invite-status:empty {
   display: none;
 }
-/* ---------- Settings: pixel tabs, switches, sliders and pickers ---------- */
 .settings-dialog {
   width: min(480px, calc(100% - 32px));
 }
@@ -1276,7 +1247,6 @@ dialog::backdrop {
   background: var(--accent);
   box-shadow: inset 0 calc(-1 * var(--pixel)) color-mix(in srgb, black 25%, transparent);
 }
-/* Panels share one height so switching tabs never makes the dialog jump. */
 .settings-panel {
   display: grid;
   align-content: start;
@@ -1310,7 +1280,6 @@ dialog::backdrop {
   box-shadow: inset 0 0 0 2px var(--line);
   cursor: pointer;
 }
-/* Pixel switch: a square knob that snaps between both ends. */
 .switch {
   appearance: none;
   flex: 0 0 auto;
@@ -1335,7 +1304,6 @@ dialog::backdrop {
   background-color: color-mix(in srgb, var(--danger) 35%, var(--surface));
   background-image: linear-gradient(var(--danger), var(--danger));
 }
-/* Pixel slider: chunky track filled up to --fill, square thumb. */
 .pixel-range {
   appearance: none;
   width: 100%;
@@ -1397,7 +1365,6 @@ dialog::backdrop {
   font-size: 14px;
   line-height: 1.3;
 }
-/* Mini board corner in the theme's own colors, with its accent as a bar. */
 .theme-swatch {
   position: relative;
   display: grid;
@@ -1422,7 +1389,6 @@ dialog::backdrop {
   display: grid;
   gap: 8px;
 }
-/* Promotion picker over the board. */
 .promotion-layer {
   position: absolute;
   inset: 0;
@@ -1540,7 +1506,6 @@ dialog::backdrop {
 .result-image > .piece-sprite {
   animation: hop 1s steps(2) infinite;
 }
-/* Pixel confetti: each bit falls once in coarse steps. */
 .confetti {
   position: absolute;
   inset: 0;
@@ -1559,7 +1524,6 @@ dialog::backdrop {
     opacity: 0;
   }
 }
-/* Stepped jolt of the board when a king is in check. */
 .board-frame.shake {
   animation: shake 0.32s steps(4);
 }
@@ -1586,7 +1550,6 @@ dialog::backdrop {
   image-rendering: pixelated;
 }
 
-/* ---------- Mascot (Alfi): self-contained, remove with modules/mascot.js ---------- */
 .mascot {
   --mascot-size: 96px;
   --mascot-outline: #15111c;
@@ -1608,7 +1571,6 @@ dialog::backdrop {
   background: none;
   cursor: pointer;
 }
-/* Floor shadow: a flat pixel ellipse that does not bob with Alfi. */
 .mascot-sprite::after {
   content: "";
   position: absolute;
@@ -1622,7 +1584,6 @@ dialog::backdrop {
 .mascot-sprite > .piece-sprite {
   width: 100%;
   height: 100%;
-  /* The theme's bishop with a hard 1-pixel-art outline so it pops off any board. */
   filter:
     drop-shadow(var(--pixel) 0 0 var(--mascot-outline))
     drop-shadow(calc(-1 * var(--pixel)) 0 0 var(--mascot-outline))
@@ -1630,7 +1591,6 @@ dialog::backdrop {
     drop-shadow(0 calc(-1 * var(--pixel)) 0 var(--mascot-outline));
   animation: mascot-float 2.6s steps(6) infinite;
 }
-/* Alfi and his book float together; the floor shadow shrinks as he rises. */
 .mascot-book {
   animation: mascot-float 2.6s steps(6) infinite;
 }
@@ -1661,7 +1621,6 @@ dialog::backdrop {
     0 calc(3 * var(--pixel)) 0 calc(2 * var(--pixel)) #0006;
   cursor: pointer;
 }
-/* Stepped pixel tail pointing at Alfi. */
 .mascot-bubble::before,
 .mascot-bubble::after {
   content: "";
@@ -1680,7 +1639,6 @@ dialog::backdrop {
   width: calc(2 * var(--pixel));
   height: calc(2 * var(--pixel));
 }
-/* In the narrow match panel the bubble sits above Alfi at full width. */
 .mascot-small {
   flex-direction: column-reverse;
   align-items: flex-start;
@@ -1689,7 +1647,6 @@ dialog::backdrop {
 .mascot-small .mascot-bubble {
   align-self: stretch;
 }
-/* Tail squares centred over Alfi (sprite margin + half his size). */
 .mascot-small .mascot-bubble::before {
   left: calc(4px + var(--mascot-size) / 2 - 1.5 * var(--pixel));
   bottom: calc(-4 * var(--pixel));
@@ -1705,7 +1662,6 @@ dialog::backdrop {
   align-self: center;
   padding: 14px 30px 14px 16px;
 }
-/* Both tail squares centred on the bubble's middle, facing Alfi. */
 .mascot-large .mascot-bubble::before {
   top: calc(50% - 1.5 * var(--pixel));
   bottom: auto;
@@ -1760,7 +1716,6 @@ body[data-mascot="off"] .mascot {
 .mascot-dismiss:hover {
   color: var(--danger);
 }
-/* Idle: Alfi reads a little pixel book, turning a page every few seconds. */
 .mascot-book {
   position: absolute;
   z-index: 2;
@@ -1776,7 +1731,6 @@ body[data-mascot="off"] .mascot {
     0 var(--pixel) 0 var(--pixel) #7a2f2f;
   visibility: hidden;
 }
-/* Lines of text on the pages. */
 .mascot-book::before {
   content: "";
   position: absolute;
@@ -1785,7 +1739,6 @@ body[data-mascot="off"] .mascot {
   -webkit-mask: linear-gradient(90deg, #000 0 38%, #0000 38% 62%, #000 62%);
   mask: linear-gradient(90deg, #000 0 38%, #0000 38% 62%, #000 62%);
 }
-/* The page being turned. */
 .mascot-book i {
   position: absolute;
   top: 0;
@@ -1799,7 +1752,6 @@ body[data-mascot="off"] .mascot {
 .mascot.is-reading .mascot-book {
   visibility: visible;
 }
-/* After a blunder Alfi freezes, leaning towards the board, before talking. */
 .mascot.is-staring .mascot-sprite > .piece-sprite {
   animation: stare 0.3s steps(3) forwards;
   transform-origin: 50% 95%;
@@ -1829,6 +1781,137 @@ body[data-mascot="off"] .mascot {
     transform: scaleX(-1);
   }
 }
+.mascot-sprite > .piece-sprite {
+  overflow: visible;
+}
+.mascot-face {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 1%;
+  overflow: visible;
+  transform: translateX(-50%);
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+.mascot.is-looking .mascot-eyes {
+  animation: look-around 4s steps(1) infinite;
+}
+@keyframes look-around {
+  25% {
+    transform: translateX(-10px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+.mascot-note {
+  visibility: hidden;
+  fill: var(--accent);
+}
+.mascot-note rect {
+  fill: inherit;
+}
+.mascot.is-humming .mascot-note {
+  visibility: visible;
+  animation: note-rise 2.4s steps(6) infinite;
+}
+.mascot.is-humming .mascot-note-2 {
+  animation-delay: -1.2s;
+}
+@keyframes note-rise {
+  from {
+    transform: translate(0, 30px);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(10px, -40px);
+    opacity: 0;
+  }
+}
+.mascot-steam {
+  animation: steam 1.6s steps(2) infinite;
+}
+@keyframes steam {
+  50% {
+    transform: translate(0, -10px);
+  }
+}
+.mascot-pawn {
+  position: absolute;
+  z-index: 2;
+  left: 33%;
+  top: -30%;
+  width: 34%;
+  height: 34%;
+  visibility: hidden;
+}
+.mascot-pawn > .piece-sprite {
+  width: 100%;
+  height: 100%;
+}
+.mascot.is-juggling .mascot-pawn {
+  visibility: visible;
+  animation: juggle 1.4s steps(7) infinite;
+}
+@keyframes juggle {
+  0%,
+  100% {
+    transform: translateY(40%) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-25%) rotate(180deg);
+  }
+}
+.mascot-zzz {
+  position: absolute;
+  z-index: 2;
+  right: 2%;
+  top: 4%;
+  visibility: hidden;
+  font: calc(var(--mascot-size) * 0.14) Silkscreen, monospace;
+  color: var(--accent);
+  text-shadow: var(--pixel) var(--pixel) 0 var(--mascot-outline);
+}
+.mascot-zzz i {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-style: normal;
+  opacity: 0;
+}
+.mascot.is-sleeping .mascot-zzz {
+  visibility: visible;
+}
+.mascot.is-sleeping .mascot-zzz i {
+  animation: zzz 3s steps(6) infinite;
+}
+.mascot.is-sleeping .mascot-zzz i:nth-child(2) {
+  animation-delay: 1s;
+}
+.mascot.is-sleeping .mascot-zzz i:nth-child(3) {
+  animation-delay: 2s;
+}
+@keyframes zzz {
+  from {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate(60%, -180%);
+    opacity: 0;
+  }
+}
+.mascot.is-sleeping .mascot-sprite > .piece-sprite,
+.mascot.is-sleeping .mascot-sprite::after {
+  animation-duration: 4.4s;
+}
 @keyframes mascot-float {
   50% {
     translate: 0 var(--float);
@@ -1846,7 +1929,6 @@ body[data-mascot="off"] .mascot {
   }
 }
 
-/* ---------- Animation ---------- */
 @keyframes nudge {
   50% {
     transform: translateX(3px);
@@ -1887,7 +1969,6 @@ body[data-mascot="off"] .mascot {
   }
 }
 
-/* ---------- Medium screens: board left, panels stacked on the right ---------- */
 @media (max-width: 1180px) and (min-width: 851px) {
   .game-screen {
     grid-template-columns: minmax(0, 1fr) clamp(260px, 30vw, 320px);
@@ -1911,7 +1992,6 @@ body[data-mascot="off"] .mascot {
     padding: 6px 8px;
     font-size: 15px;
   }
-  /* The move list already shows the last move here. */
   .mascot-small,
   .last-move-card,
   .score-sides,
@@ -1920,7 +2000,6 @@ body[data-mascot="off"] .mascot {
   }
 }
 
-/* ---------- Small screens: board first, then match info and moves ---------- */
 @media (max-width: 850px) {
   :root {
     --header: 56px;
@@ -1969,12 +2048,9 @@ body[data-mascot="off"] .mascot {
     flex: none;
     height: 260px;
   }
-  /* No keyboard hint on touch-first layouts. */
   .title-hint {
     display: none;
   }
-  /* Alfi pops into the bottom corner only while talking, so his comments
-     stay visible next to the board instead of far down the page. */
   .mascot-small {
     position: fixed;
     z-index: 20;

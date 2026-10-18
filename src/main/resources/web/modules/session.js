@@ -8,10 +8,6 @@ export class SessionAccess {
     this.api = api;
   }
 
-  // Creates a session (no sessionId) or joins an existing one. Seats belong
-  // to the server: creation seats the creator on a random colour and /join,
-  // called only by the invited player, hands out the remaining one. Each
-  // seat comes with the ID that authorizes that player's moves.
   async open(sessionId, mode = "PVP") {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : "NOT_CPU";
     const created = sessionId ? null : await this.api.create(mode, difficulty);
@@ -33,7 +29,6 @@ export class SessionAccess {
     const session = {
       sessionId: id,
       playerId: seat.playerId,
-      // A local rendering preference; requests authorize with playerId only.
       playerColor: seat.playerColor,
       gamemode,
       difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
@@ -48,7 +43,6 @@ export class SessionAccess {
   creatorSeat(created, gamemode) {
     if (created.playerId && colors.includes(created.playerColor))
       return { playerId: created.playerId, playerColor: created.playerColor };
-    // Practice moves both colours with one ID; older backends send it as whiteId.
     if (gamemode === "PRACTICE" && (created.playerId ?? created.whiteId))
       return { playerId: created.playerId ?? created.whiteId, playerColor: "WHITE" };
     throw new Error("El servidor no ha asignado un color al creador de la sala.");
@@ -78,8 +72,6 @@ export class SessionAccess {
     return readSession(sessionId);
   }
 
-  // Drops a session the server no longer has (sessions live in its memory,
-  // so a restart loses them) and takes it out of the address bar.
   forget(sessionId) {
     forgetSession(sessionId);
     const url = new URL(location.href);
@@ -96,8 +88,6 @@ export class SessionAccess {
     window.history.replaceState({}, "", url);
   }
 
-  // The link only names the session: whoever opens it gets the free seat.
-  // `origin` is where other machines reach this server (never loopback).
   invitation(sessionId, origin = location.origin) {
     const url = new URL("/", origin);
     url.searchParams.set("session", sessionId);

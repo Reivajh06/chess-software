@@ -1,16 +1,8 @@
-// "Gambito", the ArchChess loop, synthesized with Web Audio (no files).
-// A Balatro-style groove: swung syncopated bass, jazzy D minor chords and a
-// lead with a slow pitch warble. The chess touch: a chess-clock tick-tock as
-// percussion and baroque harpsichord arpeggios in the B section.
-// 16 bars of sixteenth notes at 96 BPM: A (bars 0-7) then B (bars 8-15).
-
 export const tempo = 96;
 export const stepsPerBar = 16;
 const swing = 0.18;
 
-// Bass root and a four-note voicing per bar.
 const chords = [
-  // A: Dm9 Bbmaj7 Gm9 A7(b9), twice.
   { bass: 38, tones: [53, 57, 60, 64] },
   { bass: 34, tones: [53, 57, 58, 62] },
   { bass: 43, tones: [57, 58, 62, 65] },
@@ -19,7 +11,6 @@ const chords = [
   { bass: 34, tones: [53, 57, 58, 62] },
   { bass: 43, tones: [57, 58, 62, 65] },
   { bass: 45, tones: [55, 58, 61, 64] },
-  // B: Fmaj7 Cmaj7 Dm7 A7, Bbmaj7 Gm7 Em7(b5) A7(b9).
   { bass: 41, tones: [53, 57, 60, 64] },
   { bass: 36, tones: [55, 59, 60, 64] },
   { bass: 38, tones: [53, 57, 60, 62] },
@@ -30,7 +21,6 @@ const chords = [
   { bass: 45, tones: [55, 58, 61, 64] },
 ];
 
-// Lead per bar as [step, midi, length in steps].
 const melody = [
   [[0, 74, 3], [3, 72, 1], [4, 69, 2], [6, 72, 2], [8, 74, 4], [12, 77, 2], [14, 76, 2]],
   [[0, 74, 6], [6, 72, 2], [8, 70, 2], [10, 69, 2], [12, 70, 4]],
@@ -50,10 +40,7 @@ const melody = [
   [[0, 69, 2], [2, 73, 2], [4, 76, 2], [6, 79, 2], [8, 82, 4], [12, 81, 4]],
 ];
 
-// Syncopated bass: [step, interval from the root, length]. "next" walks a
-// semitone below the following bar's root.
 const bassLine = [[0, 0, 2], [3, 12, 1], [6, 0, 1], [7, 7, 1], [10, 0, 2], [13, 10, 1], [14, "next", 2]];
-// Alberti-style broken chord for the harpsichord, one tone index per step.
 const harpsichord = [0, 2, 1, 2, 0, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2];
 const kicks = [0, 6, 10];
 
@@ -67,7 +54,6 @@ export function frequency(midi) {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
-// Everything that starts on one sixteenth step, lengths counted in steps.
 export function notesAt(step) {
   const bar = Math.floor(step / stepsPerBar) % chords.length;
   const beat = step % stepsPerBar;
@@ -88,7 +74,6 @@ export function notesAt(step) {
 
   if (bar >= 8) notes.push({ voice: "harpsichord", midi: chord.tones[harpsichord[beat]] + 12, steps: 1 });
 
-  // The chess clock: tick on beats 1 and 3, tock on the backbeats.
   if (beat % 4 === 0) notes.push({ voice: beat % 8 === 0 ? "tick" : "tock", steps: 1 });
   if (kicks.includes(beat)) notes.push({ voice: "kick", steps: 1 });
 
@@ -130,7 +115,6 @@ export class BackgroundMusic {
     this.output = context.createGain();
     this.output.gain.value = 0;
     this.output.connect(context.destination);
-    // One slow LFO bends the lead and pad a few cents: the woozy warble.
     this.warble = context.createOscillator();
     this.warble.frequency.value = 0.4;
     this.warbleDepth = context.createGain();
@@ -160,15 +144,12 @@ export class BackgroundMusic {
 
   schedule(context) {
     const step = stepDuration();
-    // A throttled tab can fall far behind: jump to now rather than firing
-    // every overdue note at once.
     if (this.nextTime < context.currentTime - step) {
       const missed = Math.ceil((context.currentTime - this.nextTime) / step);
       this.nextTime += missed * step;
       this.step = (this.step + missed) % loopSteps;
     }
     while (this.nextTime < context.currentTime + 0.4) {
-      // Swing: every off sixteenth lands a little late.
       const time = this.nextTime + (this.step % 2 ? step * swing : 0);
       for (const note of notesAt(this.step)) this.play(context, note, time, note.steps * step);
       this.nextTime += step;
@@ -214,7 +195,6 @@ export class BackgroundMusic {
     const envelope = context.createGain();
     envelope.gain.setValueAtTime(0, time);
     envelope.gain.linearRampToValueAtTime(gain, time + attack);
-    // decay < 1 drops to that share of the level, like a plucked string.
     if (decay < 1) envelope.gain.exponentialRampToValueAtTime(gain * decay, time + attack + duration * 0.3);
     envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration * 0.98);
     oscillator.connect(envelope).connect(this.output);
@@ -236,8 +216,6 @@ export class BackgroundMusic {
   }
 }
 
-// A pulse wave with the given duty cycle: 25% is the classic console lead,
-// 12.5% the thin, bright tone used for the harpsichord.
 function pulseWave(context, duty) {
   const harmonics = 32;
   const real = new Float32Array(harmonics);

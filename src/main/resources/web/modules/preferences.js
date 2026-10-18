@@ -55,8 +55,6 @@ export function parseInvitation(value) {
   return /^[a-zA-Z0-9_-]{1,128}$/.test(text) ? text : null;
 }
 
-// Where other machines can reach this server. Only needed when the page was
-// opened through a loopback address, which is useless to anybody else.
 export function loopbackHost(hostname = location.hostname) {
   return hostname === "localhost" || hostname.endsWith(".localhost") ||
     hostname === "[::1]" || hostname === "::1" || /^127\./.test(hostname);

@@ -52,7 +52,6 @@ let sessionVersion = 0;
 let warningTimer = null;
 let sessionBusy = false;
 let waitingTimer = null;
-// How often Alfi chats while a PvP room waits for the rival.
 const waitingChatDelay = 11000;
 
 const announcedResults = new Set();
@@ -66,7 +65,7 @@ const title = new TitleScreen({
   onStart: (mode) => openSession(null, mode),
   onJoin: joinSession,
   onContinue: () => showScreen("game"),
-  onError: () => titleMascot.say(titleMascot.line("error"), 2),
+  onError: () => titleMascot.talk("error", 2),
   onHover: (id, hint) => {
     if (id === hoveredEntry) return;
     hoveredEntry = id;
@@ -76,21 +75,18 @@ const title = new TitleScreen({
 
 const commentator = new Commentator();
 
-// Alfi comments after the move's own sound, so blips never mask it.
 function mascotReact(kind, priority = 1, delay = 650, options = {}, vars = {}) {
   setTimeout(() => {
-    if (document.body.dataset.screen === "game") gameMascot.say(gameMascot.line(kind, vars), priority, options);
+    if (document.body.dataset.screen === "game") gameMascot.talk(kind, priority, options, vars);
   }, delay);
 }
 
-// While the rival has not joined, Alfi keeps the creator company. The board
-// stays locked meanwhile: movableColors() blocks every move until then.
 function scheduleWaitingChat() {
   clearTimeout(waitingTimer);
   if (!store.state?.waitingForOpponent) return;
   waitingTimer = setTimeout(() => {
     if (document.body.dataset.screen === "game" && store.state?.waitingForOpponent) {
-      gameMascot.say(gameMascot.line("waiting"));
+      gameMascot.talk("waiting");
     }
     scheduleWaitingChat();
   }, waitingChatDelay);
@@ -98,8 +94,6 @@ function scheduleWaitingChat() {
 
 populateThemes(byId("theme-select"));
 
-// Visual pickers drive the hidden <select>s, so the settings loop below
-// keeps a single code path for every preference.
 function pickOption(selectId, value) {
   const select = byId(selectId);
   if (select.value === value) return;
@@ -109,9 +103,6 @@ function pickOption(selectId, value) {
 
 populateThemeGrid(byId("theme-grid"), (id) => pickOption("theme-select", id));
 
-
-// Interface sounds: a tick on hover/focus, a chirp on confirm. Throttled so
-// sweeping the pointer across a list does not machine-gun the tick.
 let lastHover = 0;
 function hoverSound() {
   const now = performance.now();
@@ -133,7 +124,6 @@ document.addEventListener("click", (event) => {
   if (target && !target.disabled) audio.play("confirm");
 });
 
-// Arrow keys move between options inside a radio grid.
 for (const grid of document.querySelectorAll(".choice-grid")) {
   grid.addEventListener("keydown", (event) => {
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
@@ -260,8 +250,6 @@ function applyGameState(payload) {
   const moved = before && next.moves.length !== before.moves.length;
   const state = store.applyNormalized(next);
 
-  // Legal targets were computed for the previous position: drop them so a
-  // stale map can never send a move that is no longer legal.
   if (moved && !store.selection.busy) {
     store.selection.reset();
     closePromotionPicker();
@@ -285,8 +273,6 @@ function applyGameState(payload) {
     const promotion =
         move?.type === "PAWN" && /[18]$/.test(move.to ?? "") || !!move?.promotion;
 
-    // Each event keeps its own cue; a capture still crunches before the
-    // promotion jingle or the check alarm that follows it.
     audio.play(
         move?.capture
             ? "capture"
@@ -339,7 +325,6 @@ function applyGameState(payload) {
   return true;
 }
 
-// A short stepped jolt of the board frame on check, like a 16-bit hit.
 function shakeBoard(delay = 0) {
   const frame = document.querySelector(".board-frame");
   setTimeout(() => {
@@ -505,16 +490,12 @@ async function loadLegalMoves({ from, token }) {
   }
 }
 
-// Chess.com-style picker: a column of pieces unfolding from the promotion
-// square over a dimmed board. The server has no promotion endpoint yet, so
-// the choice is only announced for now.
 const promotionPieces = ["QUEEN", "KNIGHT", "ROOK", "BISHOP"];
 
 function showPromotionPicker(to) {
   const color = store.pieces.get(store.selection.from)?.color ?? "WHITE";
   const square = board.element.querySelector(`[data-square="${to}"]`);
   const size = square.offsetWidth;
-  // Unfold away from the board edge the square sits on.
   const downwards = square.offsetTop < board.element.offsetHeight / 2;
   const picker = byId("promotion-picker");
   picker.style.left = `${square.offsetLeft}px`;
@@ -677,7 +658,7 @@ function showScreen(screen) {
     title.render();
     title.showMenu();
     hoveredEntry = null;
-    titleMascot.say(titleMascot.line("greeting"));
+    titleMascot.talk("greeting");
   }
 }
 
@@ -688,9 +669,9 @@ async function activateSession(session, state) {
   applyGameState(state);
   sessions.persist(session);
   showScreen("game");
-  gameMascot.say(gameMascot.line(
-      store.state?.waitingForOpponent ? "waiting" : store.state?.moves.length ? "idle" : "start"
-  ), 1);
+  gameMascot.talk(
+      store.state?.waitingForOpponent ? "waiting" : store.state?.moves.length ? "idle" : "start", 1
+  );
 
   setConnection("Conectado", "online");
   schedulePoll();
@@ -714,7 +695,7 @@ async function openSession(id, mode) {
 
   sessionBusy = true;
   title.setBusy(true, id ? "join" : mode);
-  titleMascot.say(titleMascot.line("loading"), 1);
+  titleMascot.talk("loading", 1);
   title.setError();
   resetSession();
 
@@ -806,7 +787,6 @@ byId("history-next").addEventListener("click", () => {
   );
 });
 
-// ← → step through the history, Home/End jump to the start or the live position.
 document.addEventListener("keydown", (event) => {
   if (
       document.body.dataset.screen !== "game" ||
@@ -846,8 +826,6 @@ byId("retry").addEventListener("click", () => {
   }
 });
 
-// Invitations must reach other machines. A page opened through localhost
-// asks the server for its network address each time; it is never stored.
 async function inviteOrigin() {
   if (!loopbackHost()) return location.origin;
   const found = await serverAddress(api);
@@ -885,7 +863,6 @@ byId("invite-copy").addEventListener("click", async () => {
   const link = byId("invite-link").value;
   if (!link) return;
 
-  // The Clipboard API needs a secure context, which a LAN http:// page is not.
   let copied = false;
   try {
     await navigator.clipboard.writeText(link);
@@ -900,7 +877,6 @@ byId("invite-copy").addEventListener("click", async () => {
       : "No se pudo copiar. Selecciona el enlace y cópialo a mano.";
 });
 
-
 function applyMascot() {
   document.body.dataset.mascot = preferences.mascot ? "on" : "off";
   if (!preferences.mascot) {
@@ -910,7 +886,6 @@ function applyMascot() {
   byId("mascot-enabled").checked = preferences.mascot;
 }
 
-// The × on each bubble hides Alfi; Ajustes brings him back.
 for (const button of document.querySelectorAll(".mascot-dismiss")) {
   button.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -960,7 +935,7 @@ for (const [id, key] of [
       savePreferences(preferences);
       if (preferences.mascot) {
         const mascot = document.body.dataset.screen === "game" ? gameMascot : titleMascot;
-        mascot.say(mascot.line("greeting"));
+        mascot.talk("greeting");
       }
       return;
     }
@@ -972,7 +947,7 @@ for (const [id, key] of [
       titleMascot.dress(preferences.theme);
       gameMascot.dress(preferences.theme);
       const mascot = document.body.dataset.screen === "game" ? gameMascot : titleMascot;
-      mascot.say(mascot.line(`theme-${preferences.theme}`), 1);
+      mascot.talk(`theme-${preferences.theme}`, 1);
       return;
     }
 
@@ -980,7 +955,6 @@ for (const [id, key] of [
   });
 }
 
-// Preview the effects volume once the slider is released.
 byId("volume").addEventListener("change", () => audio.play("move"));
 
 byId("sound-toggle").addEventListener("click", () => {
@@ -1010,8 +984,6 @@ async function unlockAudio() {
 document.addEventListener("pointerdown", unlockAudio, { once: true });
 document.addEventListener("keydown", unlockAudio, { once: true });
 
-// Leaving the page or hiding it (another tab, minimized) silences the music
-// and effects; coming back resumes them.
 function pauseAudio() {
   music.stop();
   audio.context?.suspend().catch(() => {});
@@ -1025,7 +997,7 @@ document.addEventListener("visibilitychange", async () => {
 
   try {
     await audio.context?.resume();
-  } catch { /* Autoplay rules may need a new gesture; unlockAudio handles it. */ }
+  } catch {}
   music.sync();
 });
 
@@ -1066,8 +1038,6 @@ if (invitation) {
               generation === sessionVersion &&
               error.name !== "AbortError"
           ) {
-            // The server keeps sessions in memory: after a restart the saved
-            // one is gone (404, or 500 from a backend that does not check).
             if ([404, 500].includes(error.status)) {
               sessions.forget(invitation);
               setConnection("Sin partida");

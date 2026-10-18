@@ -13,9 +13,6 @@ const IGNORE = Object.freeze({ type: "ignore" });
 const BOTH_COLORS = Object.freeze(["WHITE", "BLACK"]);
 const NO_COLORS = Object.freeze([]);
 
-// The frontend is the rules gatekeeper: the backend executes any move it is
-// sent. Practice is a sandbox where either color may move at any time; every
-// other mode lets only the local player's color move, and only on its turn.
 export function movableColors(session, state) {
   if (!session || !state) return NO_COLORS;
   if (state.status !== "ACTIVE" || state.waitingForOpponent) return NO_COLORS;
@@ -75,10 +72,6 @@ function isPromotion(piece, to) {
   return piece?.type === "PAWN" && (to[1] === "1" || to[1] === "8");
 }
 
-// Selection lifecycle of one board interaction:
-//   idle → loading → selected → (choosing →) moving → idle
-// Every method is synchronous and returns a command for the caller to run;
-// network requests stay outside so the transitions can be tested in isolation.
 export class Selection {
   constructor() {
     this.token = 0;

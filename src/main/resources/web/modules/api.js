@@ -25,15 +25,12 @@ export class ChessApi {
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
-        // The browser must never replay a cached position after a move.
         cache: "no-store",
       });
-      // The Java handlers use Context.result() for JSON and the move handler
-      // currently returns an empty 200 body. Do not mistake that for a state.
       const bodyText = await response.text();
       let payload = null;
       if (bodyText.trim()) {
-        try { payload = JSON.parse(bodyText); } catch { /* Invalid response below. */ }
+        try { payload = JSON.parse(bodyText); } catch {}
       }
       if (!response.ok) {
         if ([404, 405, 501].includes(response.status))
@@ -65,7 +62,6 @@ export class ChessApi {
   create(mode, difficulty) {
     return this.request("/sessions", { gamemode: mode, difficulty });
   }
-  // No player ID is sent: the server assigns the free colour and returns it.
   join(id) {
     return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});
   }
@@ -90,8 +86,6 @@ export class ChessApi {
       to,
       ...(this.playerId ? { playerId: this.playerId } : {}),
     }, { allowEmpty: true });
-    // The move handler normally returns an empty 200. If a handler sends the
-    // updated GameState or GameSession instead, consume it without another read.
     const state = response?.state ?? response?.gameState ??
       response?.session?.gameState ?? response;
     if (state && (state.fen != null || state.board != null ||

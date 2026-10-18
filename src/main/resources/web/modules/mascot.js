@@ -1,25 +1,34 @@
-// Alfi, the ArchChess mascot: the classic white bishop with a speech bubble.
-// Text is typed letter by letter with a pitched blip per letter (Balatro
-// style). Everything about the mascot lives in this module, its markup
-// (.mascot) and the "Mascot" block in styles.css, so it is easy to drop.
 import { pieceImage } from "./assets.js";
 import { alfiLines } from "./alfi-lines.js";
+import { createFace, drawFace, eraseCross } from "./alfi-face.js";
 
 const letterDelay = 28;
 const punctuationPause = { ".": 220, "!": 220, "?": 220, ",": 110, "…": 260 };
-// After this long without talking Alfi pulls out a book.
-const readingDelay = 12000;
-// How long Alfi stares at the board after a blunder before saying anything.
+const idleDelay = 12000;
+const sleepDelay = 40000;
+const moodDelay = 4000;
 const stareDelay = 1600;
-// How long a finished line stays up where Alfi only pops in to talk (mobile).
 const lingerDelay = 5000;
 
-// Funny lines show up only now and then, so Alfi stays helpful.
 const funnyChance = 0.3;
 
-// Keyboard tips make no sense on touch screens.
 const keyboardTip = /[←→]/;
 const touchScreen = () => !!globalThis.matchMedia?.("(hover: none)").matches;
+
+const kindMoods = {
+  greeting: "guino", start: "contento", waiting: "pensando", opponentJoined: "estrellas", error: "triste",
+  openingWeird: "sospecha", earlyQueen: "sospecha", castle: "contento", kingWalk: "sorpresa", bongcloud: "sorpresa",
+  knightRim: "aburrido", fianchetto: "corazones", pawnRush: "contento", repeat: "aburrido", capture: "contento",
+  minorWon: "contento", bishopLost: "triste", enPassant: "sorpresa", queenLost: "ko", queenWon: "estrellas",
+  blunder: "aburrido", check: "sorpresa", checkAgain: "sorpresa", promotion: "estrellas", bigLead: "contento",
+  comeback: "sorpresa", longGame: "aburrido", quickMate: "sorpresa", victory: "estrellas", defeat: "triste",
+  draw: "contento", poked: "enfadado", wakeUp: "sorpresa",
+};
+export const moodFor = (kind) => kindMoods[kind] ?? (kind.startsWith("theme-") ? "contento" : "normal");
+
+const activities = { reading: "leyendo", humming: "contento", looking: "normal", juggling: "pensando" };
+const idleClasses = ["is-reading", "is-humming", "is-looking", "is-juggling", "is-sleeping"];
+const pokeLimit = 5;
 
 export function line(kind, vars = {}) {
   const { calm = [], funny = [] } = alfiLines[kind] ?? alfiLines.idle;
@@ -46,36 +55,85 @@ export class Mascot {
     this.bubble = root.querySelector(".mascot-bubble");
     this.timer = null;
     this.idleTimer = null;
+    this.sleepTimer = null;
+    this.moodTimer = null;
+    this.pokeTimer = null;
     this.lingerTimer = null;
     this.letters = [];
     this.priority = 0;
-    const sprite = root.querySelector(".mascot-sprite");
+    this.pokes = 0;
+    this.lastActivity = null;
+    this.theme = preferences?.theme ?? "classic";
+    this.mood = "normal";
+
+    const body = pieceImage("BISHOP", "WHITE", "classic");
+    this.face = createFace(body.querySelector(".piece-art"));
+    eraseCross(body.querySelector("img"));
+    body.append(this.face);
     const book = document.createElement("span");
     book.className = "mascot-book";
     book.setAttribute("aria-hidden", "true");
     book.append(document.createElement("i"));
-    sprite.replaceChildren(pieceImage("BISHOP", "WHITE", preferences?.theme), book);
+    const pawn = document.createElement("span");
+    pawn.className = "mascot-pawn";
+    pawn.setAttribute("aria-hidden", "true");
+    pawn.append(pieceImage("PAWN", "WHITE", "classic"));
+    const zzz = document.createElement("span");
+    zzz.className = "mascot-zzz";
+    zzz.setAttribute("aria-hidden", "true");
+    zzz.innerHTML = "<i>z</i><i>z</i><i>Z</i>";
+    const sprite = root.querySelector(".mascot-sprite");
+    sprite.replaceChildren(body, book, pawn, zzz);
     this.sprite = sprite;
-    // Poke Alfi for a tip; click the bubble to finish the current line.
-    sprite.addEventListener("click", () => this.say(this.line("idle")));
+    this.draw();
+
+    sprite.addEventListener("click", () => this.poke());
     this.bubble.addEventListener("click", () => this.finish());
   }
 
-  // Alfi wears the bishop of the current board theme.
   dress(theme) {
-    this.sprite.querySelector(".piece-sprite")?.replaceWith(pieceImage("BISHOP", "WHITE", theme));
+    this.theme = theme;
+    this.draw();
+  }
+
+  setMood(mood) {
+    clearTimeout(this.moodTimer);
+    if (mood === this.mood) return;
+    this.mood = mood;
+    this.draw();
+  }
+
+  draw() {
+    drawFace(this.face, { mood: this.mood, theme: this.theme });
   }
 
   line(kind, vars) {
     return line(kind, vars);
   }
 
-  // Lower-priority lines never cut off a more important one still typing.
-  // With `stare`, Alfi first leans towards the board in silence.
-  say(message, priority = 0, { stare = false } = {}) {
+  talk(kind, priority = 0, options = {}, vars = {}) {
+    this.say(this.line(kind, vars), priority, { mood: moodFor(kind), ...options });
+  }
+
+  poke() {
+    const asleep = this.root.classList.contains("is-sleeping");
+    clearTimeout(this.pokeTimer);
+    this.pokeTimer = setTimeout(() => (this.pokes = 0), 4000);
+    this.pokes += 1;
+    if (asleep) return this.talk("wakeUp");
+    if (this.pokes >= pokeLimit) {
+      this.pokes = 0;
+      return this.talk("poked", 1);
+    }
+    this.say(this.line("idle"), 0, { mood: "apretando" });
+    this.moodTimer = setTimeout(() => this.setMood("normal"), 500);
+  }
+
+  say(message, priority = 0, { stare = false, mood = "normal" } = {}) {
     if (this.preferences?.mascot === false) return;
     if (this.timer && priority < this.priority) return;
     this.reset(priority);
+    this.setMood(mood);
     if (stare) {
       this.root.classList.add("is-staring");
       this.show("…", false);
@@ -90,15 +148,31 @@ export class Mascot {
 
   reset(priority) {
     clearTimeout(this.timer);
-    clearTimeout(this.idleTimer);
     clearTimeout(this.lingerTimer);
+    this.stopIdle();
     this.root.classList.add("is-active");
-    this.root.classList.remove("is-reading", "is-staring");
+    this.root.classList.remove("is-staring");
     this.priority = priority;
   }
 
-  // Lay out every letter hidden first, so the bubble keeps its final size
-  // while typing instead of reflowing on each character.
+  stopIdle() {
+    clearTimeout(this.idleTimer);
+    clearTimeout(this.sleepTimer);
+    this.root.classList.remove(...idleClasses);
+  }
+
+  startIdle() {
+    const activity = pick(Object.keys(activities).filter((name) => name !== this.lastActivity));
+    this.lastActivity = activity;
+    this.root.classList.add(`is-${activity}`);
+    this.setMood(activities[activity]);
+    this.sleepTimer = setTimeout(() => {
+      this.root.classList.remove(`is-${activity}`);
+      this.root.classList.add("is-sleeping");
+      this.setMood("durmiendo");
+    }, sleepDelay);
+  }
+
   show(message, hidden = true) {
     const letters = [];
     const words = message.split(/(\s+)/).map((chunk) => {
@@ -140,7 +214,6 @@ export class Mascot {
     step();
   }
 
-  // Stops typing and pending lines at once (hidden, or its screen left).
   silence() {
     clearTimeout(this.timer);
     clearTimeout(this.lingerTimer);
@@ -161,8 +234,9 @@ export class Mascot {
     this.timer = null;
     this.priority = 0;
     this.root.classList.remove("is-talking");
-    clearTimeout(this.idleTimer);
-    this.idleTimer = setTimeout(() => this.root.classList.add("is-reading"), readingDelay);
+    this.stopIdle();
+    this.moodTimer = setTimeout(() => this.setMood("normal"), moodDelay);
+    this.idleTimer = setTimeout(() => this.startIdle(), idleDelay);
     this.lingerTimer = setTimeout(() => this.root.classList.remove("is-active"), lingerDelay);
   }
 }

@@ -148,8 +148,6 @@ const modeIcons = {
   PRACTICE: "mode-practice",
 };
 
-// Swapping children rebuilds <img> nodes and makes the sprites blink, so
-// every renderer below only touches the DOM when its inputs changed.
 const rendered = new Map();
 function changed(id, key) {
   if (rendered.get(id) === key) return false;
@@ -161,7 +159,6 @@ function setText(id, text) {
   if (element.textContent !== text) element.textContent = text;
 }
 
-// Swatch per theme: its two tile colors, a king of the set and its accent.
 export function populateThemeGrid(container, onPick) {
   for (const [id, theme] of Object.entries(themes)) {
     const button = document.createElement("button");
@@ -341,7 +338,6 @@ export function materialBalance(pieces) {
 
 function renderMaterial(pieces, color) {
   const { totals, lead } = materialBalance(pieces);
-  // Clamp to ±10 so a queen up already fills most of the bar.
   const share = 50 + Math.max(-10, Math.min(10, lead)) * 4.5;
   byId("material-white").style.width = `${share}%`;
   setText("score-lead", !lead ? "Igualado" : `${lead > 0 ? "Blancas" : "Negras"} +${Math.abs(lead)}`);

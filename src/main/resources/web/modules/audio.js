@@ -1,7 +1,5 @@
 import { synthCues } from "./sfx-synth.js";
 
-// Every effect is synthesized on the fly (see sfx-synth.js): no files to
-// download, and each event keeps a distinct chiptune timbre.
 export class GameAudio {
   constructor(preferences) {
     this.preferences = preferences;
@@ -18,7 +16,7 @@ export class GameAudio {
         this.updatePreferences();
       }
       if (this.context.state === "suspended") await this.context.resume();
-    } catch { /* Audio support or autoplay permission may be unavailable. */ }
+    } catch {}
   }
 
   updatePreferences() {
@@ -26,7 +24,7 @@ export class GameAudio {
     if (this.output) this.output.gain.setTargetAtTime(volume, this.context.currentTime, 0.01);
     if (!volume) {
       for (const voice of this.voices) {
-        try { voice.stop(); } catch { /* Already stopped. */ }
+        try { voice.stop(); } catch {}
       }
       this.voices.clear();
     }
@@ -46,6 +44,6 @@ export class GameAudio {
           voice.disconnect();
         };
       }
-    } catch { /* A sound must never interrupt a game. */ }
+    } catch {}
   }
 }

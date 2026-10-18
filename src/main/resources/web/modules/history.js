@@ -30,7 +30,6 @@ export class HistoryView {
       ...moves.map(move => [move.ply, move.from, move.to, move.type, move.color, move.capture,
         move.capturedPiece?.type, move.capturedPiece?.color].join(":")),
     ].join("|");
-    // Rebuilding the list re-decodes every sprite, so skip identical renders.
     if (signature === this.signature) return;
     this.signature = signature;
 

@@ -12,8 +12,6 @@ export class BoardView {
       const target = event.target.closest("[data-square]");
       if (target) this.select(target.dataset.square);
     });
-    // Click/tap is the only movement gesture. Block native image and tile
-    // dragging, including the browser's ghost preview and drop behavior.
     element.addEventListener("dragstart", (event) => event.preventDefault());
     element.addEventListener("keydown", (event) => {
       const buttons = [...element.querySelectorAll(".square")];
@@ -26,8 +24,6 @@ export class BoardView {
     });
   }
   render() {
-    // A running slide is left alone: cancelling it on every re-render (poll,
-    // selection) made the piece snap to its square mid-flight.
     this.captureDelay = 0;
     if (this.store.reviewPly !== this.lastReviewPly || this.store.session?.sessionId !== this.lastSessionId ||
         this.preferences.theme !== this.lastTheme) {
@@ -52,8 +48,6 @@ export class BoardView {
     const previousPosition = animateMove
       ? this.element.querySelector(`[data-square="${last.from}"] .piece`)?.getBoundingClientRect()
       : null;
-    // Preserve the removed sprite before replacing the authoritative board.
-    // Finding the vanished square also handles en-passant captures.
     const captured = animateMove && last.capture
       ? [...this.element.querySelectorAll(".square .piece")].find(image =>
         image.dataset.color !== last.color &&
@@ -68,8 +62,6 @@ export class BoardView {
     this.element.setAttribute("aria-label", `Tablero, ${black ? "negras" : "blancas"} abajo`);
     const targets = this.store.targets;
     const movable = this.store.movableColors ?? [];
-    // Squares and sprites are reused between renders: rebuilding 64 buttons
-    // and their <img> sprites on every click made the board blink.
     const layout = `${files}${ranks}`;
     if (this.layout !== layout) {
       this.finishAnimation?.();
@@ -155,7 +147,6 @@ export class BoardView {
     const contactX = victimX - directionX * position.width * 0.3;
     const contactY = victimY - directionY * position.height * 0.3;
     const fallDirection = Math.abs(directionX) > 0.1 ? Math.sign(directionX) : Math.sign(directionY) || 1;
-    // Collisions accelerate into the victim; plain slides ease out softly.
     const frames = [{
       transform: `translate(${offsetX}px, ${offsetY}px)`,
       easing: collision ? "cubic-bezier(.5,0,.8,.6)" : "cubic-bezier(.22,.8,.3,1)",

@@ -219,8 +219,6 @@ function rgb(hex) {
   return [value >> 16, (value >> 8) & 255, value & 255];
 }
 
-// frame.png is drawn in blue tones. Map each pixel's brightness onto the
-// theme's palette so the same 9-slice artwork matches every theme.
 async function paintFrame(id, colors) {
   let image;
   try {

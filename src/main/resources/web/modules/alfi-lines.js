@@ -1,7 +1,3 @@
-// Everything Alfi can say. Each kind has calm lines (the default) and funny
-// ones used only now and then. Every line is about chess: rules, theory,
-// famous games and players, or chess video games. {to}, {from}, {pieza},
-// {victima}, {bando}, {ply} and {moves} are filled in from the move.
 export const alfiLines = {
   greeting: {
     calm: [
@@ -93,7 +89,6 @@ export const alfiLines = {
       "Respira hondo. Ni Carlsen gana todas.",
     ],
   },
-  // PvP room created, rival not there yet. Alfi keeps chatting while waiting.
   waiting: {
     calm: [
       "Sala creada. Copia la invitación y mándasela a tu rival.",
@@ -131,42 +126,65 @@ export const alfiLines = {
       "Rival a bordo. Que tiemblen los peones.",
     ],
   },
-  // Board and piece theme changed: Alfi changes outfit too.
   "theme-classic": {
-    calm: ["Tema clásico. Lo de siempre nunca falla.", "Vuelta a los orígenes. Me sienta bien el blanco."],
+    calm: ["Tema clásico. Lo de siempre nunca falla.", "Vuelta a los orígenes. Sin gorros ni bufandas."],
     funny: ["Clásico. Como un Gambito de Dama bien jugado.", "Ropa de diario otra vez. Se acabó el carnaval."],
   },
   "theme-warm": {
     calm: ["Tema cálido. Más acogedor para pensar.", "Tonos cálidos. Partida de sobremesa."],
-    funny: ["Qué calorcito. Me pido la casilla junto a la chimenea.", "Cálido. Ideal para una partida con chocolate y churros."],
+    funny: ["Me he puesto mi gorro de lana. Qué calorcito.", "Cálido. Ideal para una partida con chocolate y churros."],
   },
   "theme-cold": {
     calm: ["Tema frío. Cabeza fría, jugadas precisas.", "Azules fríos. Concentración total."],
-    funny: ["Brrr. Alguien que le traiga una bufanda al rey.", "Frío. Como el cálculo de Stockfish."],
+    funny: ["Brrr. Menos mal que he traído bufanda.", "Frío. Como el cálculo de Stockfish."],
   },
   "theme-gothic": {
     calm: ["Tema gótico. Elegante y sombrío.", "Gótico. Las catedrales también tienen alfiles. Bueno, casi."],
-    funny: ["Gótico. Me he puesto mi túnica más dramática.", "Tablero gótico. El rey ya está escribiendo poesía triste."],
+    funny: ["Gótico. Me he puesto mi chistera más dramática.", "Tablero gótico. El rey ya está escribiendo poesía triste."],
   },
   "theme-medieval": {
     calm: ["Tema medieval. Como en tiempos de Alfonso X y su libro del ajedrez.", "Medieval. En aquella época yo saltaba dos casillas."],
-    funny: ["Medieval. ¿Dónde he dejado mi armadura?", "¡A las armas! Bueno, a las diagonales."],
+    funny: ["Medieval. Este yelmo pesa más que una torre.", "¡A las armas! Bueno, a las diagonales."],
   },
   "theme-halloween": {
     calm: ["Tema de Halloween. Partida de miedo.", "Halloween. Calabazas en el tablero."],
-    funny: ["¡Buu! Hoy voy disfrazado de alfil. Como siempre, pero con miedo.", "Halloween. Lo más terrorífico sigue siendo un mate del pastor."],
+    funny: ["¡Buu! Hoy voy de bruja. Bueno, de alfil con sombrero.", "Halloween. Lo más terrorífico sigue siendo un mate del pastor."],
   },
   "theme-christmas": {
     calm: ["Tema navideño. Felices fiestas sobre el tablero.", "Navidad. Que te toquen dos alfiles en el sorteo."],
-    funny: ["Navidad. Yo quiero una dama para Reyes.", "Jo, jo, jo. Este año has sido bueno: te traigo un peón pasado."],
+    funny: ["Navidad. Ya llevo puesto el gorro de Papá Noel.", "Jo, jo, jo. Este año has sido bueno: te traigo un peón pasado."],
   },
   "theme-python": {
     calm: ["Tema Python. Tablero bien indentado.", "Python. Legible, limpio y sin llaves."],
-    funny: ["Python. import alfil; alfil.move(diagonal=True)", "Python. Cuidado, que aquí la serpiente se come a los peones."],
+    funny: ["Python. Gorra puesta y código bien ordenado.", "Python. Cuidado, que aquí la serpiente se come a los peones."],
   },
   "theme-java": {
     calm: ["Tema Java. Como el servidor de este juego.", "Java. Café recién hecho para pensar."],
-    funny: ["Java. public static void moverEnDiagonal().", "Java. Soy una clase final: nadie hereda mis diagonales."],
+    funny: ["Java. public static void moverEnDiagonal().", "Java. Nadie me quita mi taza de café."],
+  },
+  poked: {
+    calm: [
+      "¡Eh! Que tengo cosquillas.",
+      "Vale, vale, ya te he oído.",
+      "Si me sigues pinchando, me voy a otra casilla.",
+    ],
+    funny: [
+      "¡Basta! Soy una pieza, no un botón.",
+      "Como sigas, te cobro por cada clic.",
+      "Tanto clic me está mareando. Y eso que solo voy en diagonal.",
+    ],
+  },
+  wakeUp: {
+    calm: [
+      "¿Eh? ¡No estaba dormido! Solo descansaba los ojos.",
+      "¡Uy! Ya estoy, ya estoy. ¿Seguimos?",
+      "Me había quedado traspuesto. ¿Qué me he perdido?",
+    ],
+    funny: [
+      "Estaba soñando con una partida de ajedrez. Qué sorpresa, ¿verdad?",
+      "Cinco minutitos más… Vale, ya me levanto.",
+      "Estaba durmiendo de pie. Es lo que tiene ser una pieza.",
+    ],
   },
   loading: {
     calm: ["Preparando el tablero…", "Colocando las piezas…", "Sacando las piezas de la caja…", "Alineando los peones…"],
@@ -189,7 +207,6 @@ export const alfiLines = {
     ],
   },
 
-  // Openings.
   openingCenter: {
     calm: [
       "{from} a {to}. Clásico, directo al centro.",
@@ -241,7 +258,6 @@ export const alfiLines = {
     ],
   },
 
-  // Piece moves.
   castle: {
     calm: [
       "Enroque. El rey se pone a cubierto.",
@@ -326,7 +342,6 @@ export const alfiLines = {
     ],
   },
 
-  // Captures.
   capture: {
     calm: [
       "Buena captura.",
@@ -433,7 +448,6 @@ export const alfiLines = {
     ],
   },
 
-  // Game state.
   check: {
     calm: [
       "¡Jaque!",

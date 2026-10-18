@@ -1,22 +1,15 @@
-// Rule-based commentary for Alfi: no engine, no AI. After every move it looks
-// at the move, the position before and after and the recent history, picks
-// the most interesting event and decides whether Alfi should mention it.
-// What he says for each event lives in alfi-lines.js.
 import { labels, pieceValues } from "./state.js";
 
 const chance = {
-  // Always worth a comment.
   check: 1, promotion: 1, blunder: 1, queenLost: 1, queenWon: 1, castle: 1, enPassant: 1, comeback: 1,
   bongcloud: 1, quickMate: 1, bishopLost: 0.8, fianchetto: 0.6,
   openingCenter: 0.7, openingWeird: 1, openingOther: 0.5, checkAgain: 0.8,
-  // Nice to mention, but not every time.
   bigLead: 0.7, trade: 0.5, earlyQueen: 0.8, kingWalk: 0.5, knightRim: 0.5, pawnRush: 0.6,
   minorWon: 0.4, capture: 0.6, repeat: 0.6, milestone: 0.5, longGame: 1,
 };
 const priorities = {
   check: 2, checkAgain: 2, promotion: 2, blunder: 2, queenLost: 2, queenWon: 2, comeback: 2, quickMate: 3, bongcloud: 2,
 };
-// Minor remarks wait this many plies after Alfi last spoke.
 const quietPlies = 3;
 
 const fileOf = (square) => square?.charCodeAt(0) - 97;
@@ -40,7 +33,6 @@ export class Commentator {
     this.lastWasCheck = false;
   }
 
-  // Returns { kind, priority, stare, vars } or null when Alfi stays quiet.
   react({ move, before, after, userColors }) {
     if (!move) return null;
     const events = this.events({ move, before, after, userColors });
@@ -56,7 +48,6 @@ export class Commentator {
     return null;
   }
 
-  // Every event the move triggers, most important first.
   events({ move, before, after, userColors }) {
     const events = [];
     const push = (kind, extra = {}) => events.push({ kind, ...extra });
@@ -125,7 +116,6 @@ export class Commentator {
     return events;
   }
 
-  // True the first time a key is seen, so one-off remarks stay one-off.
   once(key) {
     if (this.said.has(key)) return true;
     this.said.add(key);
