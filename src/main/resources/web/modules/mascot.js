@@ -54,10 +54,16 @@ export class Mascot {
     book.className = "mascot-book";
     book.setAttribute("aria-hidden", "true");
     book.append(document.createElement("i"));
-    sprite.replaceChildren(pieceImage("BISHOP", "WHITE", "classic"), book);
+    sprite.replaceChildren(pieceImage("BISHOP", "WHITE", preferences?.theme), book);
+    this.sprite = sprite;
     // Poke Alfi for a tip; click the bubble to finish the current line.
     sprite.addEventListener("click", () => this.say(this.line("idle")));
     this.bubble.addEventListener("click", () => this.finish());
+  }
+
+  // Alfi wears the bishop of the current board theme.
+  dress(theme) {
+    this.sprite.querySelector(".piece-sprite")?.replaceWith(pieceImage("BISHOP", "WHITE", theme));
   }
 
   line(kind, vars) {

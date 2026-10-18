@@ -18,12 +18,19 @@ public class GetReadCurrentState implements Handler {
 	public void handle(@NotNull Context ctx) throws Exception {
 		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
 
-		ctx.result(jsonResponse(session.gameState()));
+		if(session == null) {
+			ctx.status(404);
+			return;
+		}
+
+		ctx.result(jsonResponse(session));
 	}
 
-	private String jsonResponse(GameState gameState) {
+	private String jsonResponse(GameSession session) {
+		GameState gameState = session.gameState();
 		Map<String, Object> response = new HashMap<>();
 		response.put("status", gameState.status());
+		response.put("waitingForOpponent", session.whiteId() == null || session.blackId() == null);
 		response.put("turnColor", gameState.turnColor());
 		response.put("checkedColor", gameState.checkedColor());
 		response.put("fen", FenParser.gameStateToFen(gameState));

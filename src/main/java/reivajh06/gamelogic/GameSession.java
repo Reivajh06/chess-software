@@ -1,15 +1,17 @@
 package reivajh06.gamelogic;
 
 import reivajh06.FenParser;
+import reivajh06.model.PieceColor;
 
+import java.util.Random;
 import java.util.UUID;
 
 public class GameSession {
 
     private final UUID id;
 
-    private final UUID whiteId;
-    private final UUID blackId;
+    private UUID whiteId;
+    private UUID blackId;
 
     private final Gamemode gamemode;
     private final Difficulty difficulty;
@@ -22,8 +24,7 @@ public class GameSession {
         this.difficulty = difficulty;
         this.gameState = GameState.startingState();
 
-        whiteId = UUID.randomUUID();
-        blackId = gamemode == Gamemode.PRACTICE ? whiteId : UUID.randomUUID();
+        if(gamemode.equals(Gamemode.PRACTICE)) whiteId = blackId = UUID.randomUUID();
     }
     public UUID id() {
         return id;
@@ -47,6 +48,30 @@ public class GameSession {
 
     public UUID blackId() {
         return blackId;
+    }
+
+    public PieceColor assignColor(UUID playerId) {
+        PieceColor assignedColor = null;
+
+        if(whiteId == null) {
+            if(blackId == null) {
+                Random random = new Random();
+
+                assignedColor = PieceColor.values()[random.nextInt(PieceColor.values().length)];
+
+                if(assignedColor == PieceColor.WHITE) whiteId = playerId;
+                else blackId = playerId;
+
+            } else {
+                whiteId = playerId;
+                assignedColor = PieceColor.WHITE;
+            }
+        } else if(blackId == null) {
+            blackId = playerId;
+            assignedColor = PieceColor.BLACK;
+        }
+
+        return assignedColor;
     }
 
     public void gameState(GameState gameState) {

@@ -1,63 +1,91 @@
-import { saveSession, readSession } from "./preferences.js";
+import { saveSession, readSession, forgetSession } from "./preferences.js";
+import { ApiError } from "./api.js";
+
+const colors = ["WHITE", "BLACK"];
 
 export class SessionAccess {
   constructor(api) {
     this.api = api;
   }
 
-  async open(sessionId, mode = "PVP", invitedPlayerId = null, invitedPlayerColor = "WHITE") {
-    if (sessionId && !invitedPlayerId)
-      throw new Error("La invitación debe incluir el ID asignado al jugador.");
+  // Creates a session (no sessionId) or joins an existing one. Seats belong
+  // to the server: creation seats the creator on a random colour and /join,
+  // called only by the invited player, hands out the remaining one. Each
+  // seat comes with the ID that authorizes that player's moves.
+  async open(sessionId, mode = "PVP") {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : "NOT_CPU";
-    const response = sessionId
-      ? await this.api.join(sessionId, invitedPlayerId)
-      : await this.api.create(mode, difficulty);
-
-    const gamemode = response.gamemode ?? mode;
-    const humanIds = ["PVP", "PRACTICE"].includes(gamemode);
-    if (!sessionId && humanIds && (!response.whiteId || !response.blackId))
-      throw new Error("El servidor no ha proporcionado los IDs de los jugadores.");
-    if (!sessionId && gamemode === "PRACTICE" && response.whiteId !== response.blackId)
-      throw new Error("La práctica necesita el mismo ID para blancas y negras.");
-    const playerColor = sessionId ? invitedPlayerColor : !humanIds || gamemode === "PRACTICE"
-      ? "WHITE"
-      : crypto.getRandomValues(new Uint8Array(1))[0] < 128 ? "WHITE" : "BLACK";
-    const playerId = humanIds
-      ? (invitedPlayerId ?? (playerColor === "WHITE" ? response.whiteId : response.blackId))
-      : null;
-    const resolvedSessionId = response.sessionId ?? response.id ?? sessionId;
-    if (!resolvedSessionId)
+    const created = sessionId ? null : await this.api.create(mode, difficulty);
+    const id = sessionId ?? created.sessionId ?? created.id;
+    if (!id)
       throw new Error("El servidor no ha proporcionado el ID de sesión.");
 
-    // The creator registers its randomly assigned PvP ID; practice has no join step.
-    if (!sessionId && gamemode === "PVP") {
-      const joined = await this.api.join(resolvedSessionId, playerId);
-      response.state = joined.state ?? joined.gameState ?? response.state ?? response.gameState;
+    let gamemode = created?.gamemode ?? mode;
+    let seat;
+    if (sessionId) {
+      seat = await this.join(id);
+      gamemode = seat.gamemode ?? gamemode;
+    } else if (gamemode === "PVP" || gamemode === "PRACTICE") {
+      seat = this.creatorSeat(created, gamemode);
+    } else {
+      seat = { playerId: null, playerColor: gamemode === "AIVAI" ? null : "WHITE" };
     }
+
     const session = {
-      sessionId: resolvedSessionId,
-      playerId,
+      sessionId: id,
+      playerId: seat.playerId,
       // A local rendering preference; requests authorize with playerId only.
-      playerColor: gamemode === "AIVAI" ? null : playerColor,
-      invitedPlayerId: !sessionId && gamemode === "PVP"
-        ? (playerColor === "WHITE" ? response.blackId : response.whiteId) : null,
-      invitedPlayerColor: !sessionId && gamemode === "PVP"
-        ? (playerColor === "WHITE" ? "BLACK" : "WHITE") : null,
+      playerColor: seat.playerColor,
       gamemode,
-      difficulty: response.difficulty ?? difficulty,
+      difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
     };
 
     this.api.playerId = session.playerId;
-    const state =
-      response.state ?? response.gameState ??
-      (response.pieces || response.board || response.fen
-        ? response
-        : await this.api.state(session.sessionId));
+    const state = seat.state ?? seat.gameState ?? created?.state ?? created?.gameState ??
+      await this.api.state(id);
     return { session, state };
+  }
+
+  creatorSeat(created, gamemode) {
+    if (created.playerId && colors.includes(created.playerColor))
+      return { playerId: created.playerId, playerColor: created.playerColor };
+    // Practice moves both colours with one ID; older backends send it as whiteId.
+    if (gamemode === "PRACTICE" && (created.playerId ?? created.whiteId))
+      return { playerId: created.playerId ?? created.whiteId, playerColor: "WHITE" };
+    throw new Error("El servidor no ha asignado un color al creador de la sala.");
+  }
+
+  async join(sessionId) {
+    let seat;
+    try {
+      seat = await this.api.join(sessionId);
+    } catch (error) {
+      if (error.status === 409)
+        throw new ApiError("La sala ya está completa.", 409);
+      if (error.status === 404)
+        throw new ApiError("La sala no existe o el servidor todavía no permite unirse.", 404);
+      if (error.status === 500)
+        throw new ApiError("No se pudo entrar: puede que la sala ya no exista en el servidor.", 500);
+      if ([405, 501].includes(error.status))
+        throw new ApiError("El servidor todavía no permite unirse a partidas.", error.status);
+      throw error;
+    }
+    if (!seat.playerId || !colors.includes(seat.playerColor))
+      throw new Error("El servidor no ha asignado un color a este jugador.");
+    return seat;
   }
 
   saved(sessionId) {
     return readSession(sessionId);
+  }
+
+  // Drops a session the server no longer has (sessions live in its memory,
+  // so a restart loses them) and takes it out of the address bar.
+  forget(sessionId) {
+    forgetSession(sessionId);
+    const url = new URL(location.href);
+    url.searchParams.delete("session");
+    url.hash = "";
+    window.history.replaceState({}, "", url);
   }
 
   persist(session) {
@@ -68,18 +96,14 @@ export class SessionAccess {
     window.history.replaceState({}, "", url);
   }
 
-  invitation(sessionId) {
-    const url = new URL(location.href);
-    url.search = "";
-    url.hash = "";
+  // The link only names the session: whoever opens it gets the free seat.
+  // `origin` is where other machines reach this server (never loopback).
+  invitation(sessionId, origin = location.origin) {
+    const url = new URL("/", origin);
     url.searchParams.set("session", sessionId);
-    const session = this.saved(sessionId);
-    if (session?.invitedPlayerId) {
-      url.hash = new URLSearchParams({ playerId: session.invitedPlayerId,
-        side: session.invitedPlayerColor }).toString();
-    }
     return url.href;
   }
+
 }
 
 export class SessionPolling {

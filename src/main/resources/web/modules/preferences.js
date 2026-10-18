@@ -29,6 +29,11 @@ export function saveSession(session) {
     sessionStorage.setItem(`archchess.session.${session.sessionId}`, JSON.stringify(session));
   } catch {}
 }
+export function forgetSession(id) {
+  try {
+    sessionStorage.removeItem(`archchess.session.${id}`);
+  } catch {}
+}
 export function readSession(id) {
   try {
     const session = JSON.parse(sessionStorage.getItem(`archchess.session.${id}`) || "null");
@@ -50,14 +55,9 @@ export function parseInvitation(value) {
   return /^[a-zA-Z0-9_-]{1,128}$/.test(text) ? text : null;
 }
 
-export function invitationPlayer(value) {
-  try {
-    const url = new URL(value);
-    const fragment = new URLSearchParams(url.hash.slice(1));
-    const playerId = fragment.get("playerId");
-    const playerColor = fragment.get("side");
-    return { playerId, playerColor: playerColor === "BLACK" ? "BLACK" : "WHITE" };
-  } catch {
-    return { playerId: null, playerColor: "WHITE" };
-  }
+// Where other machines can reach this server. Only needed when the page was
+// opened through a loopback address, which is useless to anybody else.
+export function loopbackHost(hostname = location.hostname) {
+  return hostname === "localhost" || hostname.endsWith(".localhost") ||
+    hostname === "[::1]" || hostname === "::1" || /^127\./.test(hostname);
 }

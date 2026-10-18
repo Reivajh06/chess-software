@@ -215,6 +215,19 @@
       </section>
     </dialog>
 
+    <dialog id="invite-dialog" class="pixel-frame invite-dialog" aria-labelledby="invite-title">
+      <div class="dialog-heading">
+        <h2 id="invite-title">Invitar a un rival</h2>
+        <button type="button" data-close="invite-dialog" aria-label="Cerrar invitación">×</button>
+      </div>
+      <div class="invite-field">
+        <label for="invite-link">Enlace de invitación</label>
+        <input id="invite-link" readonly spellcheck="false" />
+      </div>
+      <button id="invite-copy" class="primary invite-copy" type="button">Copiar enlace</button>
+      <p id="invite-status" class="settings-note" role="status"></p>
+    </dialog>
+
     <dialog id="move-choice-dialog" class="pixel-frame" aria-labelledby="move-choice-title">
       <div class="dialog-heading">
         <h2 id="move-choice-title">Elige el tipo de jugada</h2>

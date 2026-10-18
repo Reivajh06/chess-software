@@ -19,6 +19,11 @@ public class PostLegalMoves implements Handler {
 
 		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
 
+		if(session == null) {
+			ctx.status(404);
+			return;
+		}
+
 		GameUpdater updater = new GameUpdater(session);
 
 		Map<Integer, List<Tile>> pieceMoves = updater.pieceMoves(new Tile(selectedPieceDetails.get("from")));

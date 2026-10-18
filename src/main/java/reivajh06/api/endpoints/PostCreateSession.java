@@ -10,37 +10,40 @@ import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameState;
 import reivajh06.gamelogic.Gamemode;
+import reivajh06.model.PieceColor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class PostCreateSession implements Handler {
 
 	private static final int SUCCESS = 201;
-	private static final int UNAVAILABLE_MODE = 501;
 
 	@Override
 	public void handle(@NotNull Context ctx) {
 		Map<String, String> sessionType = Json.fromJson(ctx.body(), Map.class);
 
+		UUID creatorId = UUID.randomUUID();
 		Gamemode gamemode = Gamemode.valueOf(sessionType.get("gamemode"));
 		Difficulty difficulty = Difficulty.valueOf(sessionType.get("difficulty"));
 
 		GameSession session = new GameSession(gamemode, difficulty);
+		PieceColor creatorColor = session.assignColor(creatorId);
 
 		Sessions.registerSession(session);
 
-		ctx.status(gamemode != Gamemode.PRACTICE ? UNAVAILABLE_MODE : SUCCESS).result(jsonResponse(session));
+		ctx.status(SUCCESS).result(jsonResponse(creatorId, creatorColor, session));
 	}
 
-	private String jsonResponse(GameSession session) {
+	private String jsonResponse(UUID playerId, PieceColor playerColor, GameSession session) {
 		Map<String, Object> resultBody = new HashMap<>(Map.of(
 				"sessionId", session.id(),
 				"gamemode", session.gamemode(),
 				"difficulty", session.difficulty(),
-				"whiteId", session.whiteId(),
-				"blackId", session.blackId(),
+				"playerId", playerId.toString(),
+				"playerColor", playerColor.name(),
 				"state", extractGameStateInfo(session.gameState())
 		));
 

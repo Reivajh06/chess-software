@@ -65,12 +65,15 @@ export class ChessApi {
   create(mode, difficulty) {
     return this.request("/sessions", { gamemode: mode, difficulty });
   }
-  join(id, playerId) {
-    return this.request(`/sessions/${encodeURIComponent(id)}/join`, { playerId });
+  // No player ID is sent: the server assigns the free colour and returns it.
+  join(id) {
+    return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});
+  }
+  serverInfo() {
+    return this.request("/server");
   }
   state(id) {
-    // GetReadCurrentState is currently registered as POST in ChessAPI.
-    return this.request(`/sessions/${encodeURIComponent(id)}`, {});
+    return this.request(`/sessions/${encodeURIComponent(id)}`);
   }
   legal(id, from) {
     return this.request(

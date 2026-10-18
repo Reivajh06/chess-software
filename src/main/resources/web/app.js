@@ -7,8 +7,9 @@ import {
   loadPreferences,
   savePreferences,
   parseInvitation,
-  invitationPlayer,
+  loopbackHost,
 } from "./modules/preferences.js";
+import { serverAddress } from "./modules/network.js";
 import { SessionAccess, SessionPolling } from "./modules/session.js";
 import { GameAudio } from "./modules/audio.js";
 import { BackgroundMusic } from "./modules/music.js";
@@ -50,6 +51,9 @@ const historyView = new HistoryView(
 let sessionVersion = 0;
 let warningTimer = null;
 let sessionBusy = false;
+let waitingTimer = null;
+// How often Alfi chats while a PvP room waits for the rival.
+const waitingChatDelay = 11000;
 
 const announcedResults = new Set();
 const sessions = new SessionAccess(api);
@@ -77,6 +81,19 @@ function mascotReact(kind, priority = 1, delay = 650, options = {}, vars = {}) {
   setTimeout(() => {
     if (document.body.dataset.screen === "game") gameMascot.say(gameMascot.line(kind, vars), priority, options);
   }, delay);
+}
+
+// While the rival has not joined, Alfi keeps the creator company. The board
+// stays locked meanwhile: movableColors() blocks every move until then.
+function scheduleWaitingChat() {
+  clearTimeout(waitingTimer);
+  if (!store.state?.waitingForOpponent) return;
+  waitingTimer = setTimeout(() => {
+    if (document.body.dataset.screen === "game" && store.state?.waitingForOpponent) {
+      gameMascot.say(gameMascot.line("waiting"));
+    }
+    scheduleWaitingChat();
+  }, waitingChatDelay);
 }
 
 populateThemes(byId("theme-select"));
@@ -178,10 +195,8 @@ const liveSession = new SessionPolling(api, {
   onError: (error) => {
     if ([404, 405, 501].includes(error.status)) {
       liveSession.stop();
-      setConnection("Sesión creada");
-      setNotice(
-          "La sesión se ha creado. El servidor todavía no permite consultar su estado."
-      );
+      setConnection("Sin partida");
+      setNotice("La partida ya no existe en el servidor. Vuelve al menú y empieza una nueva.");
       return;
     }
 
@@ -256,6 +271,12 @@ function applyGameState(payload) {
   clearMoveWarning();
   byId("move-choice-dialog").close();
   renderGame();
+
+  if (before?.waitingForOpponent && !state.waitingForOpponent) {
+    audio.play("confirm");
+    mascotReact("opponentJoined", 2, 0);
+  }
+  scheduleWaitingChat();
 
   if (before && state.moves.length > before.moves.length) {
     const move = state.moves.at(-1);
@@ -630,6 +651,7 @@ function resetSession() {
   api.cancel();
   liveSession.stop();
   clearMoveWarning();
+  clearTimeout(waitingTimer);
 
   store.reset();
   store.lastStateSignature = null;
@@ -640,6 +662,7 @@ function resetSession() {
   for (const id of [
     "move-choice-dialog",
     "result-dialog",
+    "invite-dialog",
   ]) {
     byId(id).close();
   }
@@ -665,7 +688,9 @@ async function activateSession(session, state) {
   applyGameState(state);
   sessions.persist(session);
   showScreen("game");
-  gameMascot.say(gameMascot.line(store.state?.moves.length ? "idle" : "start"), 1);
+  gameMascot.say(gameMascot.line(
+      store.state?.waitingForOpponent ? "waiting" : store.state?.moves.length ? "idle" : "start"
+  ), 1);
 
   setConnection("Conectado", "online");
   schedulePoll();
@@ -679,11 +704,10 @@ function joinSession(value) {
     return;
   }
 
-  const invited = invitationPlayer(value);
-  return openSession(id, "PVP", invited);
+  return openSession(id, "PVP");
 }
 
-async function openSession(id, mode, invited = { playerId: null, playerColor: "WHITE" }) {
+async function openSession(id, mode) {
   if (sessionBusy || (!id && !modeDefinition(mode).available)) {
     return;
   }
@@ -699,12 +723,7 @@ async function openSession(id, mode, invited = { playerId: null, playerColor: "W
   renderGame();
 
   try {
-    const { session, state } = await sessions.open(
-        id,
-        mode,
-        invited.playerId,
-        invited.playerColor
-    );
+    const { session, state } = await sessions.open(id, mode);
 
     if (generation === sessionVersion) {
       await activateSession(session, state);
@@ -827,20 +846,60 @@ byId("retry").addEventListener("click", () => {
   }
 });
 
+// Invitations must reach other machines. A page opened through localhost
+// asks the server for its network address each time; it is never stored.
+async function inviteOrigin() {
+  if (!loopbackHost()) return location.origin;
+  const found = await serverAddress(api);
+  if (!found) return null;
+  try {
+    return new URL(`${location.protocol}//${found.address}${found.port ? `:${found.port}` : ""}`).origin;
+  } catch {
+    return null;
+  }
+}
+
 byId("invite").addEventListener("click", async () => {
   if (!store.session) {
     return;
   }
 
-  const invitation = sessions.invitation(store.session.sessionId);
+  const sessionId = store.session.sessionId;
+  byId("invite-link").value = "";
+  byId("invite-link").placeholder = "Preparando el enlace…";
+  byId("invite-copy").disabled = true;
+  byId("invite-status").textContent = "";
+  byId("invite-dialog").showModal();
 
-  try {
-    await navigator.clipboard.writeText(invitation);
-    setNotice("Invitación copiada.");
-  } catch {
-    setNotice(`No se pudo copiar. ${invitation}`);
-  }
+  const origin = await inviteOrigin();
+  if (store.session?.sessionId !== sessionId) return;
+  byId("invite-link").value = origin ? sessions.invitation(sessionId, origin) : "";
+  byId("invite-link").placeholder = "";
+  byId("invite-copy").disabled = !origin;
+  byId("invite-status").textContent = origin
+      ? ""
+      : "No se pudo obtener la dirección de este equipo en la red. Inténtalo de nuevo.";
 });
+
+byId("invite-copy").addEventListener("click", async () => {
+  const link = byId("invite-link").value;
+  if (!link) return;
+
+  // The Clipboard API needs a secure context, which a LAN http:// page is not.
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(link);
+    copied = true;
+  } catch {
+    byId("invite-link").select();
+    copied = document.execCommand?.("copy") ?? false;
+  }
+
+  byId("invite-status").textContent = copied
+      ? "Invitación copiada."
+      : "No se pudo copiar. Selecciona el enlace y cópialo a mano.";
+});
+
 
 function applyMascot() {
   document.body.dataset.mascot = preferences.mascot ? "on" : "off";
@@ -910,6 +969,10 @@ for (const [id, key] of [
       applyTheme(preferences.theme);
       savePreferences(preferences);
       renderGame();
+      titleMascot.dress(preferences.theme);
+      gameMascot.dress(preferences.theme);
+      const mascot = document.body.dataset.screen === "game" ? gameMascot : titleMascot;
+      mascot.say(mascot.line(`theme-${preferences.theme}`), 1);
       return;
     }
 
@@ -1003,6 +1066,15 @@ if (invitation) {
               generation === sessionVersion &&
               error.name !== "AbortError"
           ) {
+            // The server keeps sessions in memory: after a restart the saved
+            // one is gone (404, or 500 from a backend that does not check).
+            if ([404, 500].includes(error.status)) {
+              sessions.forget(invitation);
+              setConnection("Sin partida");
+              title.showMenu();
+              title.setError("La partida anterior ya no existe en el servidor. Empieza una nueva.");
+              return;
+            }
             title.showJoin(location.href);
             title.setError(errorMessage(error));
           }

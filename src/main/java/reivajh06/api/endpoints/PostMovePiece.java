@@ -20,6 +20,11 @@ public class PostMovePiece implements Handler {
 
 		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
 
+		if(session == null) {
+			ctx.status(404);
+			return;
+		}
+
 		GameUpdater updater = new GameUpdater(session);
 
 		Object moveId = moveRequest.get("moveId");

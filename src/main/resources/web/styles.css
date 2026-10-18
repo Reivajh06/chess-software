@@ -32,7 +32,7 @@
   --legal: color-mix(in srgb, var(--bg) 65%, transparent);
   --header: 64px;
   font-family: "Pixelify Sans", "Segoe UI", sans-serif;
-  font-size: 16px;
+  font-size: 18px;
 }
 * {
   box-sizing: border-box;
@@ -148,7 +148,7 @@ button.primary:hover:not(:disabled) {
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 24px;
+  font-size: 27px;
   line-height: 1;
 }
 .icon-button:hover {
@@ -218,7 +218,7 @@ button.primary:hover:not(:disabled) {
 .badge {
   display: inline-block;
   padding: 5px 7px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--accent);
   background: var(--surface);
   box-shadow: 0 0 0 2px var(--line);
@@ -259,7 +259,7 @@ input[type="checkbox"] {
   letter-spacing: -1px;
 }
 .brand-wordmark {
-  font-size: 18px;
+  font-size: 20px;
 }
 .brand-wordmark span,
 .title-wordmark span {
@@ -279,7 +279,7 @@ body[data-screen="title"] .brand {
   align-items: center;
   margin-right: 10px;
   padding: 6px 9px;
-  font: 9px Silkscreen, monospace;
+  font: 10px Silkscreen, monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
@@ -339,7 +339,7 @@ body[data-screen="game"] #title-screen {
 }
 .title-card-heading {
   align-self: flex-start;
-  font: 11px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--muted);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -360,7 +360,7 @@ body[data-screen="game"] #title-screen {
 .title-tagline {
   margin-top: 8px;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 18px;
 }
 .title-menu {
   display: grid;
@@ -400,14 +400,14 @@ body[data-screen="game"] #title-screen {
 }
 .title-option strong {
   display: block;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 500;
 }
 .title-option small {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 /* The option being opened keeps its color and shows animated dots. */
 .title-option.is-loading:disabled {
@@ -460,7 +460,7 @@ body[data-screen="game"] #title-screen {
   gap: 10px;
   width: 100%;
   padding: 8px 10px;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.35;
   background: color-mix(in srgb, var(--danger) 12%, var(--panel));
   box-shadow: inset var(--pixel) 0 var(--danger), 0 0 0 2px var(--line);
@@ -471,12 +471,12 @@ body[data-screen="game"] #title-screen {
   place-items: center;
   flex: 0 0 22px;
   height: 22px;
-  font: 900 16px/1 monospace;
+  font: 900 18px/1 monospace;
   color: var(--bg);
   background: var(--danger);
 }
 .title-hint {
-  font: 9px Silkscreen, monospace;
+  font: 10px Silkscreen, monospace;
   color: var(--muted);
 }
 
@@ -544,13 +544,13 @@ body[data-screen="game"] #title-screen {
   min-width: 0;
 }
 .player strong {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
 }
 .player small {
   margin-left: 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 .captured-row {
   display: flex;
@@ -570,12 +570,12 @@ body[data-screen="game"] #title-screen {
 }
 .advantage {
   margin-left: 6px;
-  font: 11px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--accent);
 }
 .turn {
   padding: 6px 8px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--bg);
   background: var(--accent);
 }
@@ -584,7 +584,7 @@ body[data-screen="game"] #title-screen {
 }
 .clock {
   padding: 6px 10px;
-  font-size: 24px;
+  font-size: 27px;
   font-variant-numeric: tabular-nums;
   background: var(--surface);
 }
@@ -605,7 +605,7 @@ body[data-screen="game"] #title-screen {
   scrollbar-width: thin;
 }
 .match-panel .eyebrow {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -632,13 +632,13 @@ body[data-screen="game"] #title-screen {
   min-width: 0;
 }
 .mode-text strong {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 500;
   line-height: 1.1;
 }
 .arena-status {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 .arena-status[data-alert="true"] {
   color: var(--danger);
@@ -677,7 +677,7 @@ body[data-screen="game"] #title-screen {
   animation: hop 1.6s steps(2) infinite;
 }
 #turn-name {
-  font: 20px Silkscreen, monospace;
+  font: 23px Silkscreen, monospace;
   line-height: 1.1;
 }
 .turn-card[data-turn="WHITE"] {
@@ -694,7 +694,7 @@ body[data-screen="game"] #title-screen {
 }
 .notice {
   padding: 7px 10px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.35;
   background: color-mix(in srgb, var(--accent) 12%, var(--panel));
   box-shadow: inset var(--pixel) 0 var(--accent);
@@ -702,7 +702,7 @@ body[data-screen="game"] #title-screen {
 .turn-card #retry {
   justify-self: start;
   padding: 5px 10px;
-  font-size: 14px;
+  font-size: 16px;
 }
 .score-heading {
   display: flex;
@@ -710,7 +710,7 @@ body[data-screen="game"] #title-screen {
   justify-content: space-between;
 }
 .score-lead {
-  font: 11px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--accent);
 }
 /* A fighting-game style balance bar: white fills from the left. */
@@ -731,7 +731,7 @@ body[data-screen="game"] #title-screen {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .last-move-card {
   display: grid;
@@ -763,13 +763,13 @@ body[data-screen="game"] #title-screen {
   min-width: 0;
 }
 #last-move-route {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 #last-move-detail {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .last-move-card.is-capture #last-move-detail {
   color: var(--accent);
@@ -778,12 +778,12 @@ body[data-screen="game"] #title-screen {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 .review-banner strong {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
 }
 .review-banner button {
   padding: 7px 10px;
-  font-size: 14px;
+  font-size: 16px;
 }
 .match-actions {
   display: grid;
@@ -796,7 +796,7 @@ body[data-screen="game"] #title-screen {
   gap: 10px;
   padding: 7px 12px;
   text-align: left;
-  font-size: 15px;
+  font-size: 17px;
 }
 .match-actions button span {
   width: 18px;
@@ -811,7 +811,7 @@ body[data-screen="game"] #title-screen {
   background: var(--surface);
 }
 .spectator-banner span {
-  font: 10px Silkscreen, monospace;
+  font: 11px Silkscreen, monospace;
   color: var(--accent);
 }
 .session-details {
@@ -822,7 +822,7 @@ body[data-screen="game"] #title-screen {
 }
 .session-details code {
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
 }
 
@@ -833,7 +833,7 @@ body[data-screen="game"] #title-screen {
   justify-content: space-between;
 }
 .section-title h2 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
 }
 .move-history {
@@ -858,7 +858,7 @@ body[data-screen="game"] #title-screen {
   height: 24px;
   margin-top: 12px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   box-shadow: inset 0 0 0 2px var(--line);
 }
@@ -870,7 +870,7 @@ body[data-screen="game"] #title-screen {
   padding: 9px 9px 9px 14px;
   border: 0;
   text-align: left;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.3;
   background: var(--panel);
   box-shadow: inset 0 0 0 2px var(--line), inset 5px 0 #edf4ff55;
@@ -902,14 +902,14 @@ body[data-screen="game"] #title-screen {
   height: 30px;
 }
 .move-piece-name {
-  font-size: 14px;
+  font-size: 16px;
 }
 .move-side {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 .move-side::before {
   content: "";
@@ -937,26 +937,26 @@ body[data-screen="game"] #title-screen {
 }
 .move-square-label {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 .move-square {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
 }
 .move-arrow {
   color: var(--accent);
-  font-size: 16px;
+  font-size: 18px;
 }
 .move-capture {
   display: grid;
   gap: 4px;
   padding-top: 7px;
   border-top: 2px solid var(--line);
-  font-size: 11px;
+  font-size: 12px;
 }
 .move-capture-label {
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
 }
 .move-capture-piece {
   display: flex;
@@ -978,7 +978,7 @@ body[data-screen="game"] #title-screen {
 .history-controls button {
   flex: 1;
   padding: 4px;
-  font-size: 20px;
+  font-size: 23px;
 }
 
 /* ---------- Board (sprites and tiles come from the theme sheets) ---------- */
@@ -1115,7 +1115,7 @@ body[data-screen="game"] #title-screen {
 .coordinate {
   position: absolute;
   z-index: 3;
-  font: clamp(8px, 0.8vw, 10px) Silkscreen, monospace;
+  font: clamp(9px, 0.9vw, 11px) Silkscreen, monospace;
   pointer-events: none;
 }
 .coordinate.rank {
@@ -1161,7 +1161,7 @@ body[data-screen="game"] #title-screen {
   max-width: calc(100% - 20px);
   padding: 9px 12px;
   transform: translateX(-50%);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.2;
   background: var(--panel);
   box-shadow: 0 0 0 var(--pixel) var(--accent), 0 6px 0 var(--pixel) #0007;
@@ -1172,7 +1172,7 @@ body[data-screen="game"] #title-screen {
   place-items: center;
   flex: 0 0 24px;
   height: 24px;
-  font: 900 18px/1 monospace;
+  font: 900 20px/1 monospace;
   color: var(--bg);
   background: var(--accent);
 }
@@ -1197,11 +1197,11 @@ body[data-screen="game"] #title-screen {
 }
 .empty strong {
   color: var(--text);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
 }
 .empty p {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.4;
 }
 /* ---------- Dialogs ---------- */
@@ -1221,12 +1221,30 @@ dialog::backdrop {
   margin-bottom: 12px;
 }
 .dialog-heading h2 {
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 500;
 }
 .dialog-heading button {
   padding: 0 10px;
-  font-size: 22px;
+  font-size: 25px;
+}
+/* ---------- Invitation ---------- */
+.invite-field {
+  margin-bottom: 14px;
+}
+.invite-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.invite-field input {
+  width: calc(100% - 2 * var(--pixel));
+}
+.invite-copy {
+  width: 100%;
+}
+#invite-status:empty {
+  display: none;
 }
 /* ---------- Settings: pixel tabs, switches, sliders and pickers ---------- */
 .settings-dialog {
@@ -1242,7 +1260,7 @@ dialog::backdrop {
   flex: 1;
   margin: 0;
   padding: 8px 6px 6px;
-  font: 10px Silkscreen, monospace;
+  font: 11px Silkscreen, monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
@@ -1267,7 +1285,7 @@ dialog::backdrop {
 }
 .settings-label,
 .setting-row label {
-  font: 9px Silkscreen, monospace;
+  font: 10px Silkscreen, monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
@@ -1279,7 +1297,7 @@ dialog::backdrop {
   margin-top: 4px;
 }
 .setting-row output {
-  font: 11px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--accent);
 }
 .switch-row {
@@ -1372,11 +1390,11 @@ dialog::backdrop {
   box-shadow: inset 0 0 0 var(--pixel) var(--accent);
 }
 .choice-name {
-  font-size: 14px;
+  font-size: 16px;
 }
 .choice small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.3;
 }
 /* Mini board corner in the theme's own colors, with its accent as a bar. */
@@ -1397,7 +1415,7 @@ dialog::backdrop {
 }
 .settings-note {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.45;
 }
 .move-choice-options {
@@ -1454,7 +1472,7 @@ dialog::backdrop {
   height: 28px;
   padding: 0;
   border: 0;
-  font-size: 20px;
+  font-size: 23px;
   color: var(--muted);
   background: var(--surface);
 }
@@ -1511,12 +1529,12 @@ dialog::backdrop {
   box-shadow: inset 0 0 0 2px var(--line);
 }
 .result-stats dt {
-  font: 9px Silkscreen, monospace;
+  font: 10px Silkscreen, monospace;
   color: var(--muted);
 }
 .result-stats dd {
   margin: 4px 0 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
 }
 .result-image > .piece-sprite {
@@ -1570,14 +1588,14 @@ dialog::backdrop {
 
 /* ---------- Mascot (Alfi): self-contained, remove with modules/mascot.js ---------- */
 .mascot {
-  --mascot-size: 72px;
+  --mascot-size: 96px;
   --mascot-outline: #15111c;
   display: flex;
   align-items: flex-end;
   gap: 14px;
 }
 .mascot-large {
-  --mascot-size: 168px;
+  --mascot-size: 216px;
   align-items: center;
 }
 .mascot-sprite {
@@ -1604,7 +1622,7 @@ dialog::backdrop {
 .mascot-sprite > .piece-sprite {
   width: 100%;
   height: 100%;
-  /* Classic skin with a hard 1-pixel-art outline so it pops off any theme. */
+  /* The theme's bishop with a hard 1-pixel-art outline so it pops off any board. */
   filter:
     drop-shadow(var(--pixel) 0 0 var(--mascot-outline))
     drop-shadow(calc(-1 * var(--pixel)) 0 0 var(--mascot-outline))
@@ -1671,12 +1689,13 @@ dialog::backdrop {
 .mascot-small .mascot-bubble {
   align-self: stretch;
 }
+/* Tail squares centred over Alfi (sprite margin + half his size). */
 .mascot-small .mascot-bubble::before {
-  left: 24px;
+  left: calc(4px + var(--mascot-size) / 2 - 1.5 * var(--pixel));
   bottom: calc(-4 * var(--pixel));
 }
 .mascot-small .mascot-bubble::after {
-  left: 21px;
+  left: calc(4px + var(--mascot-size) / 2 - var(--pixel));
   bottom: calc(-7 * var(--pixel));
 }
 .mascot-small .mascot-sprite {
@@ -1686,25 +1705,28 @@ dialog::backdrop {
   align-self: center;
   padding: 14px 30px 14px 16px;
 }
+/* Both tail squares centred on the bubble's middle, facing Alfi. */
 .mascot-large .mascot-bubble::before {
-  bottom: 50%;
+  top: calc(50% - 1.5 * var(--pixel));
+  bottom: auto;
 }
 .mascot-large .mascot-bubble::after {
-  bottom: calc(50% - 3px);
+  top: calc(50% - var(--pixel));
+  bottom: auto;
 }
 .mascot-name {
   display: block;
   margin-bottom: 4px;
-  font: 9px Silkscreen, monospace;
+  font: 10px Silkscreen, monospace;
   color: var(--accent);
   letter-spacing: 1px;
 }
 .mascot-text {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.4;
 }
 .mascot-large .mascot-text {
-  font-size: 18px;
+  font-size: 20px;
 }
 .mascot-text .word {
   white-space: nowrap;
@@ -1732,7 +1754,7 @@ body[data-mascot="off"] .mascot {
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
 }
 .mascot-dismiss:hover {
@@ -1858,10 +1880,10 @@ body[data-mascot="off"] .mascot {
     height: 72px;
   }
   .mascot-large {
-    --mascot-size: 96px;
+    --mascot-size: 120px;
   }
   .mascot-large .mascot-text {
-    font-size: 15px;
+    font-size: 17px;
   }
 }
 
@@ -1887,7 +1909,7 @@ body[data-mascot="off"] .mascot {
   .match-actions button {
     gap: 6px;
     padding: 6px 8px;
-    font-size: 13px;
+    font-size: 15px;
   }
   /* The move list already shows the last move here. */
   .mascot-small,
@@ -1962,7 +1984,7 @@ body[data-mascot="off"] .mascot {
     flex-direction: row;
     align-items: flex-end;
     gap: 14px;
-    --mascot-size: 56px;
+    --mascot-size: 72px;
     padding: 8px 10px 8px 8px;
     background: var(--bg);
     box-shadow: 0 0 0 var(--pixel) var(--line), 0 calc(2 * var(--pixel)) 0 var(--pixel) #000a;
@@ -1984,7 +2006,7 @@ body[data-mascot="off"] .mascot {
   }
   .mascot-small .mascot-bubble::after {
     left: calc(-7 * var(--pixel));
-    bottom: 11px;
+    bottom: calc(14px + 0.5 * var(--pixel));
   }
 }
 @keyframes pop-in {

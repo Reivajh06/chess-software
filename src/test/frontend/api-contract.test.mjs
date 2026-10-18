@@ -82,19 +82,20 @@ function currentState(ply, serialized = true) {
   };
 }
 
-test("empty move responses refresh the board, chronological history and captures through the current POST route", async (t) => {
+test("empty move responses refresh the board, chronological history and captures through the GET state route", async (t) => {
   let ply = 0;
   const calls = [];
   t.mock.method(globalThis, "fetch", async (path, options) => {
     calls.push({ path, options });
-    assert.equal(options.method, "POST");
     assert.equal(options.cache, "no-store");
     if (path.endsWith("/moves")) {
+      assert.equal(options.method, "POST");
       ply++;
       return new Response("", { status: 200 });
     }
+    assert.equal(options.method, "GET");
     assert.equal(path, `/api/sessions/${created.sessionId}`);
-    assert.deepEqual(JSON.parse(options.body), {});
+    assert.equal(options.body, undefined);
     return new Response(JSON.stringify(currentState(ply)), {
       status: 200, headers: { "Content-Type": "text/plain" },
     });
@@ -185,26 +186,50 @@ test("rejects malformed successful responses with the correct diagnostic", async
   await assert.rejects(new ChessApi().create("PRACTICE", "PRACTICE"), /Respuesta del servidor no válida/);
 });
 
-test("PvP creation registers exactly one randomly assigned ID and retains the other for invitations", async () => {
-  const blackId = "68eab6b1-974f-4e83-9c16-1ad28bd98c87";
-  const registrations = [];
+test("PvP creation takes the creator's seat from the creation response without joining", async () => {
+  let joins = 0;
   const api = {
-    create: async () => ({ ...created, gamemode: "PVP", blackId }),
-    join: async (id, actor) => { registrations.push([id, actor]); return { state }; },
+    create: async () => ({ sessionId: created.sessionId, gamemode: "PVP", difficulty: "NOT_CPU",
+      playerId, playerColor: "BLACK", state }),
+    join: async () => { joins++; return {}; },
   };
-  const { session } = await new SessionAccess(api).open(null, "PVP");
-  assert.deepEqual(registrations, [[created.sessionId, session.playerId]]);
-  assert.ok([playerId, blackId].includes(session.playerId));
-  assert.notEqual(session.invitedPlayerId, session.playerId);
-  assert.equal(session.playerColor, session.playerId === playerId ? "WHITE" : "BLACK");
-});
-
-test("joining uses the invitation ID and local orientation without generating a new assignment", async () => {
-  const api = { join: async (id, actor) => {
-    assert.equal(actor, playerId);
-    return { gamemode: "PVP", difficulty: "NOT_CPU", state };
-  } };
-  const { session } = await new SessionAccess(api).open(created.sessionId, "PVP", playerId, "BLACK");
+  const { session, state: initial } = await new SessionAccess(api).open(null, "PVP");
+  assert.equal(joins, 0);
   assert.equal(session.playerId, playerId);
   assert.equal(session.playerColor, "BLACK");
+  assert.equal(initial.waitingForOpponent, true);
+});
+
+test("PvP creation without a seat in the response is an error", async () => {
+  const api = { create: async () => ({ sessionId: created.sessionId, gamemode: "PVP", state }) };
+  await assert.rejects(new SessionAccess(api).open(null, "PVP"), /no ha asignado un color/);
+});
+
+test("the invited player joins with an empty body and takes the seat the server assigns", async (t) => {
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    calls.push({ path, options });
+    return new Response(JSON.stringify({ playerId, playerColor: "WHITE", gamemode: "PVP",
+      difficulty: "NOT_CPU", state: { ...state, waitingForOpponent: false } }), { status: 200 });
+  });
+  const api = new ChessApi();
+  const { session } = await new SessionAccess(api).open(created.sessionId);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].path, `/api/sessions/${created.sessionId}/join`);
+  assert.deepEqual(JSON.parse(calls[0].options.body), {});
+  assert.equal(session.playerId, playerId);
+  assert.equal(session.playerColor, "WHITE");
+  assert.equal(api.playerId, playerId);
+});
+
+test("joining a full room reports it", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("", { status: 409 }));
+  await assert.rejects(new SessionAccess(new ChessApi()).open(created.sessionId),
+    error => error.status === 409 && /completa/.test(error.message));
+});
+
+test("the invitation link carries only the session ID", () => {
+  const sessions = new SessionAccess(new ChessApi());
+  assert.equal(sessions.invitation(created.sessionId, "http://192.168.1.69:5000"),
+    `http://192.168.1.69:5000/?session=${created.sessionId}`);
 });
