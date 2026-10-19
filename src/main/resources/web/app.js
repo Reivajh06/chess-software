@@ -458,7 +458,7 @@ function selectSquare(tile) {
     case "deselect":
       board.render();
       return;
-    case "blocked":
+    case "promote":
       showPromotionPicker(command.to);
       return;
     case "choose":
@@ -512,8 +512,14 @@ function showPromotionPicker(to) {
     button.setAttribute("aria-label", `Coronar como ${labels[type]}`);
     button.append(pieceImage(type, color, preferences.theme));
     button.addEventListener("click", () => {
-      closePromotionPicker();
-      showMoveWarning(`Has elegido ${labels[type]}. El servidor aún no admite la coronación.`);
+      const command = store.selection.promote(type);
+      byId("promotion-layer").hidden = true;
+
+      if (command) {
+        submitMove(command);
+      } else {
+        closePromotionPicker();
+      }
     });
     return button;
   });
@@ -572,7 +578,7 @@ function offerMoveChoice({ options }) {
   byId("move-choice-dialog").showModal();
 }
 
-async function submitMove({ from, to, moveId }) {
+async function submitMove({ from, to, moveId, promotion = null }) {
   clearMoveWarning();
   liveSession.stop();
   api.cancel();
@@ -586,7 +592,8 @@ async function submitMove({ from, to, moveId }) {
         store.session.sessionId,
         from,
         to,
-        moveId
+        moveId,
+        promotion
     );
 
     if (sessionVersion === generation) {

@@ -54,6 +54,27 @@ public class GameUpdater {
 		else board.whiteKingTile(newLocation);
 	}
 
+	public void promotePiece(Tile location, PieceType newType) {
+		Piece piece = session.gameState().board().pieceAt(location);
+		Piece promotedPiece;
+
+		if(piece == null || piece.type() != PieceType.PAWN) return;
+
+		if(piece.color() == PieceColor.BLACK) {
+			if(location.rank() != Board.WHITE_KING_START_RANK) return;
+
+			promotedPiece = PieceFactory.createPieceByFENCode(String.valueOf(newType.firstLetter).toLowerCase().charAt(0));
+
+		} else {
+			if(location.rank() != Board.BLACK_KING_START_RANK) return;
+
+			promotedPiece = PieceFactory.createPieceByFENCode(String.valueOf(newType.firstLetter).charAt(0));
+		}
+
+		session.gameState().board().removePieceIn(location);
+		session.gameState().board().addPiece(location, promotedPiece);
+	}
+
 	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
 		GameState currentState = session.gameState();
 		Board updatedBoard = currentState.board();

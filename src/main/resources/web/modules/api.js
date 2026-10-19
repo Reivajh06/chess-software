@@ -77,7 +77,14 @@ export class ChessApi {
       { from, ...(this.playerId ? { playerId: this.playerId } : {}) },
     );
   }
-  async move(id, from, to, moveId) {
+  promote(id, tile, newType) {
+    return this.request(`/sessions/${encodeURIComponent(id)}/promote`, {
+      tile,
+      newType,
+      ...(this.playerId ? { playerId: this.playerId } : {}),
+    }, { allowEmpty: true });
+  }
+  async move(id, from, to, moveId, promotion = null) {
     if (!Number.isSafeInteger(moveId) || moveId < 0)
       throw new TypeError("La jugada necesita un moveId válido del servidor.");
     const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
@@ -86,6 +93,10 @@ export class ChessApi {
       to,
       ...(this.playerId ? { playerId: this.playerId } : {}),
     }, { allowEmpty: true });
+    if (promotion) {
+      await this.promote(id, to, promotion);
+      return this.state(id);
+    }
     const state = response?.state ?? response?.gameState ??
       response?.session?.gameState ?? response;
     if (state && (state.fen != null || state.board != null ||

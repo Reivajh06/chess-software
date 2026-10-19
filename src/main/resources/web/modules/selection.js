@@ -147,6 +147,13 @@ export class Selection {
     return this.#move(this.to, moveId);
   }
 
+  promote(newType) {
+    if (this.phase !== Phase.CHOOSING) return null;
+    const [option] = this.options.get(this.to) ?? [];
+    if (!option) return null;
+    return { ...this.#move(this.to, option.moveId), promotion: newType };
+  }
+
   cancelChoice() {
     if (this.phase !== Phase.CHOOSING) return false;
     this.phase = Phase.SELECTED;
@@ -155,7 +162,11 @@ export class Selection {
   }
 
   #target(to, piece) {
-    if (isPromotion(piece, to)) return { type: "blocked", reason: "promotion", to };
+    if (isPromotion(piece, to)) {
+      this.phase = Phase.CHOOSING;
+      this.to = to;
+      return { type: "promote", from: this.from, to };
+    }
 
     const options = this.options.get(to);
 

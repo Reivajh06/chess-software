@@ -137,14 +137,17 @@ test("cancelling a choice returns to the selected piece", () => {
   assert.ok(selection.targets.has("e3"));
 });
 
-test("a promotion destination is blocked without leaving the selection", () => {
+test("a promotion destination asks for the new piece before moving", () => {
   const promotion = parseFen("7k/P7/8/8/8/8/8/K7");
   const selection = new Selection();
   const context = { pieces: promotion, movableColors: ["WHITE"] };
   const { token } = selection.click("a7", context);
   selection.loaded(token, { moves: [{ moveId: 0, tiles: ["a8"] }] });
-  assert.deepEqual(selection.click("a8", context), { type: "blocked", reason: "promotion", to: "a8" });
-  assert.equal(selection.phase, Phase.SELECTED);
+  assert.deepEqual(selection.click("a8", context), { type: "promote", from: "a7", to: "a8" });
+  assert.equal(selection.phase, Phase.CHOOSING);
+  assert.deepEqual(selection.promote("QUEEN"),
+    { type: "move", from: "a7", to: "a8", moveId: 0, promotion: "QUEEN" });
+  assert.equal(selection.phase, Phase.MOVING);
 });
 
 test("the board ignores clicks while a move is in flight", () => {

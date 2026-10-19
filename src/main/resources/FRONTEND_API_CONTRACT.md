@@ -159,7 +159,17 @@ The frontend keeps a `destination → [{moveId, optional label}]` mapping for th
 }
 ```
 
-`PostMovePiece` currently extracts only `from`, `to`, and the numeric `moveId` (Gson may deserialize it as `Double`). It executes `updater.movePieceAndUpdate(moveId, fromTile, toTile)` and sends **no JSON or FEN** on success; the response is an empty `200 OK`. `playerId` is presently ignored. There is no implemented promotion parameter: the frontend warns and does not submit promotion moves.
+`PostMovePiece` currently extracts only `from`, `to`, and the numeric `moveId` (Gson may deserialize it as `Double`). It executes `updater.movePieceAndUpdate(moveId, fromTile, toTile)` and sends **no JSON or FEN** on success; the response is an empty `200 OK`. `playerId` is presently ignored. Promotion is a separate request (see below).
+
+### Promotion
+
+`POST /api/sessions/{sessionId}/promote`
+
+```json
+{ "tile": "a8", "newType": "QUEEN", "playerId": "f3435c46-1a64-40c5-9b03-4b0bb3390020" }
+```
+
+`PostPromotePiece` reads `tile` and `newType` (`QUEEN`, `ROOK`, `BISHOP` or `KNIGHT`) and calls `GameUpdater.promotePiece`, replacing the pawn on its last rank. It answers an empty `200`. When a pawn destination is on rank 1 or 8 the frontend shows the piece picker; once a piece is chosen it posts the move first, then `/promote` with the move's `to` square, and finally reads the state.
 
 The frontend execution sequence is:
 

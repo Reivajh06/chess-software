@@ -2,6 +2,7 @@ package reivajh06.api;
 
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.staticfiles.Location;
 import reivajh06.api.endpoints.*;
 
@@ -29,6 +30,8 @@ public class ChessAPI {
 		config.routes.post("/api/sessions/{sessionId}/moves", new PostMovePiece());
 		config.routes.get("/api/sessions/{sessionId}", new GetReadCurrentState());
 		config.routes.get("/api/server", new GetServerAddress());
+		config.routes.get("/api/sessions/{sessionId}/promote", new GetServerAddress());
 		config.routes.post("/api/sessions/{sessionId}/join", new PostJoinSession());
+		config.routes.post("/api/sessions/{sessionId}/promote", new PostPromotePiece());
 	}
 }
