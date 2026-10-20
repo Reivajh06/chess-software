@@ -10,15 +10,10 @@ export const Phase = Object.freeze({
 
 const IGNORE = Object.freeze({ type: "ignore" });
 
-const BOTH_COLORS = Object.freeze(["WHITE", "BLACK"]);
-const NO_COLORS = Object.freeze([]);
-
-export function movableColors(session, state) {
-  if (!session || !state) return NO_COLORS;
-  if (state.status !== "ACTIVE" || state.waitingForOpponent) return NO_COLORS;
-  if (session.gamemode === "AIVAI") return NO_COLORS;
-  if (session.gamemode === "PRACTICE") return BOTH_COLORS;
-  return session.playerColor === state.turn ? Object.freeze([state.turn]) : NO_COLORS;
+export function boardInteractive(session, state) {
+  if (!session || !state) return false;
+  if (state.status !== "ACTIVE" || state.waitingForOpponent) return false;
+  return session.gamemode !== "AIVAI";
 }
 
 export function normalizeLegalMoves(payload) {
@@ -100,7 +95,7 @@ export class Selection {
     return this.phase === Phase.MOVING;
   }
 
-  click(tile, { pieces, movableColors }) {
+  click(tile, { pieces, interactive }) {
     if (this.phase === Phase.MOVING || this.phase === Phase.CHOOSING) return IGNORE;
 
     if (this.phase === Phase.SELECTED && this.options.has(tile)) {
@@ -114,7 +109,7 @@ export class Selection {
 
     const piece = pieces.get(tile);
 
-    if (piece && movableColors.includes(piece.color)) {
+    if (piece && interactive) {
       this.reset();
       this.phase = Phase.LOADING;
       this.from = tile;

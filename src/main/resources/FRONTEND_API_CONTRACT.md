@@ -144,7 +144,7 @@ A Java `Tile(File.E, Rank.R4)` serialized directly through Gson is an object lik
 
 The order of `moves` is unspecified. `moveId` comes from `GameController.pieceMovesetTiles` / `legalPieceMoves`, where each key is the integer index in `piece.moveset()`. It **must not** be calculated by the frontend from the array position. `tiles` currently contains Gson-serialized `Tile` records, though the frontend also accepts lowercase strings. Empty legal rule lists are filtered out, and an immobile piece returns `moves: []`.
 
-The frontend keeps a `destination → [{moveId, optional label}]` mapping for the selected position. Multiple rules may share one destination; the UI offers an explicit choice rather than guessing the index. Clicking a destination that was not returned is blocked locally and shows the nonmodal illegal-move warning. Every move still requires server-side validation when the backend supports it.
+The frontend keeps a `destination → [{moveId, optional label}]` mapping for the selected position. Multiple rules may share one destination; the UI offers an explicit choice rather than guessing the index. Clicking a destination that was not returned simply deselects (there is no `moveId` to send). The frontend does not check turn or piece ownership: any piece can be selected while the game is active, and the server decides which moves it may make by answering `legal-moves` (an empty list for a piece that cannot move now) and by validating `/moves`.
 
 ## 4. Execute a move and refresh the board (already implemented)
 
@@ -217,7 +217,7 @@ Successful response (`200`), only ever sent to the caller that got the seat:
 
 While `waitingForOpponent` is `true` the frontend:
 
-- Locks the board for the creator (`movableColors` returns no colors), so the game cannot start early.
+- Locks the board for the creator (`boardInteractive` returns `false`), so the game cannot start early.
 - Shows "Esperando rival" in the turn card and the opponent panel.
 - Has Alfi chat with `waiting` lines every few seconds.
 

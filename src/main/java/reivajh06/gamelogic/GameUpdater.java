@@ -189,22 +189,16 @@ public class GameUpdater {
 		return session.gameState().halfMoveClock() + 1;
 	}
 
-	private Tile updateEnPassantTile(Move move, Tile location) {
-		if(!move.condition().equals(MoveRules.START_TWO_FORWARD)) return session.gameState().enPassantDestination();
+	private Tile updateEnPassantTile(Move move, Tile destination) {
+		if(!move.condition().equals(MoveRules.START_TWO_FORWARD)) return null;
 
 		Board board = session.gameState().board();
 
-		File leftTileFile = File.previous(location.file());
+		if(board.pieceAt(destination).color() == PieceColor.WHITE) return new Tile(destination.file(), Rank.previous(destination.rank()));
 
-		if(leftTileFile == null || board.pieceAt(new Tile(leftTileFile, location.rank())) == null) {
-			File rightTileFile = File.next(location.file());
-
-			if(rightTileFile == null || board.pieceAt(new Tile(rightTileFile, location.rank())) == null) return null;
-
-			return new Tile(rightTileFile, location.rank());
-		}
-
-		return new Tile(leftTileFile, location.rank());
+		return board.pieceAt(destination).color() == PieceColor.WHITE ?
+				new Tile(destination.file(), Rank.previous(destination.rank()))
+				: new Tile(destination.file(), Rank.next(destination.rank()));
 	}
 
 	private List<Castling> updateCastlingRights(Piece movedPiece) {

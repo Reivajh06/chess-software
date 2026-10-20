@@ -18,10 +18,8 @@ public class MovesValidator {
 
 			if(p != null && p.color() == gameState.board().pieceAt(from).color()) return false;
 
-			if(condition.satisfies(new MoveContext(gameState, from, pendingTile, lastMove))) return true;
+            return condition.satisfies(new MoveContext(gameState, from, pendingTile, lastMove));
 
-
-			return false;
-		}).toList();
+        }).toList();
 	}
 }

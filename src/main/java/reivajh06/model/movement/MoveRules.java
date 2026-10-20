@@ -62,24 +62,12 @@ public class MoveRules {
 	};
 
 	public static final MoveCondition EN_PASSANT = ctx -> {
-		Board board = ctx.gameState().board();
-		Piece p = board.pieceAt(ctx.from());
-		Tile adjacentTile = new Tile(ctx.to().file(), ctx.from().rank());
-		Piece adjacentPiece = board.pieceAt(adjacentTile);
+		Tile enPassantDestination = ctx.gameState().enPassantDestination();
 
-		if(adjacentPiece == null) return false;
+		if(enPassantDestination == null) return false;
 
-		if(adjacentPiece.color() == p.color()) return false;
-		if(adjacentPiece.type() != PieceType.PAWN) return false;
-		if(adjacentPiece.timesMoved() > 1) return false;
-
-		MoveEvent lastMove = ctx.lastMove();
-
-		if(lastMove == null) return false;
-		if(!lastMove.to().equals(adjacentTile)) return false;
-
-		return isVerticalMove(lastMove.from(), lastMove.to()) && Math.abs(lastMove.from().rank().number - lastMove.to().rank().number) == 2;
-	};
+        return ctx.to().equals(enPassantDestination);
+    };
 
 	public static final MoveCondition QUEENSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();

@@ -61,7 +61,7 @@ export class BoardView {
     setBoardTiles(this.element, this.preferences.theme);
     this.element.setAttribute("aria-label", `Tablero, ${black ? "negras" : "blancas"} abajo`);
     const targets = this.store.targets;
-    const movable = this.store.movableColors ?? [];
+    const interactive = this.store.interactive;
     const layout = `${files}${ranks}`;
     if (this.layout !== layout) {
       this.finishAnimation?.();
@@ -86,7 +86,7 @@ export class BoardView {
       const item = pieces.get(tile);
       button.classList.toggle("last-move", last?.from === tile || last?.to === tile);
       button.classList.toggle("selected", this.store.selected === tile);
-      button.classList.toggle("movable", !!item && movable.includes(item.color));
+      button.classList.toggle("movable", !!item && interactive);
       button.classList.toggle("legal", targets.has(tile));
       button.classList.toggle("capture", targets.has(tile) && !!item);
       button.classList.toggle("in-check",

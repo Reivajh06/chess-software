@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Phase, Selection, movableColors } from "../../main/resources/web/modules/selection.js";
+import { Phase, Selection, boardInteractive } from "../../main/resources/web/modules/selection.js";
 import { parseFen, initialFen } from "../../main/resources/web/modules/state.js";
 
 const pieces = parseFen(initialFen);
-const white = { pieces, movableColors: ["WHITE"] };
+const white = { pieces, interactive: true };
 const active = { status: "ACTIVE", turn: "WHITE", waitingForOpponent: false };
 
 function selectedAt(from, moves) {
@@ -14,32 +14,25 @@ function selectedAt(from, moves) {
   return selection;
 }
 
-test("practice is a sandbox where either color may move at any time", () => {
-  const session = { gamemode: "PRACTICE" };
-  assert.deepEqual([...movableColors(session, active)], ["WHITE", "BLACK"]);
-  assert.deepEqual([...movableColors(session, { ...active, turn: "BLACK" })], ["WHITE", "BLACK"]);
-});
-
-test("a seated player moves only their own color and only on their turn", () => {
+test("turn and piece ownership are left to the server", () => {
   const session = { gamemode: "PVP", playerColor: "BLACK" };
-  assert.deepEqual([...movableColors(session, active)], []);
-  assert.deepEqual([...movableColors(session, { ...active, turn: "BLACK" })], ["BLACK"]);
+  assert.equal(boardInteractive(session, active), true);
+  assert.equal(boardInteractive(session, { ...active, turn: "BLACK" }), true);
 });
 
 test("nobody moves in finished, waiting, spectated or missing games", () => {
   const session = { gamemode: "PVP", playerColor: "WHITE" };
-  assert.deepEqual([...movableColors(session, { ...active, status: "DRAW" })], []);
-  assert.deepEqual([...movableColors(session, { ...active, waitingForOpponent: true })], []);
-  assert.deepEqual([...movableColors({ gamemode: "AIVAI" }, active)], []);
-  assert.deepEqual([...movableColors(null, active)], []);
-  assert.deepEqual([...movableColors(session, null)], []);
+  assert.equal(boardInteractive(session, { ...active, status: "DRAW" }), false);
+  assert.equal(boardInteractive(session, { ...active, waitingForOpponent: true }), false);
+  assert.equal(boardInteractive({ gamemode: "AIVAI" }, active), false);
+  assert.equal(boardInteractive(null, active), false);
+  assert.equal(boardInteractive(session, null), false);
 });
 
-test("only pieces of the movable color can be selected", () => {
+test("any piece can be selected while the board is interactive", () => {
   const selection = new Selection();
-  assert.equal(selection.click("e7", white).type, "ignore");
   assert.equal(selection.click("e4", white).type, "ignore");
-  assert.equal(selection.click("e2", { pieces, movableColors: [] }).type, "ignore");
+  assert.equal(selection.click("e2", { pieces, interactive: false }).type, "ignore");
   assert.equal(selection.phase, Phase.IDLE);
   assert.equal(selection.click("e2", white).type, "load");
   assert.equal(selection.phase, Phase.LOADING);
@@ -67,9 +60,9 @@ test("clicking the selected piece again deselects it", () => {
   assert.equal(selection.phase, Phase.IDLE);
 });
 
-test("in practice a piece of either color can be selected", () => {
+test("a piece of either color can be selected; the server decides its moves", () => {
   const selection = new Selection();
-  assert.equal(selection.click("e7", { pieces, movableColors: ["WHITE", "BLACK"] }).type, "load");
+  assert.equal(selection.click("e7", white).type, "load");
 });
 
 test("selecting another own piece discards the previous legal map", () => {
@@ -140,7 +133,7 @@ test("cancelling a choice returns to the selected piece", () => {
 test("a promotion destination asks for the new piece before moving", () => {
   const promotion = parseFen("7k/P7/8/8/8/8/8/K7");
   const selection = new Selection();
-  const context = { pieces: promotion, movableColors: ["WHITE"] };
+  const context = { pieces: promotion, interactive: true };
   const { token } = selection.click("a7", context);
   selection.loaded(token, { moves: [{ moveId: 0, tiles: ["a8"] }] });
   assert.deepEqual(selection.click("a8", context), { type: "promote", from: "a7", to: "a8" });

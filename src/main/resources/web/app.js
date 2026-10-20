@@ -441,7 +441,7 @@ function reviewPosition(ply) {
 function selectSquare(tile) {
   const command = store.selection.click(tile, {
     pieces: store.pieces,
-    movableColors: store.movableColors,
+    interactive: store.interactive,
   });
 
   if (command.type === "ignore") {

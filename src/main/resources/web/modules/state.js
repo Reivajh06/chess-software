@@ -1,5 +1,5 @@
 import { square } from "./squares.js";
-import { Selection, movableColors, normalizeLegalMoves } from "./selection.js";
+import { Selection, boardInteractive, normalizeLegalMoves } from "./selection.js";
 
 export { square, normalizeLegalMoves };
 
@@ -335,11 +335,7 @@ export class GameStore {
     return this.session?.gamemode === "PRACTICE";
   }
 
-  get movableColors() {
-    return this.reviewPly === null ? movableColors(this.session, this.state) : [];
-  }
-
   get interactive() {
-    return this.movableColors.length > 0;
+    return this.reviewPly === null && boardInteractive(this.session, this.state);
   }
 }

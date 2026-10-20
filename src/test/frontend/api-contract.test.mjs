@@ -107,7 +107,7 @@ test("empty move responses refresh the board, chronological history and captures
   store.apply(state);
   const moves = [["e2", "e4", 1], ["d7", "d5", 1], ["e4", "d5", 2]];
   for (const [index, [from, to, moveId]] of moves.entries()) {
-    const context = () => ({ pieces: store.pieces, movableColors: store.movableColors });
+    const context = () => ({ pieces: store.pieces, interactive: store.interactive });
     const load = store.selection.click(from, context());
     assert.equal(load.type, "load");
     assert.ok(store.selection.loaded(load.token, { moves: [{ moveId, tiles: [to] }] }));
