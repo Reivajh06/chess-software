@@ -1,4 +1,4 @@
-import { ChessApi } from "./modules/api.js";
+import { ChessApi, HttpStatus } from "./modules/api.js";
 import { GameStore, labels, normalizeState, stateSignature } from "./modules/state.js";
 import { BoardView } from "./modules/board.js";
 import { pieceImage, logoUrl } from "./modules/assets.js";
@@ -183,7 +183,7 @@ const liveSession = new SessionPolling(api, {
   },
 
   onError: (error) => {
-    if ([404, 405, 501].includes(error.status)) {
+    if (error.status === HttpStatus.NOT_FOUND) {
       liveSession.stop();
       setConnection("Sin partida");
       setNotice("La partida ya no existe en el servidor. Vuelve al menú y empieza una nueva.");
@@ -191,7 +191,7 @@ const liveSession = new SessionPolling(api, {
     }
 
     setConnection("Sin conexión");
-    setNotice(errorMessage(error), true);
+    setNotice(error.message, true);
   },
 });
 
@@ -221,14 +221,6 @@ function showMoveWarning(message) {
 function setConnection(text, state = "") {
   byId("connection").textContent = text;
   byId("connection").dataset.state = state;
-}
-
-function errorMessage(error) {
-  return error.status === 404 && store.session
-      ? "La sesión no existe o el servidor todavía no admite esta función."
-      : error.message === "Work in progress"
-          ? "El servidor todavía no permite crear partidas."
-          : error.message;
 }
 
 function renderGame() {
@@ -484,7 +476,7 @@ async function loadLegalMoves({ from, token }) {
     }
 
     if (store.selection.failed(token)) {
-      setNotice(errorMessage(error));
+      setNotice(error.message);
       board.render();
     }
   }
@@ -604,12 +596,7 @@ async function submitMove({ from, to, moveId, promotion = null }) {
         sessionVersion === generation &&
         error.name !== "AbortError"
     ) {
-      setNotice(
-          error.status === 404
-              ? "La jugada se envió, pero falta la consulta de estado para actualizar el tablero."
-              : errorMessage(error),
-          true
-      );
+      setNotice(error.message, true);
     }
   } finally {
     if (sessionVersion === generation) {
@@ -722,7 +709,7 @@ async function openSession(id, mode) {
         error.name !== "AbortError"
     ) {
       if (document.body.dataset.screen !== "title") showScreen("title");
-      title.setError(errorMessage(error));
+      title.setError(error.message);
       setConnection("No disponible");
     }
   } finally {
@@ -1045,7 +1032,7 @@ if (invitation) {
               generation === sessionVersion &&
               error.name !== "AbortError"
           ) {
-            if ([404, 500].includes(error.status)) {
+            if (error.status === HttpStatus.NOT_FOUND) {
               sessions.forget(invitation);
               setConnection("Sin partida");
               title.showMenu();
@@ -1053,7 +1040,7 @@ if (invitation) {
               return;
             }
             title.showJoin(location.href);
-            title.setError(errorMessage(error));
+            title.setError(error.message);
           }
         });
   } else {

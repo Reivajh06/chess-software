@@ -1,7 +1,25 @@
+// Mirrors the error statuses declared in ChessAPI; the API answers no other errors.
+export const HttpStatus = Object.freeze({
+  BAD_REQUEST: 400,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  SERVICE_UNAVAILABLE: 503,
+});
+
+const defaultMessages = {
+  [HttpStatus.BAD_REQUEST]: "El servidor ha rechazado una petición no válida.",
+  [HttpStatus.FORBIDDEN]: "No puedes hacer eso en esta partida.",
+  [HttpStatus.NOT_FOUND]: "La partida no existe en el servidor.",
+  [HttpStatus.CONFLICT]: "Esa acción no es posible en el estado actual de la partida.",
+  [HttpStatus.SERVICE_UNAVAILABLE]: "El servidor no está disponible ahora mismo.",
+};
+
 export class ApiError extends Error {
-  constructor(message, status = 0) {
+  constructor(message, status = 0, code = null) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 export class ChessApi {
@@ -33,16 +51,10 @@ export class ChessApi {
         try { payload = JSON.parse(bodyText); } catch {}
       }
       if (!response.ok) {
-        if ([404, 405, 501].includes(response.status))
-          throw new ApiError(
-            response.status === 404 && path !== "/sessions"
-              ? "Work in progress · Sesión o función no disponible (404)."
-              : "Work in progress",
-            response.status,
-          );
         throw new ApiError(
-          payload?.message || payload?.error || `Error del servidor (${response.status}).`,
+          payload?.message || defaultMessages[response.status] || `Error del servidor (${response.status}).`,
           response.status,
+          typeof payload?.error === "string" ? payload.error : null,
         );
       }
       if (payload === null && allowEmpty && !bodyText.trim()) return null;

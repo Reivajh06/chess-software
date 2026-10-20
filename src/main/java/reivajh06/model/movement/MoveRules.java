@@ -71,69 +71,22 @@ public class MoveRules {
 
 	public static final MoveCondition QUEENSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();
-		PieceColor checkedColor = ctx.gameState().checkedColor();
 
-		Piece king = board.pieceAt(ctx.from());
+		PieceColor color = board.pieceAt(ctx.from()).color();
 
-		if(king.color() == PieceColor.BLACK && ctx.gameState().blackCastling().getLast() == null) return false;
-		if(king.color() == PieceColor.WHITE && ctx.gameState().whiteCastling().getLast() == null) return false;
-		if(king.timesMoved() != 0) return false;
-		if(checkedColor == king.color()) return false;
-
-		Tile leftRookTile = GameController.tilesByRank(ctx.gameState(), ctx.from().rank()).getFirst();
-		Piece rook = board.pieceAt(leftRookTile);
-
-		if(rook == null) return false;
-		if(rook.type() != PieceType.ROOK) return false;
-		if(rook.timesMoved() != 0) return false;
-
-		for(File file = File.C; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
-			Tile tile = new Tile(file, ctx.from().rank());
-
-			if(board.pieceAt(tile) != null) return false;
-			if(!SAFE_MOVE.satisfies(new MoveContext(
-					ctx.gameState(),
-					ctx.from(),
-					tile,
-					ctx.lastMove()))
-			) return false;
-		}
-
-		return true;
+		return color == PieceColor.BLACK ?
+				ctx.gameState().blackCastling().getLast() != null
+				: ctx.gameState().whiteCastling().getLast() != null;
 	};
 
 	public static final MoveCondition KINGSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();
-		PieceColor checkedColor = ctx.gameState().checkedColor();
 
-		Piece king = board.pieceAt(ctx.from());
+		PieceColor color = board.pieceAt(ctx.from()).color();
 
-		if(king.color() == PieceColor.BLACK && ctx.gameState().blackCastling().getFirst() == null) return false;
-		if(king.color() == PieceColor.WHITE && ctx.gameState().whiteCastling().getFirst() == null) return false;
-		if(king.timesMoved() != 0) return false;
-		if(checkedColor == king.color()) return false;
-
-		Tile rightRookTile = GameController.tilesByRank(ctx.gameState(), ctx.from().rank()).getLast();
-
-		Piece rook = board.pieceAt(rightRookTile);
-
-		if(rook == null) return false;
-		if(rook.type() != PieceType.ROOK) return false;
-		if(rook.timesMoved() != 0) return false;
-
-		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
-			Tile tile = new Tile(file, ctx.from().rank());
-
-			if(board.pieceAt(tile) != null) return false;
-			if(!SAFE_MOVE.satisfies(new MoveContext(
-					ctx.gameState(),
-					ctx.from(),
-					tile,
-					ctx.lastMove()))
-			) return false;
-		}
-
-		return true;
+		return color == PieceColor.BLACK ?
+				ctx.gameState().blackCastling().getFirst() != null
+				: ctx.gameState().whiteCastling().getFirst() != null;
 	};
 
 	private static boolean isDiagonalMove(Tile from, Tile to) {

@@ -1,5 +1,5 @@
 import { saveSession, readSession, forgetSession } from "./preferences.js";
-import { ApiError } from "./api.js";
+import { ApiError, HttpStatus } from "./api.js";
 
 const colors = ["WHITE", "BLACK"];
 
@@ -53,14 +53,10 @@ export class SessionAccess {
     try {
       seat = await this.api.join(sessionId);
     } catch (error) {
-      if (error.status === 409)
-        throw new ApiError("La sala ya está completa.", 409);
-      if (error.status === 404)
-        throw new ApiError("La sala no existe o el servidor todavía no permite unirse.", 404);
-      if (error.status === 500)
-        throw new ApiError("No se pudo entrar: puede que la sala ya no exista en el servidor.", 500);
-      if ([405, 501].includes(error.status))
-        throw new ApiError("El servidor todavía no permite unirse a partidas.", error.status);
+      if (error.status === HttpStatus.CONFLICT)
+        throw new ApiError("La sala ya está completa.", error.status, error.code);
+      if (error.status === HttpStatus.NOT_FOUND)
+        throw new ApiError("La sala no existe.", error.status, error.code);
       throw error;
     }
     if (!seat.playerId || !colors.includes(seat.playerColor))

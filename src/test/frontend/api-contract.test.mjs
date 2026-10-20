@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ChessApi, ApiError } from "../../main/resources/web/modules/api.js";
+import { ChessApi, ApiError, HttpStatus } from "../../main/resources/web/modules/api.js";
 import { SessionAccess } from "../../main/resources/web/modules/session.js";
 import { GameStore, normalizeState, stateSignature } from "../../main/resources/web/modules/state.js";
 
@@ -179,6 +179,16 @@ test("does not accept a 501 response even if it contains valid session JSON", as
   t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(created), { status: 501 }));
   await assert.rejects(new ChessApi().create("PVP", "NOT_CPU"),
     error => error instanceof ApiError && error.status === 501);
+});
+
+test("error bodies provide the message and code; known statuses fall back to a default text", async (t) => {
+  const body = JSON.stringify({ error: "NOT_YOUR_TURN", message: "No es tu turno." });
+  t.mock.method(globalThis, "fetch", async () => new Response(body, { status: HttpStatus.CONFLICT }));
+  await assert.rejects(new ChessApi().state("id"),
+    error => error.status === 409 && error.code === "NOT_YOUR_TURN" && error.message === "No es tu turno.");
+  t.mock.method(globalThis, "fetch", async () => new Response("", { status: HttpStatus.NOT_FOUND }));
+  await assert.rejects(new ChessApi().state("id"),
+    error => error.status === 404 && error.code === null && /no existe/.test(error.message));
 });
 
 test("rejects malformed successful responses with the correct diagnostic", async (t) => {

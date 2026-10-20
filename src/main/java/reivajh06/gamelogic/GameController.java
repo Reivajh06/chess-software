@@ -121,6 +121,7 @@ public class GameController {
 		return pieceMovesetTiles(gameState, location).entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> {
 					int moveIndex = e.getKey();
+
 					List<Tile> pendingTiles = e.getValue();
 
 					return MovesValidator.filterMoveTiles(

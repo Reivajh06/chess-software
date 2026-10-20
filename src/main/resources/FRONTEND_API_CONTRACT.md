@@ -10,10 +10,55 @@ This document describes the **current Java HTTP interface** used by the frontend
 | `POST` | `/api/sessions/{sessionId}/legal-moves` | `PostLegalMoves` | Registered. Returns indexed movement rules and tiles. |
 | `POST` | `/api/sessions/{sessionId}/moves` | `PostMovePiece` | Registered. On success, returns an **empty** `200` body. |
 | `GET` | `/api/sessions/{sessionId}` | `GetReadCurrentState` | Registered. Returns current FEN and newest-first history encoded as a JSON string. |
-| `POST` | `/api/sessions/{sessionId}/join` | None | **Not registered.** Needed for PvP registration and the waiting room (section 5). |
-| `GET` | `/api/server` | None | **Not registered.** Host address for invitations (section 5). |
+| `POST` | `/api/sessions/{sessionId}/join` | `PostJoinSession` | Registered. Seats the invited player (section 5). |
+| `POST` | `/api/sessions/{sessionId}/promote` | `PostPromotePiece` | Registered. On success, returns an **empty** `200` body. |
+| `GET` | `/api/server` | `GetServerAddress` | Registered. Host address for invitations (section 5). |
 
-All registered requests use JSON request bodies. `Context.result(Json.toJson(...))` may send JSON with a `text/plain` content type, so the frontend parses JSON from the response body rather than relying on `Content-Type`. Backend responses to errors are not yet standardized.
+All registered requests use JSON request bodies. `Context.result(Json.toJson(...))` may send JSON with a `text/plain` content type, so the frontend parses JSON from the response body rather than relying on `Content-Type`.
+
+## HTTP status codes
+
+### Codes used by each endpoint
+
+Status codes currently set by each handler. "Implicit" means that the handler sets no status and Javalin answers with its default. Unhandled exceptions are answered by Javalin with `500`.
+
+| Endpoint | Handler | Success | Explicit errors | Cases ending in an unhandled exception (`500`) |
+| --- | --- | --- | --- | --- |
+| `POST /api/sessions` | `PostCreateSession` | `201` | — | Malformed JSON; unknown `gamemode` or `difficulty`. |
+| `GET /api/sessions/{sessionId}` | `GetReadCurrentState` | `200` (implicit) | `404` unknown session | `sessionId` that is not a UUID. |
+| `POST /api/sessions/{sessionId}/join` | `PostJoinSession` | `200` | `409` both seats taken | Unknown session (no `null` check); `sessionId` that is not a UUID. |
+| `POST /api/sessions/{sessionId}/legal-moves` | `PostLegalMoves` | `200` | `404` unknown session | `sessionId` that is not a UUID; malformed `from` square. |
+| `POST /api/sessions/{sessionId}/moves` | `PostMovePiece` | `200` (implicit, empty body) | `404` unknown session | `sessionId` that is not a UUID; malformed square; `moveId` outside the moveset; no piece on `from`. |
+| `POST /api/sessions/{sessionId}/promote` | `PostPromotePiece` | `200` (empty body) | `404` unknown session | `sessionId` that is not a UUID; unknown `newType`; no piece on `tile`. |
+| `GET /api/server` | `GetServerAddress` | `200` (implicit) | `503` address lookup failed | — |
+| `GET /api/sessions/{sessionId}/promote` | `GetServerAddress` | `200` (implicit) | `503` address lookup failed | — |
+
+A move that `GameUpdater.movePieceAndUpdate` ignores (game not `ACTIVE`) is answered with `200`. Error responses carry no body.
+
+### Codes recognized by the frontend
+
+`modules/api.js` declares the error statuses in `HttpStatus`:
+
+| Code | Name | Default message when the body has no `message` |
+| --- | --- | --- |
+| `400` | `BAD_REQUEST` | "El servidor ha rechazado una petición no válida." |
+| `403` | `FORBIDDEN` | "No puedes hacer eso en esta partida." |
+| `404` | `NOT_FOUND` | "La partida no existe en el servidor." |
+| `409` | `CONFLICT` | "Esa acción no es posible en el estado actual de la partida." |
+| `503` | `SERVICE_UNAVAILABLE` | "El servidor no está disponible ahora mismo." |
+
+Any other non-`2xx` status is shown as "Error del servidor (N)." An error body of the form `{ "error": "<CODE>", "message": "<text>" }` is read when present: `message` replaces the default text and `error` is kept as `ApiError.code`.
+
+Status-specific behavior:
+
+| Code | Request | Frontend behavior |
+| --- | --- | --- |
+| `404` | State polling | Polling stops and the notice "La partida ya no existe en el servidor…" is shown. |
+| `404` | State read when restoring a saved session | The saved seat is forgotten and the menu is shown. |
+| `404` | `/join` | "La sala no existe." |
+| `409` | `/join` | "La sala ya está completa." |
+| any | `/moves`, `/promote` | The message is shown, the selection is cleared and the state is read again. |
+| any | `/server` | The invitation link is left empty. |
 
 The backend stores a session as `GameSession` (`id`, `gamemode`, `difficulty`, `whiteId`, `blackId`, `gameState`) and the current position in `GameState`. The frontend retains session IDs, the player ID and colour the server assigned on `/join`, gamemode, difficulty, and board orientation; a state poll should not redefine session identity or player assignment.
 
@@ -254,8 +299,6 @@ The creator shares `http://<host>:<port>/?session=<sessionId>`. The link names o
 It asks the server with `GET /api/server` (above) and builds the link with the reply. There is no manual entry: if the request fails, the dialog shows an error and the copy button stays disabled.
 
 Javalin listens on every interface, so other machines can reach port `5000` if the firewall allows it. A page already opened through a LAN address or domain uses its own origin.
-
-Until `/join` exists, PvP cannot start: `404`/`405`/`501` from `/join` shows an error instead of a game. Practice keeps working with the IDs from creation.
 
 ## 6. UI behavior connected to this contract
 
