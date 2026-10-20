@@ -19,12 +19,23 @@ public class MoveRules {
 
 		Piece p = board.pieceAt(ctx.from());
 
-		if(board.pieceAt(new Tile(
-				ctx.from().file(),
-				p.color() == PieceColor.WHITE ? Rank.next(ctx.from().rank()) : Rank.previous(ctx.from().rank()))
-		) != null) return false;
+		if(p.color() == PieceColor.WHITE) {
+			if(ctx.from().rank() != Board.WHITE_PAWN_START_RANK) return false;
 
-		return p.timesMoved() == 0 && isVerticalMove(ctx.from(), ctx.to()) && DESTINATION_EMPTY.satisfies(ctx);
+		} else if(ctx.from().rank() != Board.BLACK_PAWN_START_RANK) {
+			return false;
+		}
+
+		Tile destination = new Tile(
+				ctx.from().file(),
+				p.color() == PieceColor.WHITE ?
+						Rank.next(ctx.from().rank())
+						: Rank.previous(ctx.from().rank())
+				);
+
+		if(board.pieceAt(destination) != null) return false;
+
+		return DESTINATION_EMPTY.satisfies(ctx);
 	};
 
 	public static final MoveCondition SAFE_MOVE = ctx -> {

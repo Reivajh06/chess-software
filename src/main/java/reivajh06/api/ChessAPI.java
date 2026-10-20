@@ -2,7 +2,6 @@ package reivajh06.api;
 
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
-import io.javalin.http.HttpStatus;
 import io.javalin.http.staticfiles.Location;
 import reivajh06.api.endpoints.*;
 
