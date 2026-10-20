@@ -6,7 +6,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameUpdater;
 import reivajh06.model.Castling;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.Tile;
 
 import java.util.Collection;
@@ -33,8 +33,8 @@ class GameUpdaterCastlingTest {
         return session.toFEN().split("\\s+")[2];
     }
 
-    private static boolean containsRight(GameSession session, PieceColor color, Castling side) {
-        List<Castling> flags = color == PieceColor.WHITE
+    private static boolean containsRight(GameSession session, Color color, Castling side) {
+        List<Castling> flags = color == Color.WHITE
                 ? session.gameState().whiteCastling()
                 : session.gameState().blackCastling();
         return flags.contains(side);
@@ -48,17 +48,17 @@ class GameUpdaterCastlingTest {
 
     private static Stream<Arguments> originalRookMoves() {
         return Stream.of(
-                Arguments.of("white h-rook", OPEN_ROOKS, "h1h2", "Qkq", PieceColor.WHITE, Castling.KINGSIDE),
-                Arguments.of("white a-rook", OPEN_ROOKS, "a1a2", "Kkq", PieceColor.WHITE, Castling.QUEENSIDE),
-                Arguments.of("black h-rook", OPEN_ROOKS.replace(" w ", " b "), "h8h7", "KQq", PieceColor.BLACK, Castling.KINGSIDE),
-                Arguments.of("black a-rook", OPEN_ROOKS.replace(" w ", " b "), "a8a7", "KQk", PieceColor.BLACK, Castling.QUEENSIDE)
+                Arguments.of("white h-rook", OPEN_ROOKS, "h1h2", "Qkq", Color.WHITE, Castling.KINGSIDE),
+                Arguments.of("white a-rook", OPEN_ROOKS, "a1a2", "Kkq", Color.WHITE, Castling.QUEENSIDE),
+                Arguments.of("black h-rook", OPEN_ROOKS.replace(" w ", " b "), "h8h7", "KQq", Color.BLACK, Castling.KINGSIDE),
+                Arguments.of("black a-rook", OPEN_ROOKS.replace(" w ", " b "), "a8a7", "KQk", Color.BLACK, Castling.QUEENSIDE)
         );
     }
 
     @ParameterizedTest(name = "{0} permanently loses only its own castling side")
     @MethodSource("originalRookMoves")
     void rookMovesRevokeExactlyOneRight(String label, String initial, String uci,
-                                        String expectedRights, PieceColor color, Castling revoked) {
+                                        String expectedRights, Color color, Castling revoked) {
         GameSession session = at(initial);
         assertTrue(containsRight(session, color, revoked), "fixture must initially allow this side");
         play(session, uci);
@@ -68,15 +68,15 @@ class GameUpdaterCastlingTest {
 
     private static Stream<Arguments> kingMoves() {
         return Stream.of(
-                Arguments.of("white king", OPEN_ROOKS, "e1e2", "kq", PieceColor.WHITE),
-                Arguments.of("black king", OPEN_ROOKS.replace(" w ", " b "), "e8e7", "KQ", PieceColor.BLACK)
+                Arguments.of("white king", OPEN_ROOKS, "e1e2", "kq", Color.WHITE),
+                Arguments.of("black king", OPEN_ROOKS.replace(" w ", " b "), "e8e7", "KQ", Color.BLACK)
         );
     }
 
     @ParameterizedTest(name = "{0} revokes both sides")
     @MethodSource("kingMoves")
     void kingMoveRevokesBothRights(String label, String initial, String uci,
-                                  String expectedRights, PieceColor color) {
+                                  String expectedRights, Color color) {
         GameSession session = at(initial);
         play(session, uci);
         assertEquals(expectedRights, rights(session), label);
@@ -98,8 +98,8 @@ class GameUpdaterCastlingTest {
         GameSession session = at("r3k2r/8/8/8/8/8/6B1/R3K2R w KQkq - 0 1");
         play(session, "g2a8");
         assertEquals("KQk", rights(session));
-        assertFalse(containsRight(session, PieceColor.BLACK, Castling.QUEENSIDE));
-        assertTrue(containsRight(session, PieceColor.BLACK, Castling.KINGSIDE));
+        assertFalse(containsRight(session, Color.BLACK, Castling.QUEENSIDE));
+        assertTrue(containsRight(session, Color.BLACK, Castling.KINGSIDE));
     }
 
     @Test

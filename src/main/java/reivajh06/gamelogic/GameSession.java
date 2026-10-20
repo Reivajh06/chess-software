@@ -1,7 +1,7 @@
 package reivajh06.gamelogic;
 
 import reivajh06.FenParser;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 
 import java.util.Random;
 import java.util.UUID;
@@ -50,25 +50,25 @@ public class GameSession {
         return blackId;
     }
 
-    public PieceColor assignColor(UUID playerId) {
-        PieceColor assignedColor = null;
+    public Color assignColor(UUID playerId) {
+        Color assignedColor = null;
 
         if(whiteId == null) {
             if(blackId == null) {
                 Random random = new Random();
 
-                assignedColor = PieceColor.values()[random.nextInt(PieceColor.values().length)];
+                assignedColor = Color.values()[random.nextInt(Color.values().length)];
 
-                if(assignedColor == PieceColor.WHITE) whiteId = playerId;
+                if(assignedColor == Color.WHITE) whiteId = playerId;
                 else blackId = playerId;
 
             } else {
                 whiteId = playerId;
-                assignedColor = PieceColor.WHITE;
+                assignedColor = Color.WHITE;
             }
         } else if(blackId == null) {
             blackId = playerId;
-            assignedColor = PieceColor.BLACK;
+            assignedColor = Color.BLACK;
         }
 
         return assignedColor;

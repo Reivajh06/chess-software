@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PieceFactory {
 
-	public static Piece createPawn(PieceColor color) {
+	public static Piece createPawn(Color color) {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
 				new MoveBuilder().forward().condition(MoveRules.DESTINATION_EMPTY).build(),
 				new MoveBuilder().forward().forward().condition(MoveRules.START_TWO_FORWARD).build(),
@@ -20,7 +20,7 @@ public class PieceFactory {
 		)));
 	}
 
-	public static Piece createBishop(PieceColor color) {
+	public static Piece createBishop(Color color) {
 		return new Piece(PieceType.BISHOP, color, new ArrayList<>(List.of(
 				new MoveBuilder().forwardLeft().allRepetitions().build(),
 				new MoveBuilder().forwardRight().allRepetitions().build(),
@@ -29,7 +29,7 @@ public class PieceFactory {
 		)));
 	}
 
-	public static Piece createRook(PieceColor color) {
+	public static Piece createRook(Color color) {
 		return new Piece(PieceType.ROOK, color, new ArrayList<>(List.of(
 				new MoveBuilder().left().allRepetitions().build(),
 				new MoveBuilder().right().allRepetitions().build(),
@@ -38,7 +38,7 @@ public class PieceFactory {
 		)));
 	}
 
-	public static Piece createKing(PieceColor color) {
+	public static Piece createKing(Color color) {
 		return new Piece(PieceType.KING, color, new ArrayList<>(List.of(
 				new MoveBuilder().forward().condition(MoveRules.SAFE_MOVE).build(),
 				new MoveBuilder().left().condition(MoveRules.SAFE_MOVE).build(),
@@ -53,7 +53,7 @@ public class PieceFactory {
 		)));
 	}
 
-	public static Piece createQueen(PieceColor color) {
+	public static Piece createQueen(Color color) {
 		return new Piece(PieceType.QUEEN, color, new ArrayList<>(List.of(
 				new MoveBuilder().left().allRepetitions().build(),
 				new MoveBuilder().right().allRepetitions().build(),
@@ -66,7 +66,7 @@ public class PieceFactory {
 		)));
 	}
 
-	public static Piece createKnight(PieceColor color) {
+	public static Piece createKnight(Color color) {
 		return new Piece(PieceType.KNIGHT, color, new ArrayList<>(List.of(
 				new MoveBuilder().forward().forward().left().build(),
 				new MoveBuilder().forward().forward().right().build(),
@@ -81,18 +81,18 @@ public class PieceFactory {
 
 	public static Piece createPieceByFENCode(char fenCode) {
 		return switch(fenCode) {
-			case 'P' -> createPawn(PieceColor.WHITE);
-			case 'B' -> createBishop(PieceColor.WHITE);
-			case 'R' -> createRook(PieceColor.WHITE);
-			case 'K' -> createKing(PieceColor.WHITE);
-			case 'Q' -> createQueen(PieceColor.WHITE);
-			case 'N' -> createKnight(PieceColor.WHITE);
-			case 'p' -> createPawn(PieceColor.BLACK);
-			case 'b' -> createBishop(PieceColor.BLACK);
-			case 'r' -> createRook(PieceColor.BLACK);
-			case 'k' -> createKing(PieceColor.BLACK);
-			case 'q' -> createQueen(PieceColor.BLACK);
-			case 'n' -> createKnight(PieceColor.BLACK);
+			case 'P' -> createPawn(Color.WHITE);
+			case 'B' -> createBishop(Color.WHITE);
+			case 'R' -> createRook(Color.WHITE);
+			case 'K' -> createKing(Color.WHITE);
+			case 'Q' -> createQueen(Color.WHITE);
+			case 'N' -> createKnight(Color.WHITE);
+			case 'p' -> createPawn(Color.BLACK);
+			case 'b' -> createBishop(Color.BLACK);
+			case 'r' -> createRook(Color.BLACK);
+			case 'k' -> createKing(Color.BLACK);
+			case 'q' -> createQueen(Color.BLACK);
+			case 'n' -> createKnight(Color.BLACK);
 			default -> null;
 		};
 	}

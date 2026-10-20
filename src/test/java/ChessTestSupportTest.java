@@ -2,7 +2,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import reivajh06.gamelogic.GameSession;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.Tile;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -17,8 +17,8 @@ class ChessTestSupportTest {
 
         assertAll(
                 () -> assertEquals(fen, session.toFEN()),
-                () -> assertEquals(new Tile("e1"), session.gameState().board().kingTile(PieceColor.WHITE)),
-                () -> assertEquals(new Tile("e8"), session.gameState().board().kingTile(PieceColor.BLACK)),
+                () -> assertEquals(new Tile("e1"), session.gameState().board().kingTile(Color.WHITE)),
+                () -> assertEquals(new Tile("e8"), session.gameState().board().kingTile(Color.BLACK)),
                 () -> assertEquals(0, session.gameState().movesHistory().size())
         );
     }
@@ -26,7 +26,7 @@ class ChessTestSupportTest {
     @Test
     void fixtureInitializesCheckForTheActiveKing() {
         GameSession session = ChessTestSupport.sessionAt("4r1k1/8/8/8/8/8/8/4K2R w K - 0 1");
-        assertEquals(PieceColor.WHITE, session.gameState().checkedColor());
+        assertEquals(Color.WHITE, session.gameState().checkedColor());
     }
 
     @Test

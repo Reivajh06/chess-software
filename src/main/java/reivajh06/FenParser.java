@@ -62,7 +62,7 @@ public class FenParser {
 				.toString();
 	}
 
-	public static String gameStateToFen(Board board, PieceColor turnColor, List<Castling> whiteCastling, List<Castling> blackCastling, Tile enPassantDestination, int halfMoveClock, int fullMoves) {
+	public static String gameStateToFen(Board board, Color turnColor, List<Castling> whiteCastling, List<Castling> blackCastling, Tile enPassantDestination, int halfMoveClock, int fullMoves) {
 		String whiteCastlingRights = whiteCastling.stream().filter(Objects::nonNull).map(Castling::firstLetter).collect(Collectors.joining());
 		String blackCastlingRights = blackCastling.stream().filter(Objects::nonNull).map(c -> c.firstLetter().toLowerCase()).collect(Collectors.joining());
 

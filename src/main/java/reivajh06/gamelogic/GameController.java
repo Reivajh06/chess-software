@@ -28,10 +28,10 @@ public class GameController {
 		movedPiece.unmoved();
 	}
 
-	public static List<Tile> calculateMoveTiles(GameState gameState, PieceColor color, Tile start, Move move) {
+	public static List<Tile> calculateMoveTiles(GameState gameState, Color color, Tile start, Move move) {
 		List<Tile> tiles = new ArrayList<>();
 		Tile t = start;
-		int movementFactor = color == PieceColor.BLACK ? -1 : 1;
+		int movementFactor = color == Color.BLACK ? -1 : 1;
 
 		for(int i = 0; i < move.repetitions(); i++) {
 			int fileIndex = t.file().code + move.x() - File.A.code;
@@ -52,7 +52,7 @@ public class GameController {
 		return tiles;
 	}
 
-	public static List<Tile> piecesTilesByColor(GameState gameState, PieceColor color) {
+	public static List<Tile> piecesTilesByColor(GameState gameState, Color color) {
 		return gameState.board().asStream()
 				.filter(t -> gameState.board().pieceAt(t) != null && gameState.board().pieceAt(t).color() == color)
 				.toList();

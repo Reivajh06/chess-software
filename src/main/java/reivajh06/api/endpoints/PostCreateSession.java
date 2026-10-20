@@ -10,7 +10,7 @@ import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameState;
 import reivajh06.gamelogic.Gamemode;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,16 +30,16 @@ public class PostCreateSession implements Handler {
 		Difficulty difficulty = Difficulty.valueOf(sessionType.get("difficulty"));
 
 		GameSession session = new GameSession(gamemode, difficulty);
-		PieceColor creatorColor = session.assignColor(creatorId);
+		Color creatorColor = session.assignColor(creatorId);
 
-		if(gamemode == Gamemode.PRACTICE) creatorColor = PieceColor.WHITE;
+		if(gamemode == Gamemode.PRACTICE) creatorColor = Color.WHITE;
 
 		Sessions.registerSession(session);
 
 		ctx.status(SUCCESS).result(jsonResponse(creatorId, creatorColor, session));
 	}
 
-	private String jsonResponse(UUID playerId, PieceColor playerColor, GameSession session) {
+	private String jsonResponse(UUID playerId, Color playerColor, GameSession session) {
 		Map<String, Object> resultBody = new HashMap<>(Map.of(
 				"sessionId", session.id(),
 				"gamemode", session.gamemode(),

@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Piece {
 
-	private final PieceColor color;
+	private final Color color;
 	private final PieceType type;
 	private final String name;
 	private final String fenCode;
@@ -17,21 +17,21 @@ public class Piece {
 
 	private int timesMoved;
 
-	public Piece(PieceType type, PieceColor color, List<Move> moveset) {
+	public Piece(PieceType type, Color color, List<Move> moveset) {
 		this.type = type;
 		this.color = color;
 		name = color.name().charAt(0) + type.firstLetter;
 		this.moveset = moveset;
 		isPromotable = type == PieceType.PAWN;
-		fenCode = color == PieceColor.BLACK ? type.firstLetter.toLowerCase() : type.firstLetter;
+		fenCode = color == Color.BLACK ? type.firstLetter.toLowerCase() : type.firstLetter;
 	}
 
-	public Piece(PieceType type, PieceColor color, List<Move> moveset, int timesMoved) {
+	public Piece(PieceType type, Color color, List<Move> moveset, int timesMoved) {
 		this(type, color, moveset);
 		this.timesMoved = timesMoved;
 	}
 
-	public PieceColor color() {
+	public Color color() {
 		return color;
 	}
 

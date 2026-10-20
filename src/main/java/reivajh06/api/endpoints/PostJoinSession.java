@@ -8,7 +8,7 @@ import reivajh06.Json;
 import reivajh06.Sessions;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameState;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ public class PostJoinSession implements Handler {
 		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
 
 		UUID playerId = UUID.randomUUID();
-		PieceColor assignedColor = session.assignColor(playerId);
+		Color assignedColor = session.assignColor(playerId);
 
 		if(assignedColor == null) {
 			ctx.status(409);
@@ -32,7 +32,7 @@ public class PostJoinSession implements Handler {
 		ctx.status(200).result(jsonResponse(playerId, assignedColor, session));
 	}
 
-	private String jsonResponse(UUID playerId, PieceColor playerColor, GameSession session) {
+	private String jsonResponse(UUID playerId, Color playerColor, GameSession session) {
 		Map<String, Object> resultBody = new HashMap<>(Map.of(
 				"playerId", playerId.toString(),
 				"playerColor", playerColor.name(),

@@ -10,7 +10,7 @@ import reivajh06.model.Board;
 import reivajh06.model.Castling;
 import reivajh06.model.File;
 import reivajh06.model.Piece;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.PieceFactory;
 import reivajh06.model.Rank;
 import reivajh06.model.Tile;
@@ -101,9 +101,9 @@ final class ChessTestSupport {
         if (whiteKings != 1 || blackKings != 1) {
             throw new IllegalArgumentException("Fixture must contain exactly one king per color");
         }
-        PieceColor turn = switch (fields[1]) {
-            case "w" -> PieceColor.WHITE;
-            case "b" -> PieceColor.BLACK;
+        Color turn = switch (fields[1]) {
+            case "w" -> Color.WHITE;
+            case "b" -> Color.BLACK;
             default -> throw new IllegalArgumentException("Bad active color in FEN");
         };
         String rights = fields[2];
@@ -117,9 +117,9 @@ final class ChessTestSupport {
         int halfmove = Integer.parseInt(fields[4]);
         int fullmove = Integer.parseInt(fields[5]);
         if (halfmove < 0 || fullmove < 1) throw new IllegalArgumentException("Invalid move clocks");
-        Map<PieceColor, List<Piece>> captures = new EnumMap<>(PieceColor.class);
-        captures.put(PieceColor.WHITE, new ArrayList<>());
-        captures.put(PieceColor.BLACK, new ArrayList<>());
+        Map<Color, List<Piece>> captures = new EnumMap<>(Color.class);
+        captures.put(Color.WHITE, new ArrayList<>());
+        captures.put(Color.BLACK, new ArrayList<>());
         GameStateBuilder stateBuilder = new GameStateBuilder()
                 .board(board).turnColor(turn).checkedColor(null).status(GameStatus.ACTIVE)
                 .whiteCastling(rightsList(rights.contains("K"), rights.contains("Q")))
@@ -127,7 +127,7 @@ final class ChessTestSupport {
                 .enPassantDestination(ep).halfMoveClock(halfmove).fullMoves(fullmove)
                 .movesHistory(new ArrayDeque<>()).eatenPieces(captures);
         GameState state = stateBuilder.build();
-        PieceColor checkedColor = GameConditions.isKingChecked(state, turn) ? turn : null;
+        Color checkedColor = GameConditions.isKingChecked(state, turn) ? turn : null;
         session.gameState(stateBuilder.checkedColor(checkedColor).build());
     }
 

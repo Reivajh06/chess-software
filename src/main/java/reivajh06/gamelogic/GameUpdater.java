@@ -46,10 +46,10 @@ public class GameUpdater {
 		session.gameState(updateGameState(move, movedPiece, capturedPiece, from, to));
 	}
 
-	private void updateKingTile(PieceColor color, Tile newLocation) {
+	private void updateKingTile(Color color, Tile newLocation) {
 		Board board = session.gameState().board();
 
-		if(color == PieceColor.BLACK) board.blackKingTile(newLocation);
+		if(color == Color.BLACK) board.blackKingTile(newLocation);
 
 		else board.whiteKingTile(newLocation);
 	}
@@ -60,7 +60,7 @@ public class GameUpdater {
 
 		if(piece == null || piece.type() != PieceType.PAWN) return;
 
-		if(piece.color() == PieceColor.BLACK) {
+		if(piece.color() == Color.BLACK) {
 			if(location.rank() != Board.WHITE_KING_START_RANK) return;
 
 			promotedPiece = PieceFactory.createPieceByFENCode(String.valueOf(newType.firstLetter).toLowerCase().charAt(0));
@@ -79,9 +79,9 @@ public class GameUpdater {
 		GameState currentState = session.gameState();
 		Board updatedBoard = currentState.board();
 
-		PieceColor turnColor = PieceColor.rivalColor(movedPiece.color());
-		Map<PieceColor, List<Piece>> eatenPieces = updateEatenPieces(capturedPiece);
-		PieceColor checkedColor = updateCheckedColor(movedPiece);
+		Color turnColor = Color.rivalColor(movedPiece.color());
+		Map<Color, List<Piece>> eatenPieces = updateEatenPieces(capturedPiece);
+		Color checkedColor = updateCheckedColor(movedPiece);
 		GameStatus status = updateGameStatus(movedPiece);
 		Tile enPassantDestination = updateEnPassantTile(move, to);
 		int halfMoveClock = updateHalfMoveClock(movedPiece, capturedPiece);
@@ -100,7 +100,7 @@ public class GameUpdater {
 		List<Castling> whiteCastling = new ArrayList<>(currentState.whiteCastling());
 		List<Castling> blackCastling = new ArrayList<>(currentState.blackCastling());
 
-		if(movedPiece.color() == PieceColor.WHITE) {
+		if(movedPiece.color() == Color.WHITE) {
 			if(movedPiece.type() == PieceType.KING) {
 				whiteCastling.set(0, null);
 				whiteCastling.set(1, null);
@@ -137,16 +137,16 @@ public class GameUpdater {
 		return stateBuilder.build();
 	}
 
-	private PieceColor updateCheckedColor(Piece movedPiece) {
-		PieceColor kingColor = PieceColor.rivalColor(movedPiece.color());
+	private Color updateCheckedColor(Piece movedPiece) {
+		Color kingColor = Color.rivalColor(movedPiece.color());
 
 		return GameConditions.isKingChecked(session.gameState(), kingColor) ?
 				kingColor
 				: null;
 	}
 
-	private Map<PieceColor, List<Piece>> updateEatenPieces(Piece capturedPiece) {
-		Map<PieceColor, List<Piece>> eatenPieces = new HashMap<>(session.gameState().eatenPieces());
+	private Map<Color, List<Piece>> updateEatenPieces(Piece capturedPiece) {
+		Map<Color, List<Piece>> eatenPieces = new HashMap<>(session.gameState().eatenPieces());
 
 		if(capturedPiece != null) eatenPieces.get(capturedPiece.color()).add(capturedPiece.copy());
 
@@ -162,9 +162,9 @@ public class GameUpdater {
 	}
 
 	private GameStatus updateGameStatus(Piece movedPiece) {
-		PieceColor rivalColor = PieceColor.rivalColor(movedPiece.color());
+		Color rivalColor = Color.rivalColor(movedPiece.color());
 
-		if(GameConditions.isCheckMate(session.gameState(), rivalColor)) return movedPiece.color() == PieceColor.BLACK ?
+		if(GameConditions.isCheckMate(session.gameState(), rivalColor)) return movedPiece.color() == Color.BLACK ?
 				GameStatus.BLACK_WIN
 				: GameStatus.WHITE_WIN;
 
@@ -176,7 +176,7 @@ public class GameUpdater {
 	private int updateFullMoves(Piece movedPiece) {
 		int fullMoves = session.gameState().fullMoves();
 
-		return movedPiece.color() == PieceColor.BLACK ?
+		return movedPiece.color() == Color.BLACK ?
 				fullMoves + 1 :
 				fullMoves;
 	}
@@ -194,16 +194,16 @@ public class GameUpdater {
 
 		Board board = session.gameState().board();
 
-		if(board.pieceAt(destination).color() == PieceColor.WHITE) return new Tile(destination.file(), Rank.previous(destination.rank()));
+		if(board.pieceAt(destination).color() == Color.WHITE) return new Tile(destination.file(), Rank.previous(destination.rank()));
 
-		return board.pieceAt(destination).color() == PieceColor.WHITE ?
+		return board.pieceAt(destination).color() == Color.WHITE ?
 				new Tile(destination.file(), Rank.previous(destination.rank()))
 				: new Tile(destination.file(), Rank.next(destination.rank()));
 	}
 
 	private List<Castling> updateCastlingRights(Piece movedPiece) {
 		List<Castling> castlingRights = new ArrayList<>(
-				movedPiece.color() == PieceColor.BLACK ?
+				movedPiece.color() == Color.BLACK ?
 						session.gameState().blackCastling()
 						: session.gameState().whiteCastling()
 		);
@@ -219,13 +219,13 @@ public class GameUpdater {
 	}
 
 	private boolean canCastleKingSide(Piece movedPiece) {
-		PieceColor color = movedPiece.color();
+		Color color = movedPiece.color();
 		GameState currentState = session.gameState();
 		Board updatedBoard = currentState.board();
 
 		if(movedPiece.type() == PieceType.KING) return false;
 
-		if(color == PieceColor.BLACK) {
+		if(color == Color.BLACK) {
 			if(currentState.blackCastling().getFirst() == null) return false;
 
 			Tile kingsideRookTile = new Tile(File.H, Board.BLACK_KING_START_RANK);
@@ -248,13 +248,13 @@ public class GameUpdater {
 	}
 
 	private boolean canCastleQueenSide(Piece movedPiece) {
-		PieceColor color = movedPiece.color();
+		Color color = movedPiece.color();
 		GameState currentState = session.gameState();
 		Board updatedBoard = currentState.board();
 
 		if(movedPiece.type() == PieceType.KING) return false;
 
-		if(color == PieceColor.BLACK) {
+		if(color == Color.BLACK) {
 			if(currentState.blackCastling().getLast() == null) return false;
 
 			Tile queensideRookTile = new Tile(File.A, Board.BLACK_KING_START_RANK);

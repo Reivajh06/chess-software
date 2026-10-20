@@ -19,7 +19,7 @@ public class MoveRules {
 
 		Piece p = board.pieceAt(ctx.from());
 
-		if(p.color() == PieceColor.WHITE) {
+		if(p.color() == Color.WHITE) {
 			if(ctx.from().rank() != Board.WHITE_PAWN_START_RANK) return false;
 
 		} else if(ctx.from().rank() != Board.BLACK_PAWN_START_RANK) {
@@ -28,7 +28,7 @@ public class MoveRules {
 
 		Tile destination = new Tile(
 				ctx.from().file(),
-				p.color() == PieceColor.WHITE ?
+				p.color() == Color.WHITE ?
 						Rank.next(ctx.from().rank())
 						: Rank.previous(ctx.from().rank())
 				);
@@ -44,7 +44,7 @@ public class MoveRules {
 		Piece piece = board.pieceAt(ctx.from());
 		List<Tile> rivalTiles = GameController.piecesTilesByColor(
 				ctx.gameState(),
-				piece.color() == PieceColor.BLACK ? PieceColor.WHITE : PieceColor.BLACK
+				piece.color() == Color.BLACK ? Color.WHITE : Color.BLACK
 		);
 
 		for(Tile rivalTile : rivalTiles) {
@@ -72,9 +72,9 @@ public class MoveRules {
 	public static final MoveCondition QUEENSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();
 
-		PieceColor color = board.pieceAt(ctx.from()).color();
+		Color color = board.pieceAt(ctx.from()).color();
 
-		return color == PieceColor.BLACK ?
+		return color == Color.BLACK ?
 				ctx.gameState().blackCastling().getLast() != null
 				: ctx.gameState().whiteCastling().getLast() != null;
 	};
@@ -82,9 +82,9 @@ public class MoveRules {
 	public static final MoveCondition KINGSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();
 
-		PieceColor color = board.pieceAt(ctx.from()).color();
+		Color color = board.pieceAt(ctx.from()).color();
 
-		return color == PieceColor.BLACK ?
+		return color == Color.BLACK ?
 				ctx.gameState().blackCastling().getFirst() != null
 				: ctx.gameState().whiteCastling().getFirst() != null;
 	};

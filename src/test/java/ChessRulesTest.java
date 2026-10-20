@@ -5,7 +5,7 @@ import reivajh06.gamelogic.GameConditions;
 import reivajh06.gamelogic.GameController;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameUpdater;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.Tile;
 
 import java.util.Collection;
@@ -82,9 +82,9 @@ class ChessRulesTest {
         GameSession session = ChessTestSupport.sessionAt("k7/2Q5/2K5/8/8/8/8/8 w - - 0 1");
         ChessTestSupport.playMove(session, "c7b6");
         assertAll(
-                () -> assertEquals(PieceColor.BLACK, session.gameState().turnColor()),
+                () -> assertEquals(Color.BLACK, session.gameState().turnColor()),
                 () -> assertTrue(GameConditions.onStalemate(session.gameState())),
-                () -> assertTrue(GameConditions.noLegalMoves(session.gameState(), PieceColor.BLACK))
+                () -> assertTrue(GameConditions.noLegalMoves(session.gameState(), Color.BLACK))
         );
     }
 
@@ -96,7 +96,7 @@ class ChessRulesTest {
 
         assertAll(
                 () -> assertEquals(before, session.toFEN()),
-                () -> assertEquals(new Tile("e1"), session.gameState().board().kingTile(PieceColor.WHITE)),
+                () -> assertEquals(new Tile("e1"), session.gameState().board().kingTile(Color.WHITE)),
                 () -> assertEquals(0, session.gameState().board().pieceAt(new Tile("e1")).timesMoved()),
                 () -> assertEquals(0, session.gameState().board().pieceAt(new Tile("a1")).timesMoved()),
                 () -> assertEquals(0, session.gameState().board().pieceAt(new Tile("h1")).timesMoved()),

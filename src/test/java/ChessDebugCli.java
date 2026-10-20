@@ -3,7 +3,7 @@ import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameState;
 import reivajh06.gamelogic.Gamemode;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.PieceType;
 import reivajh06.model.Tile;
 import reivajh06.gamelogic.GameUpdater;
@@ -142,7 +142,7 @@ public final class ChessDebugCli {
 
     private static void diagnose(GameSession session) {
         GameState state = session.gameState();
-        for (PieceColor color : PieceColor.values()) {
+        for (Color color : Color.values()) {
             List<Tile> actual = state.board().piecesTilesByColor(color).stream()
                     .filter(t -> state.board().pieceAt(t).type() == PieceType.KING).toList();
             Tile tracked = state.board().kingTile(color);

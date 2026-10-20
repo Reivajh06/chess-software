@@ -5,7 +5,7 @@ import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Board;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.PieceType;
 import reivajh06.model.Tile;
 
@@ -38,8 +38,8 @@ class FenParserTest {
     void boardImportInitializesKingLocations() {
         Board board = FenParser.fenToBoard("4k3/8/8/8/8/8/8/4K3");
         assertAll(
-                () -> assertEquals(new Tile("e1"), board.kingTile(PieceColor.WHITE)),
-                () -> assertEquals(new Tile("e8"), board.kingTile(PieceColor.BLACK))
+                () -> assertEquals(new Tile("e1"), board.kingTile(Color.WHITE)),
+                () -> assertEquals(new Tile("e8"), board.kingTile(Color.BLACK))
         );
     }
 
@@ -52,8 +52,8 @@ class FenParserTest {
         assertNotSame(board, copy);
         assertEquals(FenParser.boardToFen(board), FenParser.boardToFen(copy));
         assertAll(
-                () -> assertEquals(new Tile("e1"), copy.kingTile(PieceColor.WHITE)),
-                () -> assertEquals(new Tile("e8"), copy.kingTile(PieceColor.BLACK)),
+                () -> assertEquals(new Tile("e1"), copy.kingTile(Color.WHITE)),
+                () -> assertEquals(new Tile("e8"), copy.kingTile(Color.BLACK)),
                 () -> assertEquals(1, copy.pieceAt(new Tile("h1")).timesMoved()),
                 () -> assertNotSame(board.pieceAt(new Tile("h1")), copy.pieceAt(new Tile("h1")))
         );

@@ -29,24 +29,24 @@ public class GameConditions {
     }
 
     public static boolean isKingCheckedBy(GameState gameState, Tile tile, Map<Integer, List<Tile>> validPieceMoves) {
-        PieceColor kingCheckedColor = PieceColor.rivalColor(gameState.board().pieceAt(tile).color());
+        Color kingCheckedColor = Color.rivalColor(gameState.board().pieceAt(tile).color());
 
         return validPieceMoves.values().stream().anyMatch(l -> l.contains(gameState.board().kingTile(kingCheckedColor)));
     }
 
-    public static boolean isKingChecked(GameState gameState, PieceColor kingColor) {
-        return GameController.piecesTilesByColor(gameState, PieceColor.rivalColor(kingColor)).stream()
+    public static boolean isKingChecked(GameState gameState, Color kingColor) {
+        return GameController.piecesTilesByColor(gameState, Color.rivalColor(kingColor)).stream()
                 .anyMatch(t -> isKingCheckedBy(gameState, t, GameController.validPieceMoves(gameState, t)));
     }
 
-    public static boolean isCheckMate(GameState gameState, PieceColor kingColor) {
+    public static boolean isCheckMate(GameState gameState, Color kingColor) {
         if (!isKingChecked(gameState, kingColor))
             return false;
 
         return !canAnyPieceSaveKing(gameState, kingColor);
     }
 
-    public static boolean canAnyPieceSaveKing(GameState gameState, PieceColor kingColor) {
+    public static boolean canAnyPieceSaveKing(GameState gameState, Color kingColor) {
         return GameController.piecesTilesByColor(gameState, kingColor).stream()
                 .anyMatch(tile ->
                         GameController.legalPieceMoves(gameState, tile).values().stream()
@@ -58,7 +58,7 @@ public class GameConditions {
         return onStalemate(gameState) || onDeadPosition(gameState) || onThreefoldRepetition(gameState);
     }
 
-    public static boolean noLegalMoves(GameState gameState, PieceColor color) {
+    public static boolean noLegalMoves(GameState gameState, Color color) {
         return GameController.piecesTilesByColor(gameState, color).stream()
                 .map(t -> GameController.legalPieceMoves(gameState, t).values())
                 .flatMap(Collection::stream)
@@ -72,8 +72,8 @@ public class GameConditions {
     public static boolean onDeadPosition(GameState gameState) {
         Board board = gameState.board();
 
-        List<Tile> blackTilesRemaining = board.piecesTilesByColor(PieceColor.BLACK);
-        List<Tile> whiteTilesRemaining = board.piecesTilesByColor(PieceColor.WHITE);
+        List<Tile> blackTilesRemaining = board.piecesTilesByColor(Color.BLACK);
+        List<Tile> whiteTilesRemaining = board.piecesTilesByColor(Color.WHITE);
 
         return (piecesRemaining(board, whiteTilesRemaining, PieceType.KING) && piecesRemaining(board, blackTilesRemaining, PieceType.KING)) ||
                 (piecesRemaining(board, whiteTilesRemaining, PieceType.KING, PieceType.BISHOP) && piecesRemaining(board, blackTilesRemaining, PieceType.KING)) ||
@@ -89,7 +89,7 @@ public class GameConditions {
         Tile blackBishopTile = blackTilesRemaining.stream().filter(t -> board.pieceAt(t).type() == PieceType.BISHOP).findFirst().orElse(null);
         Tile whiteBishopTile = whiteTilesRemaining.stream().filter(t -> board.pieceAt(t).type() == PieceType.BISHOP).findFirst().orElse(null);
 
-        return PieceColor.tileColor(blackBishopTile) == PieceColor.tileColor(whiteBishopTile);
+        return Color.tileColor(blackBishopTile) == Color.tileColor(whiteBishopTile);
     }
 
     private static boolean piecesRemaining(Board board, List<Tile> tilesRemaining, PieceType... pieceTypes) {

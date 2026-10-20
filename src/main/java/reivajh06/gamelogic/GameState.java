@@ -11,9 +11,9 @@ import java.util.Map;
 public record GameState(
 		Board board,
         Deque<MoveEvent> movesHistory,
-		Map<PieceColor, List<Piece>> eatenPieces,
-        PieceColor turnColor,
-		PieceColor checkedColor,
+		Map<Color, List<Piece>> eatenPieces,
+        Color turnColor,
+		Color checkedColor,
 		GameStatus status,
 		List<Castling> whiteCastling,
 		List<Castling> blackCastling,
@@ -25,9 +25,9 @@ public record GameState(
     public static GameState startingState() {
         return new GameStateBuilder()
                 .board(Board.startingBoard())
-                .turnColor(PieceColor.WHITE)
+                .turnColor(Color.WHITE)
                 .checkedColor(null)
-				.eatenPieces(Map.of(PieceColor.BLACK, new ArrayList<>(), PieceColor.WHITE, new ArrayList<>()))
+				.eatenPieces(Map.of(Color.BLACK, new ArrayList<>(), Color.WHITE, new ArrayList<>()))
                 .status(GameStatus.ACTIVE)
                 .whiteCastling(GameStateBuilder.CASTLING_ALL)
                 .blackCastling(GameStateBuilder.CASTLING_ALL)

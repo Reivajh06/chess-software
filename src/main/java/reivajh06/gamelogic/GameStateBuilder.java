@@ -9,11 +9,11 @@ public class GameStateBuilder {
 
     public static final List<Castling> CASTLING_ALL = List.of(Castling.KINGSIDE, Castling.QUEENSIDE);
 
-    private PieceColor turnColor;
+    private Color turnColor;
     private Board board;
     private Deque<MoveEvent> movesHistory = new ArrayDeque<>();
-    private Map<PieceColor, List<Piece>> eatenPieces = new HashMap<>();
-    private PieceColor checkedColor;
+    private Map<Color, List<Piece>> eatenPieces = new HashMap<>();
+    private Color checkedColor;
     private GameStatus status;
     private List<Castling> whiteCastling;
     private List<Castling> blackCastling;
@@ -31,12 +31,12 @@ public class GameStateBuilder {
         return this;
     }
 
-    public GameStateBuilder turnColor(PieceColor turnColor) {
+    public GameStateBuilder turnColor(Color turnColor) {
         this.turnColor = turnColor;
         return this;
     }
 
-    public GameStateBuilder checkedColor(PieceColor checkedColor) {
+    public GameStateBuilder checkedColor(Color checkedColor) {
         this.checkedColor = checkedColor;
         return this;
     }
@@ -46,7 +46,7 @@ public class GameStateBuilder {
         return this;
     }
 
-    public GameStateBuilder eatenPieces(Map<PieceColor, List<Piece>> eatenPieces) {
+    public GameStateBuilder eatenPieces(Map<Color, List<Piece>> eatenPieces) {
         this.eatenPieces = eatenPieces;
         return this;
     }

@@ -1,7 +1,5 @@
 package reivajh06.model;
 
-import reivajh06.FenParser;
-
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,8 +21,8 @@ public class Board {
 		board.whiteKingTile = new Tile(File.E, Rank.R1);
 		board.blackKingTile = new Tile(File.E, Rank.R8);
 
-		board.allocatePieces(PieceColor.BLACK);
-		board.allocatePieces(PieceColor.WHITE);
+		board.allocatePieces(Color.BLACK);
+		board.allocatePieces(Color.WHITE);
 
 		return board;
 	}
@@ -39,11 +37,11 @@ public class Board {
 		}
 	}
 
-	private void allocatePieces(PieceColor color) {
+	private void allocatePieces(Color color) {
 		Rank pawnRank = WHITE_PAWN_START_RANK;
 		Rank kingRank = WHITE_KING_START_RANK;
 
-		if(color == PieceColor.BLACK) {
+		if(color == Color.BLACK) {
 			pawnRank = BLACK_PAWN_START_RANK;
 			kingRank = BLACK_KING_START_RANK;
 		}
@@ -75,7 +73,7 @@ public class Board {
 
 	public void addPiece(Tile tile, Piece piece) {
 		if(piece.type() == PieceType.KING) {
-			if(piece.color() == PieceColor.BLACK) blackKingTile = tile;
+			if(piece.color() == Color.BLACK) blackKingTile = tile;
 
 			else whiteKingTile = tile;
 		}
@@ -91,7 +89,7 @@ public class Board {
 		return tiles.keySet().stream();
 	}
 
-	public List<Tile> piecesTilesByColor(PieceColor color) {
+	public List<Tile> piecesTilesByColor(Color color) {
 		return asStream()
 				.filter(t -> pieceAt(t) != null && pieceAt(t).color() == color)
 				.toList();
@@ -134,8 +132,8 @@ public class Board {
 		return copy;
 }
 
-public Tile kingTile(PieceColor kingColor) {
-	return kingColor == PieceColor.BLACK ? blackKingTile : whiteKingTile;
+public Tile kingTile(Color kingColor) {
+	return kingColor == Color.BLACK ? blackKingTile : whiteKingTile;
 }
 
 public Board blackKingTile(Tile blackKingTile) {

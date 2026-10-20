@@ -12,7 +12,7 @@ import reivajh06.gamelogic.GameUpdater;
 import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Board;
 import reivajh06.model.Piece;
-import reivajh06.model.PieceColor;
+import reivajh06.model.Color;
 import reivajh06.model.PieceType;
 import reivajh06.model.Tile;
 import reivajh06.model.movement.Move;
@@ -50,10 +50,10 @@ class GameSimulationTest {
             String before = bestEffortFen(session);
             int oldPly = session.gameState().movesHistory().size();
             try {
-                PieceColor side = session.gameState().turnColor();
+                Color side = session.gameState().turnColor();
                 ChessTestSupport.playMove(session, uci);
                 assertEquals(oldPly + 1, session.gameState().movesHistory().size(), "one event per accepted move");
-                assertEquals(PieceColor.rivalColor(side), session.gameState().turnColor(), "turn must alternate");
+                assertEquals(Color.rivalColor(side), session.gameState().turnColor(), "turn must alternate");
                 assertEquals(uci.substring(2, 4),
                         session.gameState().movesHistory().getFirst().to().name().toLowerCase(Locale.ROOT),
                         "recorded destination");
@@ -69,7 +69,7 @@ class GameSimulationTest {
         catch (RuntimeException e) { return "<bad full FEN: " + e + "> " + FenParser.boardToFen(session.gameState().board()); }
     }
 
-    private static Piece assertPiece(GameSession session, String square, PieceColor color, PieceType type) {
+    private static Piece assertPiece(GameSession session, String square, Color color, PieceType type) {
         Piece piece = session.gameState().board().pieceAt(new Tile(square));
         assertNotNull(piece, "missing piece on " + square);
         assertEquals(color, piece.color(), "color on " + square);
@@ -123,18 +123,18 @@ class GameSimulationTest {
     static Stream<Arguments> decisiveMatches() {
         return Stream.of(
                 Arguments.of("Fool's Mate / Black wins", START,
-                        "f2f3 e7e5 g2g4 d8h4", GameStatus.BLACK_WIN, PieceColor.WHITE),
+                        "f2f3 e7e5 g2g4 d8h4", GameStatus.BLACK_WIN, Color.WHITE),
                 Arguments.of("Scholar's Mate / White wins", START,
-                        "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", GameStatus.WHITE_WIN, PieceColor.BLACK),
+                        "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", GameStatus.WHITE_WIN, Color.BLACK),
                 Arguments.of("Back-rank rook mate / White wins", "6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1",
-                        "e1e8", GameStatus.WHITE_WIN, PieceColor.BLACK)
+                        "e1e8", GameStatus.WHITE_WIN, Color.BLACK)
         );
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("decisiveMatches")
     void winsByCheckmate(String name, String fen, String moves,
-                         GameStatus expected, PieceColor checked) {
+                         GameStatus expected, Color checked) {
         GameSession session = at(fen);
         play(session, moves);
         assertAll(
@@ -150,8 +150,8 @@ class GameSimulationTest {
         GameSession session = at("k7/2Q5/2K5/8/8/8/8/8 w - - 0 1");
         play(session, "c7b6");
         assertAll(
-                () -> assertFalse(GameConditions.isKingChecked(session.gameState(), PieceColor.BLACK)),
-                () -> assertTrue(GameConditions.noLegalMoves(session.gameState(), PieceColor.BLACK)),
+                () -> assertFalse(GameConditions.isKingChecked(session.gameState(), Color.BLACK)),
+                () -> assertTrue(GameConditions.noLegalMoves(session.gameState(), Color.BLACK)),
                 () -> assertEquals(GameStatus.DRAW, session.gameState().status())
         );
     }
@@ -161,7 +161,7 @@ class GameSimulationTest {
     void drawByInsufficientMaterialAfterCapture() {
         GameSession session = at("4k3/8/8/8/8/8/3n4/4K3 w - - 0 1");
         play(session, "e1d2");
-        assertPiece(session, "d2", PieceColor.WHITE, PieceType.KING);
+        assertPiece(session, "d2", Color.WHITE, PieceType.KING);
         assertEquals(GameStatus.DRAW, session.gameState().status());
         assertTrue(GameConditions.onDeadPosition(session.gameState()));
     }
@@ -217,10 +217,10 @@ class GameSimulationTest {
     void doubleKingsideCastling() {
         GameSession session = newGame();
         play(session, "g1f3 g8f6 g2g3 g7g6 f1g2 f8g7 e1g1 e8g8");
-        assertPiece(session, "g1", PieceColor.WHITE, PieceType.KING);
-        assertPiece(session, "f1", PieceColor.WHITE, PieceType.ROOK);
-        assertPiece(session, "g8", PieceColor.BLACK, PieceType.KING);
-        assertPiece(session, "f8", PieceColor.BLACK, PieceType.ROOK);
+        assertPiece(session, "g1", Color.WHITE, PieceType.KING);
+        assertPiece(session, "f1", Color.WHITE, PieceType.ROOK);
+        assertPiece(session, "g8", Color.BLACK, PieceType.KING);
+        assertPiece(session, "f8", Color.BLACK, PieceType.ROOK);
         assertEmpty(session, "e1");
         assertEmpty(session, "e8");
         assertEquals("-", session.toFEN().split(" ")[2], "no remaining castling rights");
@@ -231,8 +231,8 @@ class GameSimulationTest {
     void queensideCastling() {
         GameSession session = newGame();
         play(session, "d2d4 d7d5 b1c3 g8f6 c1f4 e7e6 d1d2 f8e7 e1c1");
-        assertPiece(session, "c1", PieceColor.WHITE, PieceType.KING);
-        assertPiece(session, "d1", PieceColor.WHITE, PieceType.ROOK);
+        assertPiece(session, "c1", Color.WHITE, PieceType.KING);
+        assertPiece(session, "d1", Color.WHITE, PieceType.ROOK);
         assertEmpty(session, "a1");
         assertEmpty(session, "e1");
         assertFalse(session.toFEN().split(" ")[2].contains("K"));
@@ -256,7 +256,7 @@ class GameSimulationTest {
     void capturedRookRemovesOpponentRights() {
         GameSession session = at("r3k2r/8/8/8/8/8/6B1/R3K2R w KQkq - 0 1");
         play(session, "g2a8");
-        assertPiece(session, "a8", PieceColor.WHITE, PieceType.BISHOP);
+        assertPiece(session, "a8", Color.WHITE, PieceType.BISHOP);
         assertEquals("KQk", session.toFEN().split(" ")[2]);
     }
 
@@ -266,11 +266,11 @@ class GameSimulationTest {
         GameSession session = newGame();
         play(session, "e2e4 a7a6 e4e5 d7d5");
         play(session, "e5d6");
-        assertPiece(session, "d6", PieceColor.WHITE, PieceType.PAWN);
+        assertPiece(session, "d6", Color.WHITE, PieceType.PAWN);
         assertEmpty(session, "d5");
         assertNull(session.gameState().enPassantDestination(), "en passant expires immediately after capture");
         assertEquals(0, session.gameState().halfMoveClock());
-        assertEquals(1, session.gameState().eatenPieces().get(PieceColor.BLACK).size());
+        assertEquals(1, session.gameState().eatenPieces().get(Color.BLACK).size());
     }
 
     @Test
@@ -293,7 +293,7 @@ class GameSimulationTest {
     @DisplayName("En passant that exposes own king to rook check is illegal")
     void enPassantDiscoveredCheckRejected() {
         GameSession session = at("4r1k1/8/8/3pP3/8/8/8/4K3 w - d6 0 1");
-        Piece blackPawn = assertPiece(session, "d5", PieceColor.BLACK, PieceType.PAWN);
+        Piece blackPawn = assertPiece(session, "d5", Color.BLACK, PieceType.PAWN);
         Move doublePush = blackPawn.moveset().stream()
                 .filter(m -> m.x() == 0 && m.y() == 2).findFirst().orElseThrow();
         session.gameState().movesHistory().addFirst(new MoveEvent(
@@ -302,18 +302,18 @@ class GameSimulationTest {
         assertMoveUnavailable(session, "e5", "d6");
     }
 
-    static Stream<PieceColor> promotionColors() {
-        return Stream.of(PieceColor.WHITE, PieceColor.BLACK);
+    static Stream<Color> promotionColors() {
+        return Stream.of(Color.WHITE, Color.BLACK);
     }
 
     @ParameterizedTest(name = "{0} pawn cannot remain on the last rank")
     @MethodSource("promotionColors")
-    void pawnCannotRemainOnLastRank(PieceColor color) {
-        String initial = color == PieceColor.WHITE
+    void pawnCannotRemainOnLastRank(Color color) {
+        String initial = color == Color.WHITE
                 ? "7k/P7/6K1/8/8/8/8/8 w - - 0 1"
                 : "8/8/8/8/8/6k1/p7/7K b - - 0 1";
-        String target = color == PieceColor.WHITE ? "a8" : "a1";
-        String uci = color == PieceColor.WHITE ? "a7a8" : "a2a1";
+        String target = color == Color.WHITE ? "a8" : "a1";
+        String uci = color == Color.WHITE ? "a7a8" : "a2a1";
         GameSession session = at(initial);
 
         String before = session.toFEN();
@@ -387,9 +387,9 @@ class GameSimulationTest {
     void captureConservesPieceCounts() {
         GameSession session = newGame();
         play(session, "e2e4 d7d5 e4d5");
-        assertPiece(session, "d5", PieceColor.WHITE, PieceType.PAWN);
+        assertPiece(session, "d5", Color.WHITE, PieceType.PAWN);
         assertEquals(31, occupiedSquares(session.gameState().board()));
-        assertEquals(1, session.gameState().eatenPieces().get(PieceColor.BLACK).size());
+        assertEquals(1, session.gameState().eatenPieces().get(Color.BLACK).size());
         assertEquals(PieceType.PAWN, session.gameState().movesHistory().getFirst().pieceCaptured().type());
     }
 
@@ -444,7 +444,7 @@ class GameSimulationTest {
         assertEquals(initialFen, session.toFEN());
         assertEquals(initialCount, session.gameState().movesHistory().size());
         assertEquals(pawnMoves, session.gameState().board().pieceAt(new Tile("e2")).timesMoved());
-        assertEquals(new Tile("e1"), session.gameState().board().kingTile(PieceColor.WHITE));
+        assertEquals(new Tile("e1"), session.gameState().board().kingTile(Color.WHITE));
     }
 
     @Test
@@ -472,8 +472,8 @@ class GameSimulationTest {
         assertNotEquals(first.toFEN(), second.toFEN());
         assertEquals(2, first.gameState().movesHistory().size());
         assertEquals(2, second.gameState().movesHistory().size());
-        assertPiece(first, "e4", PieceColor.WHITE, PieceType.PAWN);
-        assertPiece(second, "d4", PieceColor.WHITE, PieceType.PAWN);
+        assertPiece(first, "e4", Color.WHITE, PieceType.PAWN);
+        assertPiece(second, "d4", Color.WHITE, PieceType.PAWN);
         assertNull(second.gameState().board().pieceAt(new Tile("e4")));
     }
 
@@ -483,8 +483,8 @@ class GameSimulationTest {
         Board loaded = FenParser.fenToBoard("4k3/8/8/8/8/8/8/4K3");
         assertEquals("4k3/8/8/8/8/8/8/4K3", FenParser.boardToFen(loaded));
         assertEquals(2, occupiedSquares(loaded));
-        assertEquals(new Tile("e1"), loaded.kingTile(PieceColor.WHITE));
-        assertEquals(new Tile("e8"), loaded.kingTile(PieceColor.BLACK));
+        assertEquals(new Tile("e1"), loaded.kingTile(Color.WHITE));
+        assertEquals(new Tile("e8"), loaded.kingTile(Color.BLACK));
     }
 
     private static int occupiedSquares(Board board) {
