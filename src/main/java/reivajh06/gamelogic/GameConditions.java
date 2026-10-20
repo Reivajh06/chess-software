@@ -6,6 +6,7 @@ import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveEvent;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -71,12 +72,30 @@ public class GameConditions {
     public static boolean onDeadPosition(GameState gameState) {
         Board board = gameState.board();
 
-        return (board.piecesRemaining(PieceColor.WHITE, PieceType.KING) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
-                (board.piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
-                (board.piecesRemaining(PieceColor.WHITE, PieceType.KING) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.BISHOP)) ||
-                (board.piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.KNIGHT) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING)) ||
-                (board.piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.KNIGHT) && board.piecesRemaining(PieceColor.WHITE, PieceType.KING)) ||
-                (board.piecesRemaining(PieceColor.WHITE, PieceType.KING, PieceType.BISHOP) && board.piecesRemaining(PieceColor.BLACK, PieceType.KING, PieceType.BISHOP));
+        List<Tile> blackTilesRemaining = board.piecesTilesByColor(PieceColor.BLACK);
+        List<Tile> whiteTilesRemaining = board.piecesTilesByColor(PieceColor.WHITE);
+
+        return (piecesRemaining(board, whiteTilesRemaining, PieceType.KING) && piecesRemaining(board, blackTilesRemaining, PieceType.KING)) ||
+                (piecesRemaining(board, whiteTilesRemaining, PieceType.KING, PieceType.BISHOP) && piecesRemaining(board, blackTilesRemaining, PieceType.KING)) ||
+                (piecesRemaining(board, whiteTilesRemaining, PieceType.KING) && piecesRemaining(board, blackTilesRemaining, PieceType.KING, PieceType.BISHOP)) ||
+                (piecesRemaining(board, whiteTilesRemaining, PieceType.KING, PieceType.KNIGHT) && piecesRemaining(board, blackTilesRemaining, PieceType.KING)) ||
+                remainsDoubleBishopAndKing(board, blackTilesRemaining, whiteTilesRemaining);
+    }
+
+    private static boolean remainsDoubleBishopAndKing(Board board, List<Tile> blackTilesRemaining, List<Tile> whiteTilesRemaining) {
+        if(!piecesRemaining(board, blackTilesRemaining, PieceType.KING, PieceType.BISHOP)) return false;
+        if(!piecesRemaining(board, whiteTilesRemaining, PieceType.KING, PieceType.BISHOP)) return false;
+
+        Tile blackBishopTile = blackTilesRemaining.stream().filter(t -> board.pieceAt(t).type() == PieceType.BISHOP).findFirst().orElse(null);
+        Tile whiteBishopTile = whiteTilesRemaining.stream().filter(t -> board.pieceAt(t).type() == PieceType.BISHOP).findFirst().orElse(null);
+
+        return PieceColor.tileColor(blackBishopTile) == PieceColor.tileColor(whiteBishopTile);
+    }
+
+    private static boolean piecesRemaining(Board board, List<Tile> tilesRemaining, PieceType... pieceTypes) {
+        if(tilesRemaining.size() != pieceTypes.length) return false;
+
+        return new HashSet<>(tilesRemaining.stream().map(t -> board.pieceAt(t).type()).toList()).containsAll(List.of(pieceTypes));
     }
 
     public static boolean onThreefoldRepetition(GameState gameState) {

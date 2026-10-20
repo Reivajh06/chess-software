@@ -104,17 +104,6 @@ public class Board {
 				.toList();
 	}
 
-	public boolean piecesRemaining(PieceColor color, PieceType... pieceTypes) {
-		List<Tile> remainingPiecesTiles = piecesTilesByColor(color);
-
-		if(remainingPiecesTiles.size() != pieceTypes.length) return false;
-
-		return remainingPiecesTiles.stream()
-				.map(t -> pieceAt(t).type())
-				.collect(Collectors.toSet())
-				.containsAll(List.of(pieceTypes));
-	}
-
 	public void printBoard() {
 		System.out.println("  " + Arrays.stream(File.values()).map(File::name).collect(Collectors.joining("   ")));
 
