@@ -74,8 +74,8 @@ public class MoveRules {
 
 		Color color = board.pieceAt(ctx.from()).color();
 
-		if(color == Color.BLACK && ctx.gameState().blackCastling().getLast() != null) return false;
-		if(color == Color.WHITE && ctx.gameState().whiteCastling().getLast() != null) return false;
+		if(color == Color.BLACK && ctx.gameState().blackCastling().getLast() == null) return false;
+		if(color == Color.WHITE && ctx.gameState().whiteCastling().getLast() == null) return false;
 
 		for(File file = File.C; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
@@ -97,8 +97,8 @@ public class MoveRules {
 
 		Color color = board.pieceAt(ctx.from()).color();
 
-		if(color == Color.BLACK && ctx.gameState().blackCastling().getFirst() != null) return false;
-		if(color == Color.WHITE && ctx.gameState().whiteCastling().getFirst() != null) return false;
+		if(color == Color.BLACK && ctx.gameState().blackCastling().getFirst() == null) return false;
+		if(color == Color.WHITE && ctx.gameState().whiteCastling().getFirst() == null) return false;
 
 		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
