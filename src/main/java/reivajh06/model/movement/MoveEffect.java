@@ -7,6 +7,28 @@ import reivajh06.model.Tile;
 
 public interface MoveEffect {
 
+	MoveEffect NO_CAPTURE = new MoveEffect() {
+		@Override
+		public Piece apply(Board board, Tile from, Tile to) {
+			Piece movedPiece = board.removePieceIn(from);
+
+			board.addPiece(to, movedPiece);
+
+			movedPiece.moved();
+
+			return null;
+		}
+
+		@Override
+		public void undo(MoveEvent moveEvent, Board board) {
+			Piece movedPiece = board.removePieceIn(moveEvent.to());
+
+			board.addPiece(moveEvent.from(), movedPiece);
+
+			movedPiece.unmoved();
+		}
+	};
+
 	MoveEffect DIRECT_CAPTURE = new MoveEffect() {
 
 		@Override

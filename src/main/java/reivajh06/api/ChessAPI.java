@@ -12,7 +12,7 @@ public class ChessAPI {
 	private Javalin server;
 
 	public ChessAPI() {
-		server = Javalin.create(ChessAPI.this::configureEndpoints);
+		server = Javalin.create(this::configureEndpoints);
 
 		Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
 	}

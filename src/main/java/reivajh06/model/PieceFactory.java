@@ -11,8 +11,8 @@ public class PieceFactory {
 
 	public static Piece createPawn(Color color) {
 		return new Piece(PieceType.PAWN, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().condition(MoveRules.DESTINATION_EMPTY).build(),
-				new MoveBuilder().forward().forward().condition(MoveRules.START_TWO_FORWARD).build(),
+				new MoveBuilder().forward().condition(MoveRules.DESTINATION_EMPTY).effect(MoveEffect.NO_CAPTURE).build(),
+				new MoveBuilder().forward().forward().condition(MoveRules.START_TWO_FORWARD).effect(MoveEffect.NO_CAPTURE).build(),
 				new MoveBuilder().forwardLeft().condition(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
 				new MoveBuilder().forwardLeft().condition(MoveRules.EN_PASSANT).effect(MoveEffect.EN_PASSANT_CAPTURE).build(),
 				new MoveBuilder().forwardRight().condition(MoveRules.DIAGONAL_CAPTURE).effect(MoveEffect.DIRECT_CAPTURE).build(),
@@ -40,14 +40,14 @@ public class PieceFactory {
 
 	public static Piece createKing(Color color) {
 		return new Piece(PieceType.KING, color, new ArrayList<>(List.of(
-				new MoveBuilder().forward().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().left().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().right().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().backward().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().forwardLeft().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().forwardRight().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().backwardLeft().condition(MoveRules.SAFE_MOVE).build(),
-				new MoveBuilder().backwardRight().condition(MoveRules.SAFE_MOVE).build(),
+				new MoveBuilder().forward().build(),
+				new MoveBuilder().left().build(),
+				new MoveBuilder().right().build(),
+				new MoveBuilder().backward().build(),
+				new MoveBuilder().forwardLeft().build(),
+				new MoveBuilder().forwardRight().build(),
+				new MoveBuilder().backwardLeft().build(),
+				new MoveBuilder().backwardRight().build(),
 				new MoveBuilder().left().left().condition(MoveRules.QUEENSIDE_CASTLING).effect(MoveEffect.QUEENSIDE_CASTLING).build(),
 				new MoveBuilder().right().right().condition(MoveRules.KINGSIDE_CASTLING).effect(MoveEffect.KINGSIDE_CASTLING).build()
 		)));
