@@ -71,22 +71,46 @@ public class MoveRules {
 
 	public static final MoveCondition QUEENSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();
-
 		PieceColor color = board.pieceAt(ctx.from()).color();
 
-		return color == PieceColor.BLACK ?
-				ctx.gameState().blackCastling().getLast() != null
-				: ctx.gameState().whiteCastling().getLast() != null;
+		if(color == PieceColor.BLACK && ctx.gameState().blackCastling().getLast() == null) return false;
+		if(color == PieceColor.WHITE && ctx.gameState().whiteCastling().getLast() == null) return false;
+
+		for(File file = File.C; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
+			Tile tile = new Tile(file, ctx.from().rank());
+
+			if(board.pieceAt(tile) != null) return false;
+			if(!SAFE_MOVE.satisfies(new MoveContext(
+					ctx.gameState(),
+					ctx.from(),
+					tile,
+					ctx.lastMove()))
+			) return false;
+		}
+
+		return true;
 	};
 
 	public static final MoveCondition KINGSIDE_CASTLING = ctx -> {
 		Board board = ctx.gameState().board();
-
 		PieceColor color = board.pieceAt(ctx.from()).color();
 
-		return color == PieceColor.BLACK ?
-				ctx.gameState().blackCastling().getFirst() != null
-				: ctx.gameState().whiteCastling().getFirst() != null;
+		if(color == PieceColor.BLACK && ctx.gameState().blackCastling().getFirst() == null) return false;
+		if(color == PieceColor.WHITE && ctx.gameState().whiteCastling().getFirst() == null) return false;
+
+		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
+			Tile tile = new Tile(file, ctx.from().rank());
+
+			if(board.pieceAt(tile) != null) return false;
+			if(!SAFE_MOVE.satisfies(new MoveContext(
+					ctx.gameState(),
+					ctx.from(),
+					tile,
+					ctx.lastMove()))
+			) return false;
+		}
+
+		return true;
 	};
 
 	private static boolean isDiagonalMove(Tile from, Tile to) {
