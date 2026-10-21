@@ -176,6 +176,26 @@ export const themes = {
       dark: "#57413b",
     },
   },
+  warhammer: {
+    name: "Warhammer 40k",
+    group: "Crossover",
+    pieces: "warhammer_pieces.png",
+    tiles: "warhammer_tiles.png",
+    spriteLayout: "redesigned",
+    colors: {
+      background: "#0d111a",
+      panel: "#161c2b",
+      surface: "#212a40",
+      hover: "#33405f",
+      text: "#ece6da",
+      muted: "#a9adc4",
+      accent: "#d9b25a",
+      accentHover: "#f0cd7c",
+      border: "#3a3456",
+      light: "#c9c3b6",
+      dark: "#5a2547",
+    },
+  },
 };
 
 const tokens = {

@@ -259,6 +259,9 @@ export class GameStore {
     this.selection ??= new Selection();
     this.selection.reset();
     this.flipped = false;
+    // Multijugador local: bando que tiene el tablero de frente y si está girando hacia el otro.
+    this.localSide = "WHITE";
+    this.turning = false;
   }
 
   apply(payload) {
@@ -327,7 +330,7 @@ export class GameStore {
   }
 
   get orientation() {
-    const black = this.session?.playerColor === "BLACK";
+    const black = (this.local ? this.localSide : this.session?.playerColor) === "BLACK";
     return black !== this.flipped ? "BLACK" : "WHITE";
   }
 
@@ -335,7 +338,16 @@ export class GameStore {
     return this.session?.gamemode === "PRACTICE";
   }
 
+  get local() {
+    return this.session?.gamemode === "LOCAL";
+  }
+
+  // Color que puede seleccionarse ahora mismo; null cuando no hay restricción en el cliente.
+  get movableColor() {
+    return this.local ? this.state?.turn ?? null : null;
+  }
+
   get interactive() {
-    return this.reviewPly === null && boardInteractive(this.session, this.state);
+    return this.reviewPly === null && !this.turning && boardInteractive(this.session, this.state);
   }
 }

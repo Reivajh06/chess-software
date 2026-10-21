@@ -2099,3 +2099,17 @@ body[data-mascot="off"] .mascot {
     transition: none !important;
   }
 }
+
+/* Multijugador local: el tablero gira dentro de su marco al cambiar de turno. */
+.board-frame:has(.board.spinning) {
+  overflow: hidden;
+}
+.board.spinning .coordinate {
+  opacity: 0;
+}
+.pvp-intro {
+  margin: 0 0 12px;
+}
+.invite-intro {
+  margin: 0 0 14px;
+}

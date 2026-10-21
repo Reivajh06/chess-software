@@ -3,8 +3,16 @@ export const gameModes = {
     hint: "Invita a un amigo. O a un enemigo, yo no juzgo.",
     name: "Contra una persona",
     badge: "PvP",
-    detail: "Sala privada e invitación",
+    detail: "Invitación o en este equipo",
     available: true,
+  },
+  // Se elige desde el diálogo de PvP, no aparece en el menú principal.
+  LOCAL: {
+    name: "Dos en este equipo",
+    badge: "Local",
+    available: true,
+    // El servidor no distingue este modo: es una sala PvP con los dos asientos ocupados.
+    server: "PVP",
   },
   PVAI: {
     hint: "La IA aún está aprendiendo. Como Clippy, pero con ganas.",

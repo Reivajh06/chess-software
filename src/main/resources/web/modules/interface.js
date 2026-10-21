@@ -146,6 +146,7 @@ const modeIcons = {
   AIVAI: "mode-aivai",
   PVCPU: "mode-pvcpu",
   PRACTICE: "mode-practice",
+  LOCAL: "mode-pvp",
 };
 
 const rendered = new Map();
@@ -205,7 +206,8 @@ export function renderMatch(store, preferences) {
   const state = store.state;
   const spectator = session?.gamemode === "AIVAI";
   const mode = modeDefinition(session?.gamemode);
-  const color = store.practice ? store.orientation : (session?.playerColor ?? "WHITE");
+  const shared = store.practice || store.local;
+  const color = shared ? store.orientation : (session?.playerColor ?? "WHITE");
   const rival = color === "WHITE" ? "BLACK" : "WHITE";
   const colorName = (value) => (value === "WHITE" ? "Blancas" : "Negras");
   const finished = ["WHITE_WIN", "BLACK_WIN", "DRAW"].includes(state?.status);
@@ -242,12 +244,12 @@ export function renderMatch(store, preferences) {
   }
   setText("player-name", spectator
     ? (state?.whiteModel ?? "Modelo blanco")
-    : store.practice
+    : shared
       ? colorName(color)
       : "Tú");
   setText("opponent-name", spectator
     ? (state?.blackModel ?? "Modelo negro")
-    : store.practice
+    : shared
       ? colorName(rival)
       : session?.gamemode === "PVAI"
         ? "IA local"
@@ -256,14 +258,18 @@ export function renderMatch(store, preferences) {
     ? ""
     : store.practice
       ? "Práctica libre"
-      : colorName(color));
+      : store.local
+        ? "En este equipo"
+        : colorName(color));
   setText("opponent-detail", !session
     ? ""
     : state?.waitingForOpponent
       ? "Esperando invitación"
       : store.practice
         ? "Práctica libre"
-        : colorName(rival));
+        : store.local
+          ? "En este equipo"
+          : colorName(rival));
 
   const active = !!session && state?.status === "ACTIVE" && !reviewing;
   byId("player-turn").hidden = !active || state.turn !== color;

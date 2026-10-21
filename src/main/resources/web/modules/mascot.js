@@ -1,5 +1,5 @@
 import { pieceImage } from "./assets.js";
-import { alfiLines } from "./alfi-lines.js";
+import { alfiLines, themeLines } from "./alfi-lines.js";
 import { createFace, drawFace, eraseCross } from "./alfi-face.js";
 
 const letterDelay = 28;
@@ -11,6 +11,7 @@ const stareDelay = 1600;
 const lingerDelay = 5000;
 
 const funnyChance = 0.3;
+const themeChance = 0.4;
 
 const keyboardTip = /[←→]/;
 const touchScreen = () => !!globalThis.matchMedia?.("(hover: none)").matches;
@@ -30,8 +31,10 @@ const activities = { reading: "leyendo", humming: "contento", looking: "normal",
 const idleClasses = ["is-reading", "is-humming", "is-looking", "is-juggling", "is-sleeping"];
 const pokeLimit = 5;
 
-export function line(kind, vars = {}) {
-  const { calm = [], funny = [] } = alfiLines[kind] ?? alfiLines.idle;
+export function line(kind, vars = {}, theme = null) {
+  const themed = themeLines[theme]?.[kind];
+  const source = themed && Math.random() < themeChance ? themed : alfiLines[kind];
+  const { calm = [], funny = [] } = source ?? alfiLines.idle;
   const touch = touchScreen();
   const usable = (lines) => {
     const fitting = lines.filter((text) => !touch || !keyboardTip.test(text));
@@ -108,7 +111,7 @@ export class Mascot {
   }
 
   line(kind, vars) {
-    return line(kind, vars);
+    return line(kind, vars, this.theme);
   }
 
   talk(kind, priority = 0, options = {}, vars = {}) {

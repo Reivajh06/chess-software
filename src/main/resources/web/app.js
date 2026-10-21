@@ -62,7 +62,7 @@ const gameMascot = new Mascot(byId("game-mascot"), audio, preferences);
 let hoveredEntry = null;
 
 const title = new TitleScreen({
-  onStart: (mode) => openSession(null, mode),
+  onStart: (mode) => mode === "PVP" ? byId("pvp-dialog").showModal() : openSession(null, mode),
   onJoin: joinSession,
   onContinue: () => showScreen("game"),
   onError: () => titleMascot.talk("error", 2),
@@ -292,7 +292,7 @@ function applyGameState(payload) {
       move,
       before,
       after: state,
-      userColors: store.practice
+      userColors: store.practice || store.local
           ? ["WHITE", "BLACK"]
           : store.session?.playerColor ? [store.session.playerColor] : [],
     });
@@ -314,7 +314,40 @@ function applyGameState(payload) {
     );
   }
 
+  faceSideToMove();
   return true;
+}
+
+// Multijugador local: cuando cambia el turno, el tablero gira para dejar abajo al bando que mueve.
+async function faceSideToMove() {
+  if (!store.local || store.turning) return;
+
+  const turn = store.state?.turn;
+  if (store.localSide === null) {
+    store.localSide = turn ?? "WHITE";
+    renderGame();
+    return;
+  }
+  if (store.state?.status !== "ACTIVE" || turn === store.localSide) return;
+
+  const generation = sessionVersion;
+  store.turning = true;
+  board.render();
+
+  await board.settle();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  if (generation !== sessionVersion) return;
+
+  store.localSide = store.state.turn;
+  store.reviewPly = null;
+  renderMatch(store, preferences);
+  historyView.render();
+  await board.spin();
+  if (generation !== sessionVersion) return;
+
+  store.turning = false;
+  renderGame();
+  faceSideToMove();
 }
 
 function shakeBoard(delay = 0) {
@@ -431,9 +464,11 @@ function reviewPosition(ply) {
 }
 
 function selectSquare(tile) {
+  const movableColor = store.movableColor;
   const command = store.selection.click(tile, {
     pieces: store.pieces,
-    interactive: store.interactive,
+    interactive: store.interactive &&
+        (!movableColor || store.pieces.get(tile)?.color === movableColor),
   });
 
   if (command.type === "ignore") {
@@ -658,6 +693,7 @@ function showScreen(screen) {
 
 async function activateSession(session, state) {
   store.session = session;
+  store.localSide = null;
   api.playerId = session.playerId ?? null;
 
   applyGameState(state);
@@ -702,6 +738,7 @@ async function openSession(id, mode) {
 
     if (generation === sessionVersion) {
       await activateSession(session, state);
+      if (!id && session.gamemode === "PVP") openInvite();
     }
   } catch (error) {
     if (
@@ -729,6 +766,13 @@ byId("result-rematch").addEventListener("click", () => {
   byId("result-dialog").close();
   openSession(null, mode);
 });
+
+for (const [id, mode] of [["pvp-invite", "PVP"], ["pvp-local", "LOCAL"]]) {
+  byId(id).addEventListener("click", () => {
+    byId("pvp-dialog").close();
+    openSession(null, mode);
+  });
+}
 
 byId("result-new").addEventListener("click", () => {
   byId("result-dialog").close();
@@ -831,7 +875,9 @@ async function inviteOrigin() {
   }
 }
 
-byId("invite").addEventListener("click", async () => {
+byId("invite").addEventListener("click", openInvite);
+
+async function openInvite() {
   if (!store.session) {
     return;
   }
@@ -851,7 +897,8 @@ byId("invite").addEventListener("click", async () => {
   byId("invite-status").textContent = origin
       ? ""
       : "No se pudo obtener la dirección de este equipo en la red. Inténtalo de nuevo.";
-});
+  if (origin) byId("invite-copy").focus();
+}
 
 byId("invite-copy").addEventListener("click", async () => {
   const link = byId("invite-link").value;

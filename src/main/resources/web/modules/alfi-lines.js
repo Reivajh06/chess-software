@@ -162,6 +162,17 @@ export const alfiLines = {
     calm: ["Tema Java. Como el servidor de este juego.", "Java. Café recién hecho para pensar."],
     funny: ["Java. public static void moverEnDiagonal().", "Java. Nadie me quita mi taza de café."],
   },
+  "theme-warhammer": {
+    calm: [
+      "¡Warhammer 40k! Marines espaciales contra bichos alienígenas. Mi tema favorito, con diferencia.",
+      "Azul contra morado: los Ultramarines defienden y los Tiránidos quieren comérselo todo.",
+    ],
+    funny: [
+      "¡POR EL EMPERADOR! Perdón, me he emocionado. Ya me pongo el casco.",
+      "Este casco me queda grande, pero no pienso devolverlo nunca.",
+      "Tengo la estantería llena de miniaturas sin pintar. Esto es mucho más rápido.",
+    ],
+  },
   poked: {
     calm: [
       "¡Eh! Que tengo cosquillas.",
@@ -567,5 +578,63 @@ export const alfiLines = {
       "Tablas. Todos ganan. O todos pierden. Depende de cómo lo mires.",
       "Empate. Las piezas se dan la mano y se van a casa.",
     ],
+  },
+};
+
+export const themeLines = {
+  warhammer: {
+    greeting: {
+      calm: [
+        "¡Hola! Hoy juegan los marines azules contra los bichos morados. Elige bando y a la batalla.",
+        "Bienvenido. Llevo el casco puesto desde esta mañana. No preguntes.",
+      ],
+      funny: [
+        "En el lejano futuro solo hay guerra. Y, por lo visto, también ajedrez.",
+        "Hola. He pasado tres meses pintando un peón. Merecía la pena.",
+      ],
+    },
+    idle: {
+      calm: [
+        "Dato friki: los Tiránidos son una plaga alienígena que devora planetas enteros.",
+        "Los marines espaciales son soldados gigantes con armadura. Como una torre, pero que anda.",
+        "¿Sabías que el Dreadnought es un guerrero dentro de un robot? Por eso hace de torre.",
+      ],
+      funny: [
+        "Estoy pensando en pintar el tablero a mano. Solo son 64 casillas. Fácil.",
+        "Si me oyes murmurar «por el Emperador», es que estoy concentrado.",
+        "Tengo que confesarlo: en casa tengo más miniaturas que calcetines.",
+      ],
+    },
+    start: {
+      calm: ["¡Empieza la batalla! Que cada pieza defienda su trinchera."],
+      funny: ["¡A las armas, hermanos! Bueno, a las casillas."],
+    },
+    capture: {
+      calm: ["Baja en combate en {to}. Qué intensidad.", "Una pieza menos en el campo de batalla."],
+      funny: [
+        "¡Ñam! Los Tiránidos aprobarían esta captura.",
+        "{victima} fuera. Que lo anoten en las crónicas del capítulo.",
+      ],
+    },
+    check: {
+      calm: ["¡Jaque! El líder está en peligro: hay que protegerlo ya."],
+      funny: ["¡Jaque! Alerta roja en la nave insignia."],
+    },
+    promotion: {
+      calm: ["¡Ascenso! Un simple soldado convertido en héroe del capítulo."],
+      funny: ["Un peón que llega al final se gana una armadura nueva. Así funciona el ejército."],
+    },
+    victory: {
+      calm: ["¡Victoria! Esta batalla irá a las crónicas del capítulo."],
+      funny: ["¡VICTORIA! Por el Emperador y por las diagonales."],
+    },
+    defeat: {
+      calm: ["Derrota. Hasta los mejores ejércitos se retiran para volver más fuertes."],
+      funny: ["Nos ha devorado la plaga. Literalmente. Revancha y más munición."],
+    },
+    poked: {
+      calm: ["¡Cuidado con el casco! Está recién pintado."],
+      funny: ["¡Eh! Esta armadura no es de atrezo. Bueno, un poco sí."],
+    },
   },
 };

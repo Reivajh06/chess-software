@@ -62,6 +62,7 @@ export class BoardView {
     this.element.setAttribute("aria-label", `Tablero, ${black ? "negras" : "blancas"} abajo`);
     const targets = this.store.targets;
     const interactive = this.store.interactive;
+    const movableColor = this.store.movableColor;
     const layout = `${files}${ranks}`;
     if (this.layout !== layout) {
       this.finishAnimation?.();
@@ -86,7 +87,7 @@ export class BoardView {
       const item = pieces.get(tile);
       button.classList.toggle("last-move", last?.from === tile || last?.to === tile);
       button.classList.toggle("selected", this.store.selected === tile);
-      button.classList.toggle("movable", !!item && interactive);
+      button.classList.toggle("movable", !!item && interactive && (!movableColor || item.color === movableColor));
       button.classList.toggle("legal", targets.has(tile));
       button.classList.toggle("capture", targets.has(tile) && !!item);
       button.classList.toggle("in-check",
@@ -121,6 +122,29 @@ export class BoardView {
     this.lastOrientation = this.store.orientation;
     if (focused)
       this.element.querySelector(`[data-square="${focused}"]`)?.focus({ preventScroll: true });
+  }
+  // Espera a que termine el movimiento de pieza en curso, si lo hay.
+  settle() {
+    return this.motion ?? Promise.resolve();
+  }
+  // Recoloca el tablero con la orientación actual del store girándolo media vuelta.
+  async spin() {
+    this.render();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timing = { duration: 600, easing: "ease-in-out" };
+    this.element.classList.add("spinning");
+    const animations = [
+      this.element.animate([
+        { transform: "rotate(180deg)" },
+        { transform: "rotate(0deg)" },
+      ], timing),
+      ...[...this.element.querySelectorAll(".piece")].map((piece) => piece.animate([
+        { transform: "rotate(-180deg)" },
+        { transform: "rotate(0deg)" },
+      ], timing)),
+    ];
+    await Promise.allSettled(animations.map((animation) => animation.finished));
+    this.element.classList.remove("spinning");
   }
   async animatePiece(origin, move, capture = null) {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -197,10 +221,13 @@ export class BoardView {
       if (this.finishAnimation === cleanup) this.finishAnimation = null;
     };
     this.finishAnimation = cleanup;
+    const motion = Promise.allSettled(animations.map(animation => animation.finished));
+    this.motion = motion;
     try {
-      await Promise.allSettled(animations.map(animation => animation.finished));
+      await motion;
     } finally {
       cleanup();
+      if (this.motion === motion) this.motion = null;
     }
   }
 }

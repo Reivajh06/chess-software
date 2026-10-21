@@ -215,11 +215,30 @@
       </section>
     </dialog>
 
-    <dialog id="invite-dialog" class="pixel-frame invite-dialog" aria-labelledby="invite-title">
+    <dialog id="pvp-dialog" class="pixel-frame pvp-dialog" aria-labelledby="pvp-title">
+      <div class="dialog-heading">
+        <h2 id="pvp-title">Contra una persona</h2>
+        <button type="button" data-close="pvp-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <p class="settings-note pvp-intro">¿Dónde está tu rival?</p>
+      <div class="title-menu">
+        <button id="pvp-invite" class="title-option" type="button">
+          <img class="title-option-art" src="./assets/ui/mode-pvp.png" alt="" aria-hidden="true" />
+          <span><strong>Invitar a alguien</strong><small>Copia el enlace y envíaselo</small></span>
+        </button>
+        <button id="pvp-local" class="title-option" type="button">
+          <img class="title-option-art" src="./assets/ui/duel.png" alt="" aria-hidden="true" />
+          <span><strong>En este equipo</strong><small>Por turnos, el tablero gira solo</small></span>
+        </button>
+      </div>
+    </dialog>
+
+    <dialog id="invite-dialog"class="pixel-frame invite-dialog" aria-labelledby="invite-title">
       <div class="dialog-heading">
         <h2 id="invite-title">Invitar a un rival</h2>
         <button type="button" data-close="invite-dialog" aria-label="Cerrar invitación">×</button>
       </div>
+      <p class="settings-note invite-intro">Envía este enlace a tu rival. La partida empieza en cuanto lo abra.</p>
       <div class="invite-field">
         <label for="invite-link">Enlace de invitación</label>
         <input id="invite-link" readonly spellcheck="false" />

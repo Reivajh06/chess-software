@@ -25,6 +25,11 @@ const palette = {
   u: "#f4f0e8",
   e: "#6b3e26",
   s: "#d8d2c8",
+  U: "#2f55c4",
+  V: "#1b2f73",
+  G: "#d9b25a",
+  x: "#b3262f",
+  q: "#efe2c0",
 };
 
 const at = (cx, cy, map) => {
@@ -69,8 +74,13 @@ const outfits = {
   christmas: [from(40, -5, "..........ww/........rrww/.......rrr../.....rrrrr../....Rrrrrr../...Rrrrrrr../..Rrrrrrrrr./..Rrrrrrrrr./.wwwwwwwwww./.wwwwwwwwww.")],
   python: [from(50, 25, "...bbbb...../..bbbbbb..../.bbbbbbbb.../.bbbyybbb.../.bbbyybbb.../bbbbbbbbbb../yyyyyyyyyyyy")],
   java: [from(140, 195, "ueeeeu../uuuuuuu./uoooou.u/uuuuuuu./.uuuu...")],
+  warhammer: [
+    from(30, -45, ".....xxxx...../...xxxxxxxx.../..xxUUUUUUxx../...UUUUUUUU.../..UUUUUUUUUU../..UUUUwUUwUU../..UUUUUwwUUU../..UUUUUUUUUU../.GGGGGGGGGGGG./.VUU......UUV./.VUU......UUV./..VU......UV.."),
+    from(8, 148, ".VUUU........UUUV./VUUUUG......GUUUUV/.GGGG........GGGG."),
+    from(118, 185, ".xx./xxxx/xxxx/.xx./.qq./.qq./.q../.q.."),
+  ],
 };
-const hats = new Set(["warm", "cold", "gothic", "medieval", "halloween", "christmas", "python"]);
+const hats = new Set(["warm", "cold", "gothic", "medieval", "halloween", "christmas", "python", "warhammer"]);
 const extras = {
   steam: [from(150, 170, ".s.s/s.s.")],
   notes: [from(150, 40, ".kk/.k./kk./kk."), from(20, 70, ".kk/.k./kk./kk.")],

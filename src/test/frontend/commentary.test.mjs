@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Commentator } from "../../main/resources/web/modules/commentary.js";
 import { line } from "../../main/resources/web/modules/mascot.js";
-import { alfiLines } from "../../main/resources/web/modules/alfi-lines.js";
+import { alfiLines, themeLines } from "../../main/resources/web/modules/alfi-lines.js";
 
 const board = (entries) => new Map(Object.entries(entries).map(([tile, piece]) => [tile, piece]));
 const W = (type) => ({ type, color: "WHITE" });
@@ -86,6 +86,18 @@ test("every detected event has lines and placeholders get filled", () => {
     for (let i = 0; i < 20; i++) {
       const text = line(kind, { to: "h3", from: "g1", pieza: "caballo", victima: "alfil", bando: "blancas", ply: "4", moves: "10" });
       assert.ok(text && !/\{\w+\}/.test(text), `${kind}: ${text}`);
+    }
+  }
+});
+
+test("theme lines only cover existing kinds and fill their placeholders", () => {
+  for (const [theme, kinds] of Object.entries(themeLines)) {
+    for (const kind of Object.keys(kinds)) {
+      assert.ok(alfiLines[kind], `${theme}/${kind}`);
+      for (let i = 0; i < 20; i++) {
+        const text = line(kind, { to: "h3", victima: "alfil" }, theme);
+        assert.ok(text && !/\{\w+\}/.test(text), `${theme}/${kind}: ${text}`);
+      }
     }
   }
 });

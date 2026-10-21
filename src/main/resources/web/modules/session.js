@@ -1,5 +1,6 @@
 import { saveSession, readSession, forgetSession } from "./preferences.js";
 import { ApiError, HttpStatus } from "./api.js";
+import { modeDefinition } from "./modes.js";
 
 const colors = ["WHITE", "BLACK"];
 
@@ -10,14 +11,24 @@ export class SessionAccess {
 
   async open(sessionId, mode = "PVP") {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : "NOT_CPU";
-    const created = sessionId ? null : await this.api.create(mode, difficulty);
+    const local = !sessionId && mode === "LOCAL";
+    const created = sessionId ? null : await this.api.create(modeDefinition(mode).server ?? mode, difficulty);
     const id = sessionId ?? created.sessionId ?? created.id;
     if (!id)
       throw new Error("El servidor no ha proporcionado el ID de sesión.");
 
-    let gamemode = created?.gamemode ?? mode;
+    let gamemode = local ? mode : (created?.gamemode ?? mode);
     let seat;
-    if (sessionId) {
+    if (local) {
+      // Ambos jugadores comparten este equipo: ocupamos también el segundo asiento.
+      const creator = this.creatorSeat(created, "PVP");
+      const second = await this.join(id);
+      seat = {
+        playerId: creator.playerId,
+        playerColor: null,
+        state: second.state ?? second.gameState ?? await this.api.state(id),
+      };
+    } else if (sessionId) {
       seat = await this.join(id);
       gamemode = seat.gamemode ?? gamemode;
     } else if (gamemode === "PVP" || gamemode === "PRACTICE") {
