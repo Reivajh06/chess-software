@@ -1,6 +1,7 @@
 package reivajh06.gamelogic;
 
 import reivajh06.FenParser;
+import reivajh06.gamelogic.updaters.EnPassantUpdater;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveEvent;
@@ -11,9 +12,11 @@ import java.util.*;
 public class GameUpdater {
 
 	private final GameSession session;
+	private final EnPassantUpdater enPassantUpdater;
 
 	public GameUpdater(GameSession session) {
 		this.session = session;
+		enPassantUpdater = new EnPassantUpdater();
 	}
 
 	public Map<Integer, List<Tile>> pieceMoves(Tile location) {
@@ -83,7 +86,7 @@ public class GameUpdater {
 		Map<Color, List<Piece>> eatenPieces = updateEatenPieces(capturedPiece);
 		Color checkedColor = updateCheckedColor(movedPiece);
 		GameStatus status = updateGameStatus(movedPiece);
-		Tile enPassantDestination = updateEnPassantTile(move, to);
+		Tile enPassantDestination = enPassantUpdater.update(currentState, move, movedPiece, capturedPiece, from, to);
 		int halfMoveClock = updateHalfMoveClock(movedPiece, capturedPiece);
 		int fullMoves = updateFullMoves(movedPiece);
 
@@ -187,18 +190,6 @@ public class GameUpdater {
 		if(capturedPiece != null) return 0;
 
 		return session.gameState().halfMoveClock() + 1;
-	}
-
-	private Tile updateEnPassantTile(Move move, Tile destination) {
-		if(!move.condition().equals(MoveRules.START_TWO_FORWARD)) return null;
-
-		Board board = session.gameState().board();
-
-		if(board.pieceAt(destination).color() == Color.WHITE) return new Tile(destination.file(), Rank.previous(destination.rank()));
-
-		return board.pieceAt(destination).color() == Color.WHITE ?
-				new Tile(destination.file(), Rank.previous(destination.rank()))
-				: new Tile(destination.file(), Rank.next(destination.rank()));
 	}
 
 	private List<Castling> updateCastlingRights(Piece movedPiece) {
