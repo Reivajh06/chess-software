@@ -4,7 +4,7 @@ import reivajh06.api.ChessAPI;
 
 public class Launcher {
 
-	static void main(String[] args) {
+	static void main() {
 		new ChessAPI().start();
 	}
 }

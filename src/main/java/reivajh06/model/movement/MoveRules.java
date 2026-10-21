@@ -52,6 +52,8 @@ public class MoveRules {
 			List<Move> moveset = rivalPiece.moveset();
 
 			for(Move move : moveset) {
+				if(move.effect().equals(MoveEffect.NO_CAPTURE)) return true;
+
 				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.gameState(), rivalPiece.color(), rivalTile, move).contains(ctx.to());
 
 				if(isTileCompromised) return false;

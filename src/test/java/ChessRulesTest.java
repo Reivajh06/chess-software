@@ -73,7 +73,6 @@ class ChessRulesTest {
     })
     void bishopDeadPositionsDependOnSquareColors(String fen, boolean expected) {
         GameSession session = ChessTestSupport.sessionAt(fen);
-        session.gameState().board().printBoard();
         assertEquals(expected, GameConditions.onDeadPosition(session.gameState()));
     }
 
