@@ -1,22 +1,29 @@
 package reivajh06.gamelogic;
 
 import reivajh06.FenParser;
-import reivajh06.gamelogic.updaters.EnPassantUpdater;
+import reivajh06.gamelogic.updaters.*;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveEvent;
-import reivajh06.model.movement.MoveRules;
 
 import java.util.*;
 
 public class GameUpdater {
 
 	private final GameSession session;
-	private final EnPassantUpdater enPassantUpdater;
+	private final List<Updater> updaters;
 
 	public GameUpdater(GameSession session) {
 		this.session = session;
-		enPassantUpdater = new EnPassantUpdater();
+
+		updaters = List.of(
+				new EnPassantUpdater(),
+				new HalfMoveClockUpdater(),
+				new FullMovesUpdater(),
+				new TurnColorUpdater(),
+				new EatenPiecesUpdater(),
+				new CastlingRightsUpdater()
+		);
 	}
 
 	public Map<Integer, List<Tile>> pieceMoves(Tile location) {
@@ -79,65 +86,24 @@ public class GameUpdater {
 	}
 
 	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
-		GameState currentState = session.gameState();
-		Board updatedBoard = currentState.board();
+		GameStateBuilder builder = new GameStateBuilder();
 
-		Color turnColor = Color.rivalColor(movedPiece.color());
-		Map<Color, List<Piece>> eatenPieces = updateEatenPieces(capturedPiece);
-		Color checkedColor = updateCheckedColor(movedPiece);
-		GameStatus status = updateGameStatus(movedPiece);
-		Tile enPassantDestination = enPassantUpdater.update(currentState, move, movedPiece, capturedPiece, from, to);
-		int halfMoveClock = updateHalfMoveClock(movedPiece, capturedPiece);
-		int fullMoves = updateFullMoves(movedPiece);
+		updaters.forEach(u -> u.update(builder, session.gameState(), move, movedPiece, capturedPiece, from, to));
 
-		GameStateBuilder stateBuilder = new GameStateBuilder()
-				.turnColor(turnColor)
-				.board(updatedBoard)
-				.eatenPieces(eatenPieces)
-				.checkedColor(checkedColor)
-				.status(status)
-				.enPassantDestination(enPassantDestination)
-				.halfMoveClock(halfMoveClock)
-				.fullMoves(fullMoves);
+		GameState updatedState = builder.build();
 
-		List<Castling> whiteCastling = new ArrayList<>(currentState.whiteCastling());
-		List<Castling> blackCastling = new ArrayList<>(currentState.blackCastling());
+		String fen = FenParser.gameStateToFen(updatedState);
 
-		if(movedPiece.color() == Color.WHITE) {
-			if(movedPiece.type() == PieceType.KING) {
-				whiteCastling.set(0, null);
-				whiteCastling.set(1, null);
-			}
+		updatedState.movesHistory().addFirst(updateMovesHistory(
+				movedPiece,
+				move,
+				from,
+				to,
+				capturedPiece,
+				fen
+		));
 
-			else whiteCastling = updateCastlingRights(movedPiece);
-		}
-
-		else {
-			if(movedPiece.type() == PieceType.KING) {
-				blackCastling.set(0, null);
-				blackCastling.set(1, null);
-			}
-
-			else blackCastling = updateCastlingRights(movedPiece);
-		}
-
-		stateBuilder.whiteCastling(whiteCastling).blackCastling(blackCastling);
-
-		String fen = FenParser.gameStateToFen(
-				updatedBoard,
-				turnColor,
-				whiteCastling,
-				blackCastling,
-				enPassantDestination,
-				halfMoveClock,
-				fullMoves
-		);
-
-		Deque<MoveEvent> movesHistory = updateMovesHistory(movedPiece, move, from, to, capturedPiece, fen);
-
-		stateBuilder.movesHistory(movesHistory);
-
-		return stateBuilder.build();
+		return updatedState;
 	}
 
 	private Color updateCheckedColor(Piece movedPiece) {
@@ -156,12 +122,8 @@ public class GameUpdater {
 		return eatenPieces;
 	}
 
-	private Deque<MoveEvent> updateMovesHistory(Piece movedPiece, Move move, Tile from, Tile to, Piece capturedPiece, String fen) {
-		Deque<MoveEvent> movesHistory = session.gameState().movesHistory();
-
-		movesHistory.addFirst(new MoveEvent(movedPiece, move, from, to, capturedPiece, fen));
-
-		return movesHistory;
+	private MoveEvent updateMovesHistory(Piece movedPiece, Move move, Tile from, Tile to, Piece capturedPiece, String fen) {
+		return new MoveEvent(movedPiece, move, from, to, capturedPiece, fen);
 	}
 
 	private GameStatus updateGameStatus(Piece movedPiece) {
@@ -174,22 +136,6 @@ public class GameUpdater {
 		return GameConditions.onDraw(session.gameState()) ?
 				GameStatus.DRAW
 				: GameStatus.ACTIVE;
-	}
-
-	private int updateFullMoves(Piece movedPiece) {
-		int fullMoves = session.gameState().fullMoves();
-
-		return movedPiece.color() == Color.BLACK ?
-				fullMoves + 1 :
-				fullMoves;
-	}
-
-	private int updateHalfMoveClock(Piece movedPiece, Piece capturedPiece) {
-		if(movedPiece.type() == PieceType.PAWN) return 0;
-
-		if(capturedPiece != null) return 0;
-
-		return session.gameState().halfMoveClock() + 1;
 	}
 
 	private List<Castling> updateCastlingRights(Piece movedPiece) {
