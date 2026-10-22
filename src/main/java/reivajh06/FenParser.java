@@ -1,11 +1,8 @@
 package reivajh06;
 
+import reivajh06.gamelogic.CastlingRights;
 import reivajh06.gamelogic.GameState;
 import reivajh06.model.*;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class FenParser {
 
@@ -40,19 +37,12 @@ public class FenParser {
 	}
 
 	public static String gameStateToFen(GameState gameState) {
-		String whiteCastlingRights = gameState.whiteCastling().stream().filter(Objects::nonNull).map(Castling::firstLetter).collect(Collectors.joining());
-		String blackCastlingRights = gameState.blackCastling().stream().filter(Objects::nonNull).map(c -> c.firstLetter().toLowerCase()).collect(Collectors.joining());
-
-		String castlingRights = whiteCastlingRights + blackCastlingRights;
-
-		if(castlingRights.isEmpty()) castlingRights = "-";
-
 		return new StringBuilder()
 				.append(FenParser.boardToFen(gameState.board()))
 				.append(" ")
 				.append(gameState.turnColor().name().toLowerCase().charAt(0))
 				.append(" ")
-				.append(castlingRights)
+				.append(castlingRightsToFen(gameState.castlingRights()))
 				.append(" ")
 				.append(gameState.enPassantDestination() == null ? "-" : gameState.enPassantDestination().name().toLowerCase())
 				.append(" ")
@@ -62,20 +52,13 @@ public class FenParser {
 				.toString();
 	}
 
-	public static String gameStateToFen(Board board, Color turnColor, List<Castling> whiteCastling, List<Castling> blackCastling, Tile enPassantDestination, int halfMoveClock, int fullMoves) {
-		String whiteCastlingRights = whiteCastling.stream().filter(Objects::nonNull).map(Castling::firstLetter).collect(Collectors.joining());
-		String blackCastlingRights = blackCastling.stream().filter(Objects::nonNull).map(c -> c.firstLetter().toLowerCase()).collect(Collectors.joining());
-
-		String castlingRights = whiteCastlingRights + blackCastlingRights;
-
-		if(castlingRights.isEmpty()) castlingRights = "-";
-
+	public static String gameStateToFen(Board board, Color turnColor, CastlingRights castlingRights, Tile enPassantDestination, int halfMoveClock, int fullMoves) {
 		return new StringBuilder()
 				.append(FenParser.boardToFen(board))
 				.append(" ")
 				.append(turnColor.name().toLowerCase().charAt(0))
 				.append(" ")
-				.append(castlingRights)
+				.append(castlingRightsToFen(castlingRights))
 				.append(" ")
 				.append(enPassantDestination == null ? "-" : enPassantDestination.name().toLowerCase())
 				.append(" ")
@@ -115,5 +98,19 @@ public class FenParser {
 		}
 
 		return board;
+	}
+
+	public static String castlingRightsToFen(CastlingRights castlingRights) {
+		String whiteKingside = castlingRights.hasRight(Color.WHITE, Castling.KINGSIDE) ? "K" : "";
+		String whiteQueenside = castlingRights.hasRight(Color.WHITE, Castling.QUEENSIDE) ? "Q" : "";
+		String blackKingside = castlingRights.hasRight(Color.BLACK, Castling.KINGSIDE) ? "k" : "";
+		String blackQueenside = castlingRights.hasRight(Color.BLACK, Castling.QUEENSIDE) ? "q" : "";
+
+		String whiteCastlingRights = whiteKingside + whiteQueenside;
+		String blackCastlingRights = blackKingside + blackQueenside;
+
+		String castlingRightsFen = whiteCastlingRights + blackCastlingRights;
+
+		return castlingRightsFen.isEmpty() ? "-" : castlingRightsFen;
 	}
 }

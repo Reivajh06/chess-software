@@ -15,8 +15,7 @@ public record GameState(
         Color turnColor,
 		Color checkedColor,
 		GameStatus status,
-		List<Castling> whiteCastling,
-		List<Castling> blackCastling,
+		CastlingRights castlingRights,
 		Tile enPassantDestination,
 		int halfMoveClock,
 		int fullMoves
@@ -29,8 +28,7 @@ public record GameState(
                 .checkedColor(null)
 				.eatenPieces(Map.of(Color.BLACK, new ArrayList<>(), Color.WHITE, new ArrayList<>()))
                 .status(GameStatus.ACTIVE)
-                .whiteCastling(GameStateBuilder.CASTLING_ALL)
-                .blackCastling(GameStateBuilder.CASTLING_ALL)
+				.castlingRights(CastlingRights.allRights())
                 .enPassantDestination(null)
                 .halfMoveClock(0)
                 .fullMoves(1)

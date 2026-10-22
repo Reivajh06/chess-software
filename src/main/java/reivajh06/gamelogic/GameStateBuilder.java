@@ -15,8 +15,7 @@ public class GameStateBuilder {
     private Map<Color, List<Piece>> eatenPieces = new HashMap<>();
     private Color checkedColor;
     private GameStatus status;
-    private List<Castling> whiteCastling;
-    private List<Castling> blackCastling;
+    private CastlingRights castlingRights;
     private Tile enPassantDestination;
     private int halfMoveClock;
     private int fullMoves = 0;
@@ -51,13 +50,8 @@ public class GameStateBuilder {
         return this;
     }
 
-    public GameStateBuilder whiteCastling(List<Castling> whiteCastling) {
-        this.whiteCastling = whiteCastling;
-        return this;
-    }
-
-    public GameStateBuilder blackCastling(List<Castling> blackCastling) {
-        this.blackCastling = blackCastling;
+    public GameStateBuilder castlingRights(CastlingRights castlingRights) {
+        this.castlingRights = castlingRights;
         return this;
     }
 
@@ -84,8 +78,7 @@ public class GameStateBuilder {
                 turnColor,
                 checkedColor,
                 status,
-                whiteCastling,
-                blackCastling,
+                castlingRights,
                 enPassantDestination,
                 halfMoveClock,
                 fullMoves
