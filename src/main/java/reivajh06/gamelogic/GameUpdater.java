@@ -114,14 +114,6 @@ public class GameUpdater {
 				: null;
 	}
 
-	private Map<Color, List<Piece>> updateEatenPieces(Piece capturedPiece) {
-		Map<Color, List<Piece>> eatenPieces = new HashMap<>(session.gameState().eatenPieces());
-
-		if(capturedPiece != null) eatenPieces.get(capturedPiece.color()).add(capturedPiece.copy());
-
-		return eatenPieces;
-	}
-
 	private MoveEvent updateMovesHistory(Piece movedPiece, Move move, Tile from, Tile to, Piece capturedPiece, String fen) {
 		return new MoveEvent(movedPiece, move, from, to, capturedPiece, fen);
 	}
