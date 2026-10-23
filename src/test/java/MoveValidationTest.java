@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class MoveValidationTest {
     private static final String PINNED_ROOK = "4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1";
@@ -81,8 +81,12 @@ class MoveValidationTest {
 
         new GameUpdater(session).movePieceAndUpdate(moveId, new Tile(from), new Tile(to));
 
+        // El estado nuevo trabaja sobre una copia del tablero: se comprueba la pieza (tipo y color), no la instancia.
+        Piece arrived = session.gameState().board().pieceAt(new Tile(to));
         assertAll(
-                () -> assertSame(moved, session.gameState().board().pieceAt(new Tile(to)), "piece reaches its destination"),
+                () -> assertNotNull(arrived, "piece reaches its destination"),
+                () -> assertEquals(moved.type(), arrived.type(), "piece reaches its destination"),
+                () -> assertEquals(moved.color(), arrived.color(), "piece reaches its destination"),
                 () -> assertNull(session.gameState().board().pieceAt(new Tile(from)), "origin is vacated"),
                 () -> assertEquals(historySize + 1, session.gameState().movesHistory().size(), "one event is recorded")
         );

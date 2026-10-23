@@ -1,3 +1,4 @@
+import reivajh06.gamelogic.CastlingRights;
 import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameConditions;
 import reivajh06.gamelogic.GameSession;
@@ -17,7 +18,6 @@ import reivajh06.model.Tile;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -122,8 +122,7 @@ final class ChessTestSupport {
         captures.put(Color.BLACK, new ArrayList<>());
         GameStateBuilder stateBuilder = new GameStateBuilder()
                 .board(board).turnColor(turn).checkedColor(null).status(GameStatus.ACTIVE)
-                .whiteCastling(rightsList(rights.contains("K"), rights.contains("Q")))
-                .blackCastling(rightsList(rights.contains("k"), rights.contains("q")))
+                .castlingRights(castlingRights(rights))
                 .enPassantDestination(ep).halfMoveClock(halfmove).fullMoves(fullmove)
                 .movesHistory(new ArrayDeque<>()).eatenPieces(captures);
         GameState state = stateBuilder.build();
@@ -131,9 +130,13 @@ final class ChessTestSupport {
         session.gameState(stateBuilder.checkedColor(checkedColor).build());
     }
 
-    private static List<Castling> rightsList(boolean king, boolean queen) {
-        return new ArrayList<>(Arrays.asList(
-                king ? Castling.KINGSIDE : null, queen ? Castling.QUEENSIDE : null));
+    private static CastlingRights castlingRights(String fenRights) {
+        CastlingRights rights = new CastlingRights();
+        if (fenRights.contains("K")) rights.grantRight(Color.WHITE, Castling.KINGSIDE);
+        if (fenRights.contains("Q")) rights.grantRight(Color.WHITE, Castling.QUEENSIDE);
+        if (fenRights.contains("k")) rights.grantRight(Color.BLACK, Castling.KINGSIDE);
+        if (fenRights.contains("q")) rights.grantRight(Color.BLACK, Castling.QUEENSIDE);
+        return rights;
     }
 
 }

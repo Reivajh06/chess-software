@@ -103,7 +103,7 @@ public final class ChessDebugCli {
         System.out.println("session=" + session.id() + " turn=" + state.turnColor()
                 + " checked=" + state.checkedColor() + " status=" + state.status());
         System.out.println("FEN: " + safeFen(session));
-        System.out.println("castling: W=" + state.whiteCastling() + " B=" + state.blackCastling()
+        System.out.println("castling: " + FenParser.castlingRightsToFen(state.castlingRights())
                 + " en-passant=" + state.enPassantDestination()
                 + " halfmove=" + state.halfMoveClock() + " fullmove=" + state.fullMoves()
                 + " history=" + state.movesHistory().size());

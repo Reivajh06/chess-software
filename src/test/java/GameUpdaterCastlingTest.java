@@ -34,10 +34,7 @@ class GameUpdaterCastlingTest {
     }
 
     private static boolean containsRight(GameSession session, Color color, Castling side) {
-        List<Castling> flags = color == Color.WHITE
-                ? session.gameState().whiteCastling()
-                : session.gameState().blackCastling();
-        return flags.contains(side);
+        return session.gameState().castlingRights().hasRight(color, side);
     }
 
     private static boolean canMove(GameSession session, String from, String to) {

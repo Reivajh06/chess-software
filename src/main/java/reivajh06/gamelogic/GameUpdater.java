@@ -89,13 +89,14 @@ public class GameUpdater {
 		GameStateBuilder builder = new GameStateBuilder();
 
 		builder.board(session.gameState().board().copy());
+		builder.movesHistory(new ArrayDeque<>(session.gameState().movesHistory()));
 		updaters.forEach(u -> u.update(builder, session.gameState(), move, movedPiece, capturedPiece, from, to));
 
-		GameState updatedState = builder.build();
+		GameState transitiveState = builder.build();
 
-		String fen = FenParser.gameStateToFen(updatedState);
+		String fen = FenParser.gameStateToFen(transitiveState);
 
-		updatedState.movesHistory().addFirst(updateMovesHistory(
+		transitiveState.movesHistory().addFirst(updateMovesHistory(
 				movedPiece,
 				move,
 				from,
@@ -104,13 +105,24 @@ public class GameUpdater {
 				fen
 		));
 
-		return updatedState;
+		return new GameStateBuilder()
+				.board(transitiveState.board())
+				.checkedColor(updateCheckedColor(movedPiece, transitiveState))
+				.turnColor(transitiveState.turnColor())
+				.movesHistory(transitiveState.movesHistory())
+				.fullMoves(transitiveState.fullMoves())
+				.halfMoveClock(transitiveState.halfMoveClock())
+				.eatenPieces(transitiveState.eatenPieces())
+				.castlingRights(transitiveState.castlingRights())
+				.enPassantDestination(transitiveState.enPassantDestination())
+				.status(updateGameStatus(movedPiece, transitiveState))
+				.build();
 	}
 
-	private Color updateCheckedColor(Piece movedPiece) {
+	private Color updateCheckedColor(Piece movedPiece, GameState transitiveState) {
 		Color kingColor = Color.rivalColor(movedPiece.color());
 
-		return GameConditions.isKingChecked(session.gameState(), kingColor) ?
+		return GameConditions.isKingChecked(transitiveState, kingColor) ?
 				kingColor
 				: null;
 	}
@@ -119,14 +131,14 @@ public class GameUpdater {
 		return new MoveEvent(movedPiece, move, from, to, capturedPiece, fen);
 	}
 
-	private GameStatus updateGameStatus(Piece movedPiece) {
+	private GameStatus updateGameStatus(Piece movedPiece, GameState transitiveState) {
 		Color rivalColor = Color.rivalColor(movedPiece.color());
 
-		if(GameConditions.isCheckMate(session.gameState(), rivalColor)) return movedPiece.color() == Color.BLACK ?
+		if(GameConditions.isCheckMate(transitiveState, rivalColor)) return movedPiece.color() == Color.BLACK ?
 				GameStatus.BLACK_WIN
 				: GameStatus.WHITE_WIN;
 
-		return GameConditions.onDraw(session.gameState()) ?
+		return GameConditions.onDraw(transitiveState) ?
 				GameStatus.DRAW
 				: GameStatus.ACTIVE;
 	}

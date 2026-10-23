@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -306,9 +305,11 @@ class GameSimulationTest {
         return Stream.of(Color.WHITE, Color.BLACK);
     }
 
-    @ParameterizedTest(name = "{0} pawn cannot remain on the last rank")
+    // Coronar va en dos pasos: la jugada lleva el peón a la última fila y /promote (promotePiece) lo cambia
+    // por la pieza que elija el jugador.
+    @ParameterizedTest(name = "{0} pawn reaching the last rank is promoted in a second step")
     @MethodSource("promotionColors")
-    void pawnCannotRemainOnLastRank(Color color) {
+    void pawnIsPromotedAfterReachingTheLastRank(Color color) {
         String initial = color == Color.WHITE
                 ? "7k/P7/6K1/8/8/8/8/8 w - - 0 1"
                 : "8/8/8/8/8/6k1/p7/7K b - - 0 1";
@@ -316,20 +317,27 @@ class GameSimulationTest {
         String uci = color == Color.WHITE ? "a7a8" : "a2a1";
         GameSession session = at(initial);
 
-        String before = session.toFEN();
-        try {
-            ChessTestSupport.playMove(session, uci);
-        } catch (IllegalArgumentException promotionChoiceRequired) {
-            assertEquals(before, session.toFEN(), "an incomplete promotion request must not change the position");
-            assertTrue(session.gameState().movesHistory().isEmpty());
-            return;
-        }
-        Piece piece = session.gameState().board().pieceAt(new Tile(target));
-        assertNotNull(piece);
-        assertEquals(color, piece.color());
-        assertTrue(Set.of(PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT)
-                .contains(piece.type()), "a pawn cannot remain a pawn on the last rank");
+        ChessTestSupport.playMove(session, uci);
+        Piece arrived = session.gameState().board().pieceAt(new Tile(target));
+        assertNotNull(arrived);
+        assertEquals(PieceType.PAWN, arrived.type(), "the move itself only carries the pawn to the last rank");
         assertEquals(1, session.gameState().movesHistory().size());
+
+        new GameUpdater(session).promotePiece(new Tile(target), PieceType.QUEEN);
+        Piece promoted = session.gameState().board().pieceAt(new Tile(target));
+        assertNotNull(promoted);
+        assertEquals(color, promoted.color());
+        assertEquals(PieceType.QUEEN, promoted.type(), "the chosen piece replaces the pawn");
+    }
+
+    @Test
+    @DisplayName("Promotion is ignored for a piece that is not a pawn on its last rank")
+    void promotionRequiresAPawnOnTheLastRank() {
+        GameSession session = at("7k/P7/6K1/8/8/8/8/8 w - - 0 1");
+        String before = session.toFEN();
+        new GameUpdater(session).promotePiece(new Tile("a7"), PieceType.QUEEN);
+        new GameUpdater(session).promotePiece(new Tile("g6"), PieceType.QUEEN);
+        assertEquals(before, session.toFEN());
     }
 
     @Test
