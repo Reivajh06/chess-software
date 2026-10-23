@@ -1,5 +1,6 @@
 import { labels } from "./state.js";
-import { pieceImage, setBoardTiles } from "./assets.js";
+import { gamePiece, setBoardTiles, variantTag } from "./assets.js";
+import { shownColor } from "./colors.js";
 export { pieceImage } from "./assets.js";
 
 export class BoardView {
@@ -59,7 +60,8 @@ export class BoardView {
     } : null;
     this.element.dataset.theme = this.preferences.theme;
     setBoardTiles(this.element, this.preferences.theme);
-    this.element.setAttribute("aria-label", `Tablero, ${black ? "negras" : "blancas"} abajo`);
+    const bottom = shownColor(black ? "BLACK" : "WHITE");
+    this.element.setAttribute("aria-label", `Tablero, ${bottom === "BLACK" ? "negras" : "blancas"} abajo`);
     const targets = this.store.targets;
     const interactive = this.store.interactive;
     const movableColor = this.store.movableColor;
@@ -97,14 +99,14 @@ export class BoardView {
       const state = this.store.selected === tile
         ? ", seleccionada"
         : targets.has(tile) ? (item ? ", captura posible" : ", destino legal") : "";
-      const label = `${tile}${item ? `, ${labels[item.type]} ${item.color === "WHITE" ? "blanc" : "negr"}${["QUEEN", "ROOK"].includes(item.type) ? "a" : "o"}` : ""}${state}`;
+      const label = `${tile}${item ? `, ${labels[item.type]} ${shownColor(item.color) === "WHITE" ? "blanc" : "negr"}${["QUEEN", "ROOK"].includes(item.type) ? "a" : "o"}` : ""}${state}`;
       if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
       const current = button.querySelector(".piece");
-      const key = item ? `${item.type}:${item.color}:${this.preferences.theme}` : null;
+      const key = item ? `${item.type}:${item.color}:${this.preferences.theme}${variantTag(item.type, item.color)}` : null;
       if ((current?.dataset.key ?? null) === key) continue;
       current?.remove();
       if (item) {
-        const image = pieceImage(item.type, item.color, this.preferences.theme);
+        const image = gamePiece(item.type, item.color, this.preferences.theme);
         image.classList.add("piece");
         image.dataset.pieceType = item.type;
         image.dataset.key = key;
@@ -229,5 +231,81 @@ export class BoardView {
       cleanup();
       if (this.motion === motion) this.motion = null;
     }
+  }
+
+  // Cambio de colores del modo Alfi: las piezas de antes se pliegan fila a fila (de arriba abajo)
+  // mientras aparecen las nuevas. apply cambia el estado; onRow avisa al empezar cada fila.
+  async colorWave(apply, onRow) {
+    const squares = [...this.element.querySelectorAll(".square")];
+    const before = new Map(squares.map((square) => [square, square.querySelector(".piece")?.cloneNode(true)]));
+    apply();
+    this.render();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const rowDelay = 110;
+    const fold = 130;
+    const animations = [];
+    squares.forEach((square, index) => {
+      const delay = Math.floor(index / 8) * rowDelay;
+      const ghost = before.get(square);
+      const piece = square.querySelector(".piece");
+      if (ghost) {
+        ghost.classList.remove("piece");
+        ghost.classList.add("capture-ghost");
+        square.append(ghost);
+        animations.push(ghost.animate(
+          [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }],
+          { duration: fold, delay, easing: "steps(3)", fill: "forwards" },
+        ));
+      }
+      if (piece) {
+        animations.push(piece.animate(
+          [{ transform: "scaleX(0)" }, { transform: "scaleX(0)", offset: 0.5 }, { transform: "scaleX(1)" }],
+          { duration: fold * 2, delay, easing: "steps(6)", fill: "backwards" },
+        ));
+      }
+      animations.push(square.animate(
+        [{ filter: "brightness(1)" }, { filter: "brightness(1.7)" }, { filter: "brightness(1)" }],
+        { duration: fold * 2, delay, easing: "steps(3)" },
+      ));
+    });
+    for (let row = 0; row < 8; row++) setTimeout(() => onRow?.(row), row * rowDelay);
+    await Promise.allSettled(animations.map((animation) => animation.finished));
+    for (const ghost of before.values()) ghost?.remove();
+  }
+
+  // Derriba la pieza de una casilla como en una captura (se tumba y desaparece) sin tocar la partida.
+  async topple(tile) {
+    const square = this.element.querySelector(`[data-square="${tile}"]`);
+    const piece = square?.querySelector(".piece");
+    if (!piece) return;
+    const ghost = piece.cloneNode(true);
+    ghost.classList.remove("piece");
+    ghost.classList.add("capture-ghost");
+    piece.style.visibility = "hidden";
+    square.append(ghost);
+    const size = square.offsetWidth;
+    const fallX = size * 0.22;
+    const fallY = size * 0.08;
+    await ghost.animate([
+      { opacity: 1, transform: "translate(0, 0) rotate(0deg)", easing: "ease-in" },
+      { offset: 0.18, opacity: 1, transform: `translate(${fallX * 0.12}px, ${fallY * 0.12}px) rotate(15deg)`, easing: "ease-in" },
+      { offset: 0.6, opacity: 1, transform: `translate(${fallX * 0.85}px, ${fallY}px) rotate(96deg)`, easing: "ease-out" },
+      { offset: 0.78, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(88deg)` },
+      { offset: 0.88, opacity: 1, transform: `translate(${fallX}px, ${fallY}px) rotate(90deg)`, easing: "steps(3)" },
+      { opacity: 0, transform: `translate(${fallX}px, ${fallY}px) rotate(90deg)` },
+    ], { duration: 650, fill: "both" }).finished.catch(() => {});
+    ghost.remove();
+    piece.style.removeProperty("visibility");
+  }
+
+  // La pieza de una casilla cae desde arriba y rebota al aterrizar.
+  async dropIn(tile) {
+    const piece = this.element.querySelector(`[data-square="${tile}"] .piece`);
+    if (!piece) return;
+    await piece.animate([
+      { transform: "translateY(-120%) scale(0.6)", opacity: 0 },
+      { offset: 0.6, transform: "translateY(6%) scale(1.08, 0.9)", opacity: 1 },
+      { transform: "translateY(0) scale(1)", opacity: 1 },
+    ], { duration: 460, easing: "steps(6)" }).finished.catch(() => {});
   }
 }

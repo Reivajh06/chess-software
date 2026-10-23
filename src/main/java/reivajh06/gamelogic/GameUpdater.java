@@ -88,6 +88,7 @@ public class GameUpdater {
 	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
 		GameStateBuilder builder = new GameStateBuilder();
 
+		builder.board(session.gameState().board().copy());
 		updaters.forEach(u -> u.update(builder, session.gameState(), move, movedPiece, capturedPiece, from, to));
 
 		GameState updatedState = builder.build();

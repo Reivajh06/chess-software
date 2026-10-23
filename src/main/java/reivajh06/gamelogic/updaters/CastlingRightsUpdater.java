@@ -37,12 +37,26 @@ public class CastlingRightsUpdater implements Updater {
     }
 
     private boolean canCastleQueenside(Color color, GameState previousState) {
-        return false;
-    }
+        if(!previousState.castlingRights().hasRight(color, Castling.QUEENSIDE)) return false;
+
+        Tile rookQueensideTile = new Tile(File.H, color == Color.BLACK ? Rank.R8 : Rank.R1);
+        Piece pieceOnQueenside = previousState.board().pieceAt(rookQueensideTile);
+
+        if(pieceOnQueenside == null) return false;
+        if(pieceOnQueenside.type() != PieceType.ROOK) return false;
+
+		return pieceOnQueenside.color() == color;
+	}
 
     private boolean canCastleKingside(Color color, GameState previousState) {
-        return false;
+        if(!previousState.castlingRights().hasRight(color, Castling.KINGSIDE)) return false;
+
+        Tile rookQueensideTile = new Tile(File.A, color == Color.BLACK ? Rank.R8 : Rank.R1);
+        Piece pieceOnQueenside = previousState.board().pieceAt(rookQueensideTile);
+
+        if(pieceOnQueenside == null) return false;
+        if(pieceOnQueenside.type() != PieceType.ROOK) return false;
+
+        return pieceOnQueenside.color() == color;
     }
-
-
 }

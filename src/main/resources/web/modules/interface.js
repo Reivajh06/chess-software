@@ -1,4 +1,5 @@
-import { pieceImage, uiIcon } from "./assets.js";
+import { gamePiece, pieceImage, variantTag, uiIcon } from "./assets.js";
+import { shownColor } from "./colors.js";
 import { gameModes, menuOrder, modeDefinition } from "./modes.js";
 import { labels, pieceValues } from "./state.js";
 import { themes } from "./themes.js";
@@ -9,6 +10,11 @@ const statusLabels = {
   WHITE_WIN: "Ganan las blancas",
   BLACK_WIN: "Ganan las negras",
   DRAW: "Tablas",
+};
+// El resultado se nombra por el color que se ve (en el modo Alfi los bandos aparecen cambiados).
+const statusLabel = (status) => {
+  const winner = { WHITE_WIN: "WHITE", BLACK_WIN: "BLACK" }[status];
+  return winner ? statusLabels[`${shownColor(winner)}_WIN`] : statusLabels[status];
 };
 
 export class TitleScreen {
@@ -209,7 +215,7 @@ export function renderMatch(store, preferences) {
   const shared = store.practice || store.local;
   const color = shared ? store.orientation : (session?.playerColor ?? "WHITE");
   const rival = color === "WHITE" ? "BLACK" : "WHITE";
-  const colorName = (value) => (value === "WHITE" ? "Blancas" : "Negras");
+  const colorName = (value) => (shownColor(value) === "WHITE" ? "Blancas" : "Negras");
   const finished = ["WHITE_WIN", "BLACK_WIN", "DRAW"].includes(state?.status);
   const check = state?.status === "ACTIVE" && !!state.checkedColor;
   const currentStatus = !session
@@ -218,7 +224,7 @@ export function renderMatch(store, preferences) {
       ? "Esperando oponente"
       : check
         ? "¡Jaque!"
-        : (statusLabels[state?.status] ?? "Conectando");
+        : (statusLabel(state?.status) ?? "Conectando");
   const reviewing = store.reviewPly !== null;
 
   byId("review-banner").hidden = !reviewing;
@@ -238,9 +244,9 @@ export function renderMatch(store, preferences) {
   const icon = `./assets/ui/${modeIcons[session?.gamemode] ?? "mode-practice"}.png`;
   if (byId("arena-icon").getAttribute("src") !== icon) byId("arena-icon").setAttribute("src", icon);
 
-  if (changed("avatars", `${color}:${preferences.theme}`)) {
-    byId("player-avatar").replaceChildren(pieceImage("KING", color, preferences.theme));
-    byId("opponent-avatar").replaceChildren(pieceImage("KING", rival, preferences.theme));
+  if (changed("avatars", `${color}:${preferences.theme}${variantTag("KING", rival)}`)) {
+    byId("player-avatar").replaceChildren(gamePiece("KING", color, preferences.theme));
+    byId("opponent-avatar").replaceChildren(gamePiece("KING", rival, preferences.theme));
   }
   setText("player-name", spectator
     ? (state?.whiteModel ?? "Modelo blanco")
@@ -253,7 +259,9 @@ export function renderMatch(store, preferences) {
       ? colorName(rival)
       : session?.gamemode === "PVAI"
         ? "IA local"
-        : "Oponente");
+        : session?.cpu
+          ? (session.alfi === "revealed" ? "Alfi" : "Stockfish")
+          : "Oponente");
   setText("player-detail", !session
     ? ""
     : store.practice
@@ -303,20 +311,20 @@ function renderTurn(state, session, finished, reviewing, check, preferences) {
   const label = !session
     ? "—"
     : finished
-      ? statusLabels[state.status]
+      ? statusLabel(state.status)
       : reviewing
         ? "Revisando"
         : state?.waitingForOpponent
           ? "Esperando rival"
-          : turn === "WHITE" ? "Blancas" : "Negras";
+          : shownColor(turn) === "WHITE" ? "Blancas" : "Negras";
   setText("turn-eyebrow", finished ? "Resultado" : check && !reviewing ? "¡Jaque! Mueven" : "Mueven");
   setText("turn-name", label);
-  card.dataset.turn = !session || finished || reviewing ? "" : turn;
+  card.dataset.turn = !session || finished || reviewing ? "" : shownColor(turn);
   card.dataset.check = String(check && !reviewing);
   const avatarColor = finished ? winner : session && !reviewing ? turn : null;
-  if (changed("turn-avatar", `${avatarColor}:${preferences.theme}`)) {
+  if (changed("turn-avatar", `${avatarColor}:${preferences.theme}${variantTag("KING", avatarColor)}`)) {
     byId("turn-avatar").replaceChildren(
-      ...(avatarColor ? [pieceImage("KING", avatarColor, preferences.theme)] : []),
+      ...(avatarColor ? [gamePiece("KING", avatarColor, preferences.theme)] : []),
     );
   }
 }
@@ -329,10 +337,10 @@ function renderLastMove(move, preferences) {
   const captured = move.capturedPiece;
   setText("last-move-detail", move.capture
     ? `${name[0].toUpperCase()}${name.slice(1)} captura ${captured ? labels[captured.type] : "pieza"}`
-    : `${name[0].toUpperCase()}${name.slice(1)} ${move.color === "WHITE" ? "blanco" : "negro"}`);
+    : `${name[0].toUpperCase()}${name.slice(1)} ${shownColor(move.color) === "WHITE" ? "blanco" : "negro"}`);
   byId("last-move-card").classList.toggle("is-capture", !!move.capture);
-  if (changed("last-move-piece", `${move.type}:${move.color}:${preferences.theme}`)) {
-    byId("last-move-piece").replaceChildren(pieceImage(move.type, move.color, preferences.theme));
+  if (changed("last-move-piece", `${move.type}:${move.color}:${preferences.theme}${variantTag(move.type, move.color)}`)) {
+    byId("last-move-piece").replaceChildren(gamePiece(move.type, move.color, preferences.theme));
   }
 }
 
@@ -344,9 +352,11 @@ export function materialBalance(pieces) {
 
 function renderMaterial(pieces, color) {
   const { totals, lead } = materialBalance(pieces);
-  const share = 50 + Math.max(-10, Math.min(10, lead)) * 4.5;
+  // La barra y el texto hablan del color que se ve.
+  const shownLead = shownColor("WHITE") === "WHITE" ? lead : -lead;
+  const share = 50 + Math.max(-10, Math.min(10, shownLead)) * 4.5;
   byId("material-white").style.width = `${share}%`;
-  setText("score-lead", !lead ? "Igualado" : `${lead > 0 ? "Blancas" : "Negras"} +${Math.abs(lead)}`);
+  setText("score-lead", !shownLead ? "Igualado" : `${shownLead > 0 ? "Blancas" : "Negras"} +${Math.abs(shownLead)}`);
   const rival = color === "WHITE" ? "BLACK" : "WHITE";
   for (const [id, side, other] of [["player-advantage", color, rival], ["opponent-advantage", rival, color]]) {
     const diff = totals[side] - totals[other];
@@ -357,12 +367,12 @@ function renderMaterial(pieces, color) {
 
 function renderCaptured(id, pieces, preferences) {
   const list = Array.isArray(pieces) ? pieces : [];
-  if (!changed(id, `${preferences.theme}:${list.map((piece) => piece.color + piece.type).join(",")}`)) return;
+  if (!changed(id, `${preferences.theme}${variantTag("", "")}:${list.map((piece) => piece.color + piece.type).join(",")}`)) return;
   const order = ["QUEEN", "ROOK", "BISHOP", "KNIGHT", "PAWN", "KING"];
   byId(id).replaceChildren(
     ...[...list]
       .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type))
-      .map((piece) => pieceImage(piece.type, piece.color, preferences.theme)),
+      .map((piece) => gamePiece(piece.type, piece.color, preferences.theme)),
   );
 }
 

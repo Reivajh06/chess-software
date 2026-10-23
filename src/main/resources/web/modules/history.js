@@ -1,4 +1,5 @@
-import { pieceImage, uiIcon } from "./assets.js";
+import { gamePiece, uiIcon } from "./assets.js";
+import { colorSwapped, shownColor } from "./colors.js";
 import { labels } from "./state.js";
 
 function textSpan(className, text) {
@@ -10,7 +11,7 @@ function textSpan(className, text) {
 
 function pieceDescription(type, color) {
   const feminine = ["QUEEN", "ROOK"].includes(type);
-  const side = color === "WHITE" ? "blanc" : "negr";
+  const side = shownColor(color) === "WHITE" ? "blanc" : "negr";
   return `${labels[type] ?? "pieza"} ${side}${feminine ? "a" : "o"}`;
 }
 
@@ -26,6 +27,7 @@ export class HistoryView {
     const moves = this.store.state?.moves ?? [];
     const signature = [
       this.preferences.theme,
+      colorSwapped(),
       this.store.reviewPly,
       ...moves.map(move => [move.ply, move.from, move.to, move.type, move.color, move.capture,
         move.capturedPiece?.type, move.capturedPiece?.color].join(":")),
@@ -69,10 +71,10 @@ export class HistoryView {
 
       const identity = document.createElement("span");
       identity.className = "move-identity";
-      const side = textSpan("move-side", move.color === "WHITE" ? "Blancas" : "Negras");
+      const side = textSpan("move-side", shownColor(move.color) === "WHITE" ? "Blancas" : "Negras");
       side.dataset.color = move.color;
       const name = labels[move.type] ?? "pieza";
-      identity.append(pieceImage(move.type, move.color, this.preferences.theme),
+      identity.append(gamePiece(move.type, move.color, this.preferences.theme),
         textSpan("move-piece-name", name[0].toUpperCase() + name.slice(1)), side);
       button.append(identity);
 
@@ -101,7 +103,7 @@ export class HistoryView {
         capture.append(textSpan("move-capture-label", "Captura"));
         const capturedIdentity = document.createElement("span");
         capturedIdentity.className = "move-capture-piece";
-        if (captured) capturedIdentity.append(pieceImage(captured.type, captured.color, this.preferences.theme));
+        if (captured) capturedIdentity.append(gamePiece(captured.type, captured.color, this.preferences.theme));
         capturedIdentity.append(textSpan("move-captured-name", capturedDescription));
         capture.append(capturedIdentity);
         button.append(capture);

@@ -308,3 +308,54 @@ Javalin listens on every interface, so other machines can reach port `5000` if t
 - Live moves slide into place (knights hop). During a capture the attacker makes contact and briefly recoils, then the captured piece tips onto its side and slides away before disappearing. The capture sound is timed to contact. Animations respect reduced-motion preferences and are skipped for history review or session restoration.
 - Board redraw and history updates are tied to the authoritative returned state. On an empty move response the frontend requests the current state immediately; it does not assume the POST response has a body.
 - The backend still needs the PvP join endpoint. This frontend patch does **not** add backend HTTP routes, game-rule fixes, promotion, or artificial opponents.
+
+## 7. PvCPU and the Alfi mode (frontend mock on the existing routes)
+
+Until the server integrates an engine, the CPU opponent is simulated in the frontend with the existing routes only.
+
+### What the frontend does today
+
+| Step | Route | Notes |
+| --- | --- | --- |
+| Create the game | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD" }`. |
+| Seat the CPU | `POST /api/sessions/{id}/join` | The frontend occupies the second seat itself, so `waitingForOpponent` becomes `false`. With `HARD` the player always gets the seat whose colour is `WHITE` (creator or joined seat). |
+| CPU move | `POST /legal-moves` for each of its pieces, then `POST /moves` | A random legal move. Pawns reaching the last rank promote to a queen through `/promote`. |
+| Alfi's opening cheat (`HARD`) | `POST /moves` only | Before White's first move a black pawn advances with `moveId` 0 or 1. `legal-moves` returns nothing for the colour without the turn (`GameUpdater.pieceMoves`), but `/moves` applies any moveset index and `TurnColorUpdater` hands the turn back to White. |
+
+The `HARD` level is the Alfi easter egg: the rival is shown as "Stockfish" until that cheat, then Alfi reveals himself.
+
+### Alfi's cheats
+
+**Teleport.** `POST /moves` does not check the turn, the path or the move's condition: it takes `moveset().get(moveId)` and applies its effect from `from` to `to`. The effect of index 0 is `DIRECT_CAPTURE` for every piece except the pawn (`NO_CAPTURE`), so `moveId: 0` moves any piece to any **empty** square. `TurnColorUpdater` then gives the turn to the rival of whoever moved. The cheats rely on this; the backend must keep that behaviour (or offer an equivalent route) for them to keep working.
+
+| Cheat | How it works | Route |
+| --- | --- | --- |
+| Double move | After his normal move, Alfi sends a second legal move (from the list `legal-moves` gave before the first one, for another piece). His piece moved, so the turn stays with the player | `POST /moves` |
+| Dodge | When the player captures one of his pieces (not the king), the piece is teleported to a free neighbouring square first; the player's move lands on the empty square | `POST /moves` with `moveId: 0` |
+| Rewind | If the player's move gives check (without capture, promotion or castling), that piece is teleported back to its square; the player's piece moved, so the turn goes to Alfi | `POST /moves` with `moveId: 0` |
+| Flip the board | Once per game, when the player leads by 5 points of material: the two seats swap in the frontend (`playerColor` and the CPU colour) | None (seats are not validated by the server) |
+
+Each cheat costs Alfi energy (double 20, dodge 15, rewind 25, flip 40, out of 100). At zero he falls asleep and plays clean.
+
+### Cheats that need a new route
+
+`POST /promote` now only accepts a pawn on the last rank (`GameUpdater.promotePiece`), so it can no longer turn other pieces into a bishop. These cheats edit pieces in a way no current route allows; a **single** generic route would cover all of them:
+
+| Cheat | What it needs |
+| --- | --- |
+| Turn a player's piece into a bishop | Change a piece's type |
+| Steal a piece (change its colour) | Change a piece's colour |
+| When Alfi captures, turn a piece from his captured pool into one of his | Change a captured piece's colour and put it on the board; update `eatenPieces` |
+| Bring back one of his captured pieces | Put a piece from `eatenPieces` back on the board; update `eatenPieces` |
+
+Proposed route: `POST /api/sessions/{id}/edit` with `{ "changes": [{ "tile": "e4", "piece": { "type": "BISHOP", "color": "BLACK" } | null }], "revive": { "color": "BLACK", "type": "ROOK" } }`. It returns the same state as `GET /api/sessions/{id}`; `revive` removes one matching piece from `eatenPieces`. These four cheats are not built yet; they will be once the route exists.
+
+### Backend issues found while testing (2026-10-23)
+
+1. **Every `POST /moves` fails with 500 at `HEAD`.** `GameUpdater.updateGameState` builds the new `GameState` only from the six `Updater`s, and none of them sets `board`, `movesHistory`, `status` or `checkedColor` on the `GameStateBuilder`. `board` ends up `null` and `FenParser.boardToFen` (line 17, called from `GameUpdater.java:95`) throws `NullPointerException`. The history would also restart empty on every move.
+2. **`legal-moves` corrupts the live board.** `MovesValidator`/`GameController.legalPieceMoves` call `GameConditions.moveUnchecksKing`, which applies each candidate move to the session's real `Board` and undoes it in a `finally`. Two consequences:
+   - **Concurrent requests race.** 32 `legal-moves` requests sent at once, 10 times, returned 80 errors (500) and left the starting position as `1nb1kbnp/ppppppp1/8/8/8/8/PPP1PPPP/RNBP2NR` (queens, a king and rooks gone, pawns where the queen stood). The same requests one after another left it intact. Any two clients asking at once (PvP, or a CPU asking for all its pieces) can trigger it.
+   - **Exceptions mid-simulation leave it broken even without concurrency.** With requests one at a time, 40 random moves still lost a black bishop (f8) with no capture. The log shows `NullPointerException` in `GameConditions.isKingCheckedBy` (`GameConditions.java:32`, reached from `isKingChecked` line 39) and in `MoveRules.SAFE_MOVE` (`MoveRules.java:52`): both iterate a list of piece tiles taken before nested simulations moved those pieces, so `pieceAt(tile)` returns `null`. When that happens inside `moveUnchecksKing`, `undoMove` runs with a half-applied move (and `pieceCaptured` still `null`), so pieces vanish.
+   - Suggested fix: check legality on a **copy** of the board (or of the `GameState`) instead of the live one, and serialise writes per session (e.g. `synchronized (session)` in the move/promote handlers).
+
+The frontend now asks for legal moves one piece at a time, which avoids the race but not the second problem.

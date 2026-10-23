@@ -1,4 +1,250 @@
 export const alfiLines = {
+  // Modo Alfi: el jugador intenta silenciarlo, esconderlo o cambiarle el tablero. Tono tranquilo,
+  // serio y condescendiente: no se enfada, simplemente no lo permite.
+  bossMute: {
+    calm: [
+      "¿silenciarme? heh. no, colega. aquí se escucha todo.",
+      "mira, te lo digo con cariño: no.",
+      "puedes intentarlo las veces que quieras. el resultado no cambia.",
+    ],
+    funny: [
+      "ese botón está muy bien. para otras partidas.",
+      "shh… eso se lo dices a otro.",
+    ],
+  },
+  bossHide: {
+    calm: [
+      "¿esconderme? estoy justo delante de ti, chaval.",
+      "cerrar los ojos no hace que el problema desaparezca. el problema soy yo.",
+    ],
+    funny: [
+      "qué mono. de verdad crees que esto funciona así.",
+    ],
+  },
+  bossTheme: {
+    calm: [
+      "el tablero se queda como está. mis reglas, ¿recuerdas?",
+      "aquí los colores los cambio yo. y ya lo hice una vez.",
+    ],
+    funny: [
+      "decoración nueva, mismo resultado. no pierdas el tiempo.",
+    ],
+  },
+  bossVolume: {
+    calm: [
+      "un poco más bajo, vale. menos que eso… no.",
+      "bajar el volumen no me hace más pequeño.",
+    ],
+    funny: [
+      "si bajas más vas a tener que leerme los labios. y no tengo.",
+    ],
+  },
+  // Modo Alfi: el jugador lo pincha mientras juega contra él.
+  bossPoke: {
+    calm: [
+      "¿te aburres? es tu turno, por si no te habías dado cuenta.",
+      "eh. las piezas están en el tablero, no aquí arriba.",
+      "concéntrate, colega. uno de los dos tiene que hacerlo.",
+      "tocarme no te va a dar puntos.",
+    ],
+    funny: [
+      "¿buscas el botón de rendirte? no hay.",
+      "sigue, sigue. yo mientras voy pensando cómo ganarte.",
+      "si me pinchas otra vez cuenta como jugada. es broma. o no.",
+    ],
+  },
+  bossPoked: {
+    calm: [
+      "vale, ya está bien. me vas a desgastar la pintura.",
+      "cinco toques. impresionante. ahora prueba a mover una pieza.",
+    ],
+    funny: [
+      "¿sabes qué le pasa a quien me pincha tanto? nada bueno. heh.",
+    ],
+  },
+  // Modo Alfi: comentarios del rival sobre la partida.
+  bossChecked: {
+    calm: ["heh. jaque. qué valiente.", "vale, me has dado un toque. no te acostumbres."],
+    funny: ["uy. eso casi duele."],
+  },
+  bossCheck: {
+    calm: ["jaque. tu rey está sudando más que yo.", "tranquilo, aún puedes moverte. de momento."],
+    funny: ["toc, toc. ¿hay alguien en casa? jaque."],
+  },
+  bossBlunder: {
+    calm: ["¿eso era un regalo? no tenías que molestarte.", "gracias. me la quedo."],
+    funny: ["heh. no pasa nada. bueno, sí pasa."],
+  },
+  bossQueenLost: {
+    calm: ["…era mi pieza favorita. que lo sepas.", "vale. esto lo voy a recordar."],
+    funny: ["mi reina. en serio. ¿tenías que hacerlo?"],
+  },
+  bossQueenWon: {
+    calm: ["tu reina se viene conmigo. no llores.", "sin reina se juega más tranquilo. para mí."],
+    funny: ["una reina menos. qué silencio tan agradable."],
+  },
+  bossLostPiece: {
+    calm: ["uy. eso sí lo he notado.", "no estaba usando esa pieza. de verdad."],
+    funny: ["bien. ahora hazlo otra vez. si puedes."],
+  },
+  bossAhead: {
+    calm: ["esto se está poniendo aburrido. para ti.", "voy ganando. por si no te habías dado cuenta."],
+    funny: ["¿quieres que me deje ganar? no. era broma."],
+  },
+  bossBehind: {
+    calm: ["vas ganando, ¿eh? qué curioso.", "disfrútalo mientras dure."],
+    funny: ["no me mires así. aún tengo trucos."],
+  },
+  bossComeback: {
+    calm: ["y así, sin más, todo cambia. heh."],
+    funny: ["¿lo ves? nunca te fíes de un alfil."],
+  },
+  bossPromotion: {
+    calm: ["un peón que llega hasta el final. qué historia tan bonita.", "un ascenso. enhorabuena, supongo."],
+    funny: ["ese peón se ha venido arriba. literalmente."],
+  },
+  bossTaunt: {
+    calm: ["interesante. y por interesante quiero decir raro.", "¿ese era el plan? vale.", "hmm. no."],
+    funny: ["sigue así. me lo estás poniendo fácil.", "te veo pensar mucho. no hace falta, vas a perder igual."],
+  },
+  // Modo Alfi: comentarios según el historial del jugador (cuando existan los perfiles).
+  bossProfileLosses: {
+    calm: ["{partidas} partidas contra mí y ninguna victoria. me caes bien."],
+    funny: ["{partidas} intentos. admiro tu cabezonería."],
+  },
+  bossProfileWins: {
+    calm: ["me has ganado {victorias} veces. no lo he olvidado."],
+    funny: ["{victorias} victorias. hoy no habrá otra."],
+  },
+  bossProfileFirstMove: {
+    calm: ["¿hoy también empezarás con {jugada}? te tengo calado."],
+    funny: ["{jugada} otra vez, ¿verdad? qué previsible."],
+  },
+  bossProfilePiece: {
+    calm: ["ya sé que te encanta mover tu {pieza}. hoy no te va a salvar."],
+    funny: ["tu {pieza} y tú. qué pareja tan bonita. qué pena."],
+  },
+  // Modo Alfi: revancha (ya os conocéis), espera, vuelta a la partida y sueños.
+  bossAgain: {
+    calm: [
+      "¿otra vez tú? vale. ya sabes cómo va esto.",
+      "revancha, ¿eh? me encanta ver a la gente intentarlo.",
+    ],
+    funny: [
+      "heh. pensaba que no volverías. me alegro. bueno, más o menos.",
+    ],
+  },
+  bossAgainMany: {
+    calm: [
+      "{veces} veces ya. empiezo a pensar que te caigo bien.",
+      "partida número {veces}. tú nunca te rindes, ¿eh? yo tampoco.",
+    ],
+    funny: [
+      "{veces} veces. a este paso te cobro alquiler.",
+    ],
+  },
+  bossWaiting: {
+    calm: [
+      "tómate tu tiempo. tengo toda la eternidad.",
+      "¿sigues ahí? no me hagas dormirme.",
+      "piensa, piensa. me encanta el sonido de alguien pensando.",
+    ],
+    funny: [
+      "si buscas una jugada buena, aviso: no hay.",
+      "podría echarme una siesta. pero me perdería tu cara.",
+    ],
+  },
+  bossReturn: {
+    calm: [
+      "volviste. sabía que no podrías resistirte.",
+      "la partida sigue aquí. y yo también.",
+    ],
+    funny: [
+      "¿has ido a buscar ayuda? no te va a servir.",
+    ],
+  },
+  bossSleepTalk: {
+    calm: [
+      "zzz… no muevas eso… zzz…",
+      "zzz… cinco jugadas más y me levanto…",
+    ],
+    funny: [
+      "zzz… heh… te pillé… zzz…",
+    ],
+  },
+  // Trampas de Alfi.
+  bossDouble: {
+    calm: [
+      "¿dos seguidas? nadie dijo que no se pudiera.",
+      "tu turno. bueno, casi.",
+    ],
+    funny: [
+      "uy. se me ha escapado otra.",
+    ],
+  },
+  bossDodge: {
+    calm: [
+      "heh. ¿de verdad creías que te iba a dejar?",
+      "fallaste. qué pena.",
+    ],
+    funny: [
+      "por los pelos. bueno, no tengo pelos.",
+    ],
+  },
+  bossRewind: {
+    calm: [
+      "nah. esa jugada no me gustó.",
+      "vamos a hacer como que eso no ha pasado.",
+    ],
+    funny: [
+      "rebobinando… listo. ¿decías algo?",
+    ],
+  },
+  bossFlip: {
+    calm: [
+      "¿vas ganando? vamos a darle la vuelta a eso.",
+      "cambio de bando. a ver qué tal se te dan mis piezas.",
+    ],
+    funny: [
+      "ahora juegas tú con esto. suerte. la vas a necesitar.",
+    ],
+  },
+  bossTired: {
+    calm: [
+      "…uf. vale, vale. esto cansa más de lo que parece.",
+      "hacer trampas también es trabajo, ¿sabes?",
+    ],
+    funny: [
+      "necesito un descanso. después de esta jugada. o de la siguiente.",
+    ],
+  },
+  bossExhausted: {
+    calm: [
+      "dame… un segundo…",
+      "no estoy cansado. solo cierro los ojos para pensar mejor.",
+    ],
+    funny: [
+      "si me duermo, tú no has visto nada.",
+    ],
+  },
+  bossAsleep: {
+    calm: [
+      "zzz… cinco minutos más…",
+      "zzz… no toques mis piezas… zzz…",
+    ],
+    funny: [
+      "zzz… jaque… mate… zzz… (está soñando)",
+    ],
+  },
+  bossVolume: {
+    calm: [
+      "más bajo no. me gusta que se me oiga.",
+      "un poquito más bajo, vale. hasta ahí.",
+    ],
+    funny: [
+      "si bajas más vas a tener que leerme los labios. y no tengo.",
+    ],
+  },
   greeting: {
     calm: [
       "¡Hola! Soy Alfi, el alfil. Elige un modo y empezamos.",

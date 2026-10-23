@@ -24,6 +24,12 @@ const kindMoods = {
   blunder: "aburrido", check: "sorpresa", checkAgain: "sorpresa", promotion: "estrellas", bigLead: "contento",
   comeback: "sorpresa", longGame: "aburrido", quickMate: "sorpresa", victory: "estrellas", defeat: "triste",
   draw: "contento", poked: "enfadado", wakeUp: "sorpresa",
+  bossPoke: "sonrisa", bossPoked: "vacio", bossAsleep: "durmiendo",
+  bossChecked: "guino", bossCheck: "sonrisa", bossBlunder: "sonrisa", bossQueenLost: "vacio", bossQueenWon: "sonrisa",
+  bossLostPiece: "sospecha", bossAhead: "aburrido", bossBehind: "vacio", bossComeback: "brillo", bossPromotion: "sospecha",
+  bossTaunt: "sonrisa", bossProfileLosses: "sonrisa", bossProfileWins: "sospecha", bossProfileFirstMove: "sospecha",
+  bossProfilePiece: "sospecha",
+  bossAgain: "guino", bossAgainMany: "sonrisa", bossWaiting: "aburrido", bossReturn: "sonrisa", bossSleepTalk: "durmiendo",
 };
 export const moodFor = (kind) => kindMoods[kind] ?? (kind.startsWith("theme-") ? "contento" : "normal");
 
@@ -50,8 +56,12 @@ export function pick(lines) {
 }
 
 export class Mascot {
-  constructor(root, audio, preferences) {
+  constructor(root, audio, preferences, { idle = true, voice = "talk", pokes = {} } = {}) {
     this.root = root;
+    this.idle = idle;
+    this.voice = voice;
+    // Frases al pincharle: una vez, muchas veces seguidas y despertándolo.
+    this.pokeLines = { poke: "idle", annoyed: "poked", wake: "wakeUp", ...pokes };
     this.audio = audio;
     this.preferences = preferences;
     this.text = root.querySelector(".mascot-text");
@@ -68,6 +78,9 @@ export class Mascot {
     this.lastActivity = null;
     this.theme = preferences?.theme ?? "classic";
     this.mood = "normal";
+    // Cara (y clase, p. ej. is-sleeping) a la que vuelve tras hablar.
+    this.restMood = "normal";
+    this.restClass = null;
 
     const body = pieceImage("BISHOP", "WHITE", "classic");
     this.face = createFace(body.querySelector(".piece-art"));
@@ -123,13 +136,21 @@ export class Mascot {
     clearTimeout(this.pokeTimer);
     this.pokeTimer = setTimeout(() => (this.pokes = 0), 4000);
     this.pokes += 1;
-    if (asleep) return this.talk("wakeUp");
+    if (asleep) return this.talk(this.pokeLines.wake, 0, { mood: "durmiendo" });
     if (this.pokes >= pokeLimit) {
       this.pokes = 0;
-      return this.talk("poked", 1);
+      return this.talk(this.pokeLines.annoyed, 1);
     }
-    this.say(this.line("idle"), 0, { mood: "apretando" });
-    this.moodTimer = setTimeout(() => this.setMood("normal"), 500);
+    this.say(this.line(this.pokeLines.poke), 0, { mood: "apretando" });
+    this.moodTimer = setTimeout(() => this.setMood(this.restMood), 500);
+  }
+
+  // Como say(), pero devuelve una promesa que se cumple al terminar de escribir (o al ser interrumpido).
+  speak(message, options = {}) {
+    return new Promise((resolve) => {
+      this.say(message, 9, options);
+      this.spoken = resolve;
+    });
   }
 
   say(message, priority = 0, { stare = false, mood = "normal" } = {}) {
@@ -150,6 +171,7 @@ export class Mascot {
   }
 
   reset(priority) {
+    this.resolveSpoken();
     clearTimeout(this.timer);
     clearTimeout(this.lingerTimer);
     this.stopIdle();
@@ -211,13 +233,20 @@ export class Mascot {
       const letter = letters[index++];
       letter.classList.add("shown");
       const character = letter.textContent;
-      if (/[\p{L}\p{N}]/u.test(character) && index % 2) this.audio?.play("talk");
+      if (/[\p{L}\p{N}]/u.test(character) && index % 2) this.audio?.play(this.voice);
       this.timer = setTimeout(step, letterDelay + (punctuationPause[character] ?? 0));
     };
     step();
   }
 
+  resolveSpoken() {
+    const spoken = this.spoken;
+    this.spoken = null;
+    spoken?.();
+  }
+
   silence() {
+    this.resolveSpoken();
     clearTimeout(this.timer);
     clearTimeout(this.lingerTimer);
     this.timer = null;
@@ -234,12 +263,14 @@ export class Mascot {
   }
 
   done() {
+    this.resolveSpoken();
     this.timer = null;
     this.priority = 0;
     this.root.classList.remove("is-talking");
     this.stopIdle();
-    this.moodTimer = setTimeout(() => this.setMood("normal"), moodDelay);
-    this.idleTimer = setTimeout(() => this.startIdle(), idleDelay);
+    if (this.restClass) this.root.classList.add(this.restClass);
+    this.moodTimer = setTimeout(() => this.setMood(this.restMood), moodDelay);
+    if (this.idle) this.idleTimer = setTimeout(() => this.startIdle(), idleDelay);
     this.lingerTimer = setTimeout(() => this.root.classList.remove("is-active"), lingerDelay);
   }
 }

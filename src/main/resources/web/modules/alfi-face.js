@@ -60,6 +60,13 @@ export const moods = {
   sospecha: eyes("kkk/wkk", "kkk/kkw", 120),
   pensando: [at(82, 112, "kw/kk"), at(126, 112, "kw/kk")],
   leyendo: [...glasses, at(74, 124, "kk"), at(126, 124, "kk")],
+  // Aguante del Alfi rival: párpados que caen y gotas de sudor; sonrisa ancha cuando se burla.
+  cansado: [...eyes("kkk/.k.", "kkk/.k.", 118), at(152, 92, ".B./BBB/.b.")],
+  agotado: [...eyes("kkk/.../.k.", "kkk/.../.k.", 120), at(152, 92, ".B./BBB/.b."), at(46, 100, ".B./BBB/.b.")],
+  sonrisa: [...eyes(".k./k.k", ".k./k.k", 112), at(100, 146, "k.....k/.kkkkk.")],
+  // Cuando va en serio: cuencas sin brillo, y el ojo izquierdo encendido.
+  vacio: eyes("kkk/kkk/kkk"),
+  brillo: [at(78, 116, ".B./BwB/.B."), at(122, 116, "kkk/kkk/kkk")],
 };
 
 const outfits = {
@@ -80,6 +87,8 @@ const outfits = {
     from(118, 185, ".xx./xxxx/xxxx/.xx./.qq./.qq./.q../.q.."),
   ],
 };
+// La corona del rey de Alfi, pintada como parte de la pieza.
+const crown = [from(55, -8, "y...y...y/yy.yyy.yy/yyyyyyyyy/yoyryryoy/ooooooooo")];
 const hats = new Set(["warm", "cold", "gothic", "medieval", "halloween", "christmas", "python", "warhammer"]);
 const extras = {
   steam: [from(150, 170, ".s.s/s.s.")],
@@ -119,12 +128,12 @@ export function createFace(artwork) {
   return svg;
 }
 
-export function drawFace(svg, { mood = "normal", theme = "classic" } = {}) {
+export function drawFace(svg, { mood = "normal", theme = "classic", crowned = false } = {}) {
   const notes = extras.notes.map((note, index) => group(`mascot-note mascot-note-${index + 1}`, [note]));
-  const outfit = group("mascot-outfit", outfits[theme] ?? []);
+  const outfit = group("mascot-outfit", crowned ? crown : outfits[theme] ?? []);
   if (theme === "java") outfit.append(group("mascot-steam", extras.steam));
   svg.replaceChildren(
-    group("mascot-forehead", hats.has(theme) ? [] : forehead),
+    group("mascot-forehead", crowned || hats.has(theme) ? [] : forehead),
     group("mascot-eyes", moods[mood] ?? moods.normal),
     outfit,
     ...notes,

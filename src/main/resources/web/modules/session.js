@@ -9,8 +9,8 @@ export class SessionAccess {
     this.api = api;
   }
 
-  async open(sessionId, mode = "PVP") {
-    const difficulty = mode === "PRACTICE" ? "PRACTICE" : "NOT_CPU";
+  async open(sessionId, mode = "PVP", cpuDifficulty = "EASY") {
+    const difficulty = mode === "PRACTICE" ? "PRACTICE" : mode === "PVCPU" ? cpuDifficulty : "NOT_CPU";
     const local = !sessionId && mode === "LOCAL";
     const created = sessionId ? null : await this.api.create(modeDefinition(mode).server ?? mode, difficulty);
     const id = sessionId ?? created.sessionId ?? created.id;
@@ -19,7 +19,21 @@ export class SessionAccess {
 
     let gamemode = local ? mode : (created?.gamemode ?? mode);
     let seat;
-    if (local) {
+    let cpu = null;
+    if (!sessionId && gamemode === "PVCPU") {
+      // Simulación hasta que el servidor tenga motor: la CPU ocupa el segundo asiento desde este equipo.
+      const creator = this.creatorSeat(created, gamemode);
+      const second = await this.join(id);
+      // En la dificultad máxima espera Alfi, y contra él siempre se juega con blancas.
+      const swap = difficulty === "HARD" && creator.playerColor !== "WHITE";
+      const [human, machine] = swap ? [second, creator] : [creator, second];
+      seat = {
+        playerId: human.playerId,
+        playerColor: human.playerColor,
+        state: second.state ?? second.gameState ?? await this.api.state(id),
+      };
+      cpu = { playerId: machine.playerId, color: machine.playerColor };
+    } else if (local) {
       // Ambos jugadores comparten este equipo: ocupamos también el segundo asiento.
       const creator = this.creatorSeat(created, "PVP");
       const second = await this.join(id);
@@ -43,6 +57,7 @@ export class SessionAccess {
       playerColor: seat.playerColor,
       gamemode,
       difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
+      ...(cpu ? { cpu, alfi: difficulty === "HARD" ? "hidden" : null } : {}),
     };
 
     this.api.playerId = session.playerId;

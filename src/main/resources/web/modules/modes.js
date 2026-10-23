@@ -31,12 +31,11 @@ export const gameModes = {
     reason: "La creación de partidas entre modelos todavía no está disponible en el servidor.",
   },
   PVCPU: {
-    hint: "La CPU sigue en el horno. Huele a silicio quemado.",
+    hint: "Contra la máquina. No se cansa, no se queja y no acepta sobornos.",
     name: "Contra CPU",
     badge: "PvCPU",
-    detail: "Rival controlado por el servidor",
-    available: false,
-    reason: "El proyecto define este modo, pero todavía no integra un motor ni sus dificultades.",
+    detail: "Elige la dificultad",
+    available: true,
   },
   PRACTICE: {
     hint: "Juegas contra ti mismo. Por fin un rival a tu altura.",
@@ -46,6 +45,13 @@ export const gameModes = {
     available: true,
   },
 };
+
+// Dificultades del servidor (enum Difficulty). La máxima esconde una sorpresa.
+export const cpuLevels = [
+  { id: "EASY", name: "Fácil", detail: "Para calentar" },
+  { id: "MEDIUM", name: "Media", detail: "Ya muerde un poco" },
+  { id: "HARD", name: "Difícil", detail: "La máquina a pleno rendimiento" },
+];
 
 export const menuOrder = ["PVP", "PRACTICE", "PVAI", "PVCPU", "AIVAI"];
 

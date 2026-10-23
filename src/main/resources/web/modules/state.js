@@ -262,6 +262,8 @@ export class GameStore {
     // Multijugador local: bando que tiene el tablero de frente y si está girando hacia el otro.
     this.localSide = "WHITE";
     this.turning = false;
+    // Contra la CPU: mientras ella piensa (o Alfi hace su entrada) el jugador espera.
+    this.cpuBusy = false;
   }
 
   apply(payload) {
@@ -344,10 +346,16 @@ export class GameStore {
 
   // Color que puede seleccionarse ahora mismo; null cuando no hay restricción en el cliente.
   get movableColor() {
+    if (this.session?.cpu) return this.session.playerColor;
     return this.local ? this.state?.turn ?? null : null;
   }
 
+  get cpuTurn() {
+    const cpu = this.session?.cpu;
+    return !!cpu && (this.cpuBusy || this.state?.turn === cpu.color);
+  }
+
   get interactive() {
-    return this.reviewPly === null && !this.turning && boardInteractive(this.session, this.state);
+    return this.reviewPly === null && !this.turning && !this.cpuTurn && boardInteractive(this.session, this.state);
   }
 }

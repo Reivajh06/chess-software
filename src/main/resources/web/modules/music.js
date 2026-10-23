@@ -80,6 +80,9 @@ export function notesAt(step) {
   return notes;
 }
 
+// Cada pista expone su tempo y su partitura; el bucle vuelve a loopStart al llegar a loopSteps.
+export const calmTrack = { tempo, swing, loopSteps, loopStart: 0, notesAt };
+
 export class BackgroundMusic {
   constructor(audio, preferences) {
     this.audio = audio;
@@ -87,6 +90,9 @@ export class BackgroundMusic {
     this.timer = null;
     this.output = null;
     this.waves = null;
+    this.track = calmTrack;
+    // Corte dramático: mientras dure, sync() no vuelve a arrancar la música.
+    this.silenced = false;
   }
 
   get playing() {
@@ -95,7 +101,7 @@ export class BackgroundMusic {
 
   sync() {
     const context = this.audio.context;
-    const wanted = !!context && this.preferences.music && !this.preferences.muted &&
+    const wanted = !!context && !this.silenced && this.preferences.music && !this.preferences.muted &&
       this.preferences.musicVolume > 0;
 
     if (wanted && !this.playing) this.start(context);
@@ -106,11 +112,28 @@ export class BackgroundMusic {
     }
   }
 
+  // Silencio en seco, sin fundido.
+  cut() {
+    this.silenced = true;
+    this.stop(true);
+  }
+
+  play(track) {
+    this.silenced = false;
+    if (track !== this.track) {
+      this.track = track;
+      // Cambio de tema con un fundido corto, no en seco.
+      if (this.playing) this.stop();
+    }
+    this.sync();
+  }
+
   volume() {
     return (this.preferences.musicVolume / 100) * 0.9;
   }
 
   start(context) {
+    if (this.track.kind === "file") return this.startFile(context);
     this.waves ??= { pulse: pulseWave(context, 0.25), thin: pulseWave(context, 0.125) };
     this.output = context.createGain();
     this.output.gain.value = 0;
@@ -127,37 +150,104 @@ export class BackgroundMusic {
     this.timer = setInterval(() => this.schedule(context), 100);
   }
 
-  stop() {
+  // Pista de audio: el archivo suena en bucle (desde loopFrom si tiene intro) y cada pulso se avisa con onBeat.
+  startFile(context) {
+    const track = this.track;
+    if (!track.buffer) {
+      // Sin archivo, suena la música normal.
+      if (track.failed) {
+        this.track = calmTrack;
+        return this.start(context);
+      }
+      track.load(context).then(() => track === this.track && this.sync());
+      return;
+    }
+    this.output = context.createGain();
+    this.output.gain.value = 0;
+    this.output.connect(context.destination);
+    const source = context.createBufferSource();
+    source.buffer = track.buffer;
+    source.loop = true;
+    source.loopStart = track.loopFrom ?? 0;
+    source.loopEnd = track.loopTo ?? track.buffer.duration;
+    const level = context.createGain();
+    level.gain.value = 0.55;
+    source.connect(level).connect(this.output);
+    this.source = source;
+    this.warble = null;
+    this.fileStart = context.currentTime + 0.05;
+    source.start(this.fileStart);
+    this.beatIndex = 0;
+    this.scheduleFile(context);
+    this.timer = setInterval(() => this.scheduleFile(context), 100);
+  }
+
+  scheduleFile(context) {
+    const { buffer, bpm, offset } = this.track;
+    if (!(bpm > 30)) return;
+    const beat = 60 / bpm;
+    const from = this.track.loopFrom ?? 0;
+    const to = this.track.loopTo ?? buffer.duration;
+    for (;;) {
+      const elapsed = offset + this.beatIndex * beat;
+      const time = this.fileStart + elapsed;
+      if (time > context.currentTime + 0.4) return;
+      // Posición dentro del archivo: tras la primera vuelta se repite solo el tramo del bucle.
+      const within = elapsed < to ? elapsed : from + (elapsed - to) % (to - from);
+      if (time >= context.currentTime - 0.05 && this.onBeat) {
+        const info = { step: Math.round((within - offset) / beat) * 4, track: this.track };
+        setTimeout(() => this.playing && this.track === info.track && this.onBeat(info), Math.max(0, (time - context.currentTime) * 1000));
+      }
+      this.beatIndex++;
+    }
+  }
+
+  stop(immediate = false) {
     clearInterval(this.timer);
     this.timer = null;
     const output = this.output;
     const warble = this.warble;
+    const source = this.source;
+    this.source = null;
     this.output = null;
     if (!output) return;
     const context = this.audio.context;
-    output.gain.setTargetAtTime(0, context.currentTime, 0.08);
+    output.gain.cancelScheduledValues(context.currentTime);
+    output.gain.setTargetAtTime(0, context.currentTime, immediate ? 0.004 : 0.08);
     setTimeout(() => {
       output.disconnect();
-      warble.stop();
+      warble?.stop();
+      source?.stop();
     }, 600);
   }
 
+  advance(steps) {
+    const { loopSteps: total, loopStart } = this.track;
+    const next = this.step + steps;
+    this.step = next < total ? next : loopStart + (next - loopStart) % (total - loopStart);
+  }
+
   schedule(context) {
-    const step = stepDuration();
+    const { tempo: bpm, swing: shuffle, notesAt: score } = this.track;
+    const step = 60 / bpm / 4;
     if (this.nextTime < context.currentTime - step) {
       const missed = Math.ceil((context.currentTime - this.nextTime) / step);
       this.nextTime += missed * step;
-      this.step = (this.step + missed) % loopSteps;
+      this.advance(missed);
     }
     while (this.nextTime < context.currentTime + 0.4) {
-      const time = this.nextTime + (this.step % 2 ? step * swing : 0);
-      for (const note of notesAt(this.step)) this.play(context, note, time, note.steps * step);
+      const time = this.nextTime + (this.step % 2 ? step * shuffle : 0);
+      for (const note of score(this.step)) this.sound(context, note, time, note.steps * step);
+      if (this.onBeat && this.step % 4 === 0) {
+        const beat = { step: this.step, track: this.track };
+        setTimeout(() => this.playing && this.onBeat(beat), Math.max(0, (time - context.currentTime) * 1000));
+      }
       this.nextTime += step;
-      this.step = (this.step + 1) % loopSteps;
+      this.advance(1);
     }
   }
 
-  play(context, note, time, duration) {
+  sound(context, note, time, duration) {
     switch (note.voice) {
       case "pad":
         for (const midi of note.tones) {

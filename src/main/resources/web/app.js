@@ -1,7 +1,8 @@
 import { ChessApi, HttpStatus } from "./modules/api.js";
 import { GameStore, labels, normalizeState, stateSignature } from "./modules/state.js";
 import { BoardView } from "./modules/board.js";
-import { pieceImage, logoUrl } from "./modules/assets.js";
+import { gamePiece, logoUrl } from "./modules/assets.js";
+import { setColorSwap, shownColor } from "./modules/colors.js";
 import { HistoryView } from "./modules/history.js";
 import {
   loadPreferences,
@@ -14,7 +15,12 @@ import { SessionAccess, SessionPolling } from "./modules/session.js";
 import { GameAudio } from "./modules/audio.js";
 import { BackgroundMusic } from "./modules/music.js";
 import { applyTheme, populateThemes } from "./modules/themes.js";
-import { modeDefinition } from "./modules/modes.js";
+import { cpuLevels, modeDefinition } from "./modules/modes.js";
+import { legalOptions, outOfTurnPawnPush, pickMove } from "./modules/cpu.js";
+import { cheatChances, cleanPlies, flipLead, freeNeighbours, materialLead, secondMove, teleport } from "./modules/cheats.js";
+import { AlfiBoss, fullEnergy } from "./modules/alfi-boss.js";
+import { rivalKind } from "./modules/alfi-reactions.js";
+import { profileLine } from "./modules/alfi-profile.js";
 import { Mascot } from "./modules/mascot.js";
 import { Commentator } from "./modules/commentary.js";
 import {
@@ -59,12 +65,28 @@ const sessions = new SessionAccess(api);
 
 const titleMascot = new Mascot(byId("title-mascot"), audio, preferences);
 const gameMascot = new Mascot(byId("game-mascot"), audio, preferences);
+const alfi = new AlfiBoss(audio, music, preferences);
+// El aguante de Alfi se guarda con la sesión para que una recarga no se lo rellene.
+alfi.onEnergyChange = (energy) => {
+  if (!store.session?.cpu) return;
+  store.session.alfiEnergy = energy;
+  sessions.persist(store.session);
+};
+music.onBeat = (beat) => alfi.beat(beat);
+// En el modo Alfi quien comenta es el rival sentado enfrente, no la mascota del panel.
+const activeMascot = () => (alfi.active ? alfi.seat : gameMascot);
 let hoveredEntry = null;
+let cpuTimer = null;
 
 const title = new TitleScreen({
-  onStart: (mode) => mode === "PVP" ? byId("pvp-dialog").showModal() : openSession(null, mode),
+  onStart: (mode) => mode === "PVP"
+      ? byId("pvp-dialog").showModal()
+      : mode === "PVCPU" ? byId("cpu-dialog").showModal() : openSession(null, mode),
   onJoin: joinSession,
-  onContinue: () => showScreen("game"),
+  onContinue: () => {
+    showScreen("game");
+    if (alfi.active && !alfi.asleep) setTimeout(() => alfi.seat.talk("bossReturn", 2), 500);
+  },
   onError: () => titleMascot.talk("error", 2),
   onHover: (id, hint) => {
     if (id === hoveredEntry) return;
@@ -77,7 +99,13 @@ const commentator = new Commentator();
 
 function mascotReact(kind, priority = 1, delay = 650, options = {}, vars = {}) {
   setTimeout(() => {
-    if (document.body.dataset.screen === "game") gameMascot.talk(kind, priority, options, vars);
+    if (document.body.dataset.screen !== "game" || store.session?.alfi === "revealing") return;
+    // Dormido no comenta la partida; como mucho, murmura en sueños.
+    if (alfi.active && alfi.asleep) {
+      if (Math.random() < 0.25) alfi.seat.talk("bossSleepTalk", 0);
+      return;
+    }
+    activeMascot().talk(kind, priority, options, vars);
   }, delay);
 }
 
@@ -297,7 +325,11 @@ function applyGameState(payload) {
           : store.session?.playerColor ? [store.session.playerColor] : [],
     });
 
-    if (reaction) {
+    if (reaction && alfi.active && store.session?.cpu) {
+      // Contra Alfi comenta el rival, con sus propias frases.
+      const kind = rivalKind(reaction.kind, { move, after: state, cpuColor: store.session.cpu.color });
+      if (kind) mascotReact(kind, reaction.priority, 650, {}, reaction.vars);
+    } else if (reaction) {
       mascotReact(reaction.kind, reaction.priority, 650, { stare: reaction.stare }, reaction.vars);
     }
   }
@@ -315,7 +347,200 @@ function applyGameState(payload) {
   }
 
   faceSideToMove();
+  scheduleCpu();
+  scheduleAlfiWait();
   return true;
+}
+
+// Si el jugador tarda en mover contra Alfi, él le mete prisa (unas pocas veces por jugada).
+let alfiWaitTimer = null;
+function scheduleAlfiWait(nudges = 0) {
+  clearTimeout(alfiWaitTimer);
+  const session = store.session;
+  if (!session?.cpu || session.alfi !== "revealed" || nudges >= 3) return;
+  const ply = store.state?.moves.length;
+  alfiWaitTimer = setTimeout(() => {
+    const stillWaiting = store.state?.moves.length === ply && store.state?.status === "ACTIVE" &&
+      store.state.turn === session.playerColor && !store.cpuBusy;
+    if (!stillWaiting || document.body.dataset.screen !== "game") return;
+    if (alfi.active && !alfi.asleep && !alfi.seat.timer) alfi.seat.talk("bossWaiting", 1);
+    scheduleAlfiWait(nudges + 1);
+  }, nudges ? 30000 : 22000);
+}
+
+// Rival simulado: juega cuando le toca. En la dificultad máxima, antes de nada, entra Alfi.
+function scheduleCpu() {
+  clearTimeout(cpuTimer);
+  const session = store.session;
+  if (!session?.cpu || store.cpuBusy || store.state?.status !== "ACTIVE") return;
+  if (session.alfi === "hidden") {
+    revealAlfi();
+    return;
+  }
+  if (store.state.turn !== session.cpu.color) return;
+  const generation = sessionVersion;
+  cpuTimer = setTimeout(() => playCpu(generation), 700 + Math.random() * 600);
+}
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// ¿Puede Alfi hacer esta trampa ahora? Solo contra él, ya revelado, con la partida en juego, pasadas
+// las primeras jugadas, con aguante y si la suerte acompaña.
+function wantsCheat(kind) {
+  const session = store.session;
+  return alfi.active && session?.alfi === "revealed" && store.state?.status === "ACTIVE" &&
+    store.state.moves.length >= cleanPlies && alfi.canAfford(kind) && Math.random() < cheatChances[kind];
+}
+
+async function playCpu(generation) {
+  if (generation !== sessionVersion) return;
+  store.cpuBusy = true;
+  try {
+    if (await alfiFlip()) return;
+    const color = store.session.cpu.color;
+    const options = await legalOptions(api, store.session.sessionId, store.state.pieces, color);
+    const move = pickMove(options);
+    if (!move || generation !== sessionVersion) return;
+    await submitMove(move);
+    // Doble jugada: el turno ya es del jugador, pero Alfi vuelve a mover.
+    if (generation === sessionVersion && wantsCheat("double")) {
+      const second = secondMove(options, move, store.state.pieces);
+      if (second && alfi.cheat("double")) {
+        await wait(700);
+        if (generation === sessionVersion && store.state?.status === "ACTIVE") await submitMove(second);
+      }
+    }
+  } finally {
+    if (generation === sessionVersion) {
+      store.cpuBusy = false;
+      renderGame();
+      scheduleCpu();
+    }
+  }
+}
+
+// Si el jugador va ganando por mucho, Alfi gira el tablero una vez: cada uno se queda con las piezas
+// del otro. Solo cambian los asientos en este equipo; el servidor no valida quién mueve qué.
+async function alfiFlip() {
+  const session = store.session;
+  if (session.flipped || !wantsCheat("flip") || materialLead(store.state.pieces, session.playerColor) < flipLead) return false;
+  if (!alfi.cheat("flip")) return false;
+  session.flipped = true;
+  [session.playerColor, session.cpu.color] = [session.cpu.color, session.playerColor];
+  [session.playerId, session.cpu.playerId] = [session.cpu.playerId, session.playerId];
+  api.playerId = session.playerId;
+  sessions.persist(session);
+  alfi.side = session.cpu.color;
+  await wait(600);
+  await board.spin();
+  // Alfi sigue viéndose blanco: los colores vuelven a cambiar y su corona pasa a su nuevo rey.
+  await board.colorWave(() => alfi.rebrand(true), () => audio.play("scramble"));
+  renderGame();
+  return true;
+}
+
+// En el modo Alfi las jugadas del jugador pasan por sus trampas: puede esquivar antes y rebobinar después.
+async function playerMove(command) {
+  if (!alfi.active || !store.session?.cpu) return submitMove(command);
+  const generation = sessionVersion;
+  store.cpuBusy = true;
+  try {
+    await alfiDodge(command);
+    if (generation !== sessionVersion) return;
+    await submitMove(command);
+    if (generation === sessionVersion) await alfiRewind(command);
+  } finally {
+    if (generation === sessionVersion) {
+      store.cpuBusy = false;
+      renderGame();
+      scheduleCpu();
+    }
+  }
+}
+
+// Esquiva: la pieza atacada se aparta a una casilla vecina libre y el golpe cae en el vacío.
+async function alfiDodge(command) {
+  const target = store.state.pieces.get(command.to);
+  if (!target || target.color !== store.session.cpu.color || target.type === "KING" || !wantsCheat("dodge")) return;
+  const free = freeNeighbours(store.state.pieces, command.to).filter((tile) => tile !== command.from);
+  if (!free.length || !alfi.cheat("dodge")) return;
+  await wait(250);
+  await submitMove(teleport(command.to, free[Math.floor(Math.random() * free.length)]));
+  await wait(350);
+}
+
+// Rebobinar: si la jugada del jugador le da jaque (y no capturó, coronó ni enrocó), la pieza vuelve a
+// su casilla y el turno pasa a Alfi.
+async function alfiRewind(command) {
+  const moved = store.state?.pieces.get(command.to);
+  const last = store.state?.moves.at(-1);
+  const castled = moved?.type === "KING" && Math.abs(command.from.charCodeAt(0) - command.to.charCodeAt(0)) > 1;
+  if (!moved || last?.capture || command.promotion || castled) return;
+  if (store.state.checkedColor !== store.session.cpu.color || !wantsCheat("rewind")) return;
+  if (!alfi.cheat("rewind")) return;
+  await wait(500);
+  await submitMove(teleport(command.to, command.from));
+}
+
+// Cuántas veces se ha enfrentado el jugador a Alfi en este navegador (para que lo reconozca).
+function alfiEncounters(add = 0) {
+  try {
+    const count = Number(localStorage.getItem("archchess.alfi.encounters")) || 0;
+    if (add) localStorage.setItem("archchess.alfi.encounters", String(count + add));
+    return count + add;
+  } catch {
+    return 0;
+  }
+}
+
+async function revealAlfi() {
+  const generation = sessionVersion;
+  const session = store.session;
+  alfi.side = session.cpu.color;
+  store.cpuBusy = true;
+  session.alfi = "revealing";
+  gameMascot.silence();
+  renderGame();
+
+  await alfi.reveal({
+    // Su primera trampa: mueve las negras aunque sea el turno del jugador.
+    cheat: async () => {
+      const move = outOfTurnPawnPush(store.state.pieces, session.cpu.color);
+      if (move) await submitMove(move);
+    },
+    alive: () => generation === sessionVersion,
+    encounters: alfiEncounters(),
+    onRevealed: () => {
+      session.alfi = "revealed";
+      sessions.persist(session);
+      alfiEncounters(1);
+    },
+    // Las piezas de Alfi pasan a verse blancas y las del jugador negras, fila a fila.
+    swapColors: async (onRow) => {
+      await board.colorWave(() => setColorSwap(true), onRow);
+      renderGame();
+    },
+    // Su rey cae como capturado y en su casilla aterriza la miniatura de Alfi con corona.
+    crownKing: async () => {
+      const tile = [...store.state.pieces].find(([, item]) => item.type === "KING" && item.color === session.cpu.color)?.[0];
+      if (!tile) return;
+      audio.play("capture");
+      await board.topple(tile);
+      alfi.crown();
+      board.render();
+      audio.play("promotion");
+      await board.dropIn(tile);
+      renderGame();
+    },
+  });
+  if (generation !== sessionVersion) return;
+  store.cpuBusy = false;
+  renderGame();
+  scheduleCpu();
+  scheduleAlfiWait();
+  // Si algún día hay perfiles, Alfi demuestra que se acuerda de ti.
+  const comment = profileLine(session.profile);
+  if (comment) setTimeout(() => alfi.active && alfi.seat.talk(comment.kind, 2, {}, comment.vars), 5000);
 }
 
 // Multijugador local: cuando cambia el turno, el tablero gira para dejar abajo al bando que mueve.
@@ -379,7 +604,7 @@ function renderResultStats(winner) {
   );
 }
 
-function showResult(status) {
+async function showResult(status) {
   const key = `${store.session.sessionId}:${status}`;
 
   if (announcedResults.has(key)) {
@@ -387,6 +612,16 @@ function showResult(status) {
   }
 
   announcedResults.add(key);
+
+  // Contra Alfi, antes del resultado hay escena final.
+  const finale = alfi.active && store.session?.cpu && store.session.alfi === "revealed";
+  if (finale) {
+    const generation = sessionVersion;
+    const winnerColor = { WHITE_WIN: "WHITE", BLACK_WIN: "BLACK" }[status];
+    const outcome = !winnerColor ? "draw" : winnerColor === store.session.playerColor ? "win" : "loss";
+    await alfi.ending(outcome, () => generation === sessionVersion);
+    if (generation !== sessionVersion) return;
+  }
 
   const winner = status === "WHITE_WIN"
       ? "WHITE"
@@ -404,19 +639,23 @@ function showResult(status) {
                   : "Derrota"
               : "Partida terminada";
 
-  byId("result-title").textContent = title;
+  byId("result-title").textContent = finale
+      ? (!winner ? "Tablas con Alfi" : title === "Derrota" ? "Alfi gana" : "Le has ganado a Alfi")
+      : title;
 
-  byId("result-detail").textContent = winner
-      ? `Ganan las ${winner === "WHITE" ? "blancas" : "negras"}`
-      : "Tablas";
+  byId("result-detail").textContent = finale
+      ? (!winner ? "Nadie gana. Alfi dice que él sí." : title === "Derrota" ? "Otra vez será. O no." : "Ni sus trampas lo han salvado.")
+      : winner
+          ? `Ganan las ${shownColor(winner) === "WHITE" ? "blancas" : "negras"}`
+          : "Tablas";
 
   renderResultStats(winner);
 
   byId("result-card").className =
-      `result-card ${winner === "BLACK" ? "black" : winner ? "white" : "draw"}`;
+      `result-card ${shownColor(winner) === "BLACK" ? "black" : winner ? "white" : "draw"}`;
 
   const resultImage = winner
-      ? pieceImage("KING", winner, preferences.theme)
+      ? gamePiece("KING", winner, preferences.theme)
       : document.createElement("img");
 
   if (!winner) {
@@ -435,7 +674,7 @@ function showResult(status) {
       0.45
   );
 
-  mascotReact(!winner ? "draw" : title === "Derrota" ? "defeat" : "victory", 3, 0);
+  if (!finale) mascotReact(!winner ? "draw" : title === "Derrota" ? "defeat" : "victory", 3, 0);
 
   if (!byId("result-dialog").open) {
     byId("result-dialog").showModal();
@@ -492,7 +731,7 @@ function selectSquare(tile) {
       offerMoveChoice(command);
       return;
     case "move":
-      return submitMove(command);
+      return playerMove(command);
   }
 }
 
@@ -537,13 +776,13 @@ function showPromotionPicker(to) {
     button.className = "promotion-choice";
     button.style.height = `${size}px`;
     button.setAttribute("aria-label", `Coronar como ${labels[type]}`);
-    button.append(pieceImage(type, color, preferences.theme));
+    button.append(gamePiece(type, color, preferences.theme));
     button.addEventListener("click", () => {
       const command = store.selection.promote(type);
       byId("promotion-layer").hidden = true;
 
       if (command) {
-        submitMove(command);
+        playerMove(command);
       } else {
         closePromotionPicker();
       }
@@ -594,7 +833,7 @@ function offerMoveChoice({ options }) {
       byId("move-choice-dialog").close();
 
       if (command) {
-        submitMove(command);
+        playerMove(command);
       }
     });
 
@@ -663,6 +902,10 @@ function resetSession() {
   clearMoveWarning();
   clearTimeout(waitingTimer);
 
+  clearTimeout(cpuTimer);
+  clearTimeout(alfiWaitTimer);
+  alfi.abort();
+
   store.reset();
   store.lastStateSignature = null;
   api.playerId = null;
@@ -681,6 +924,7 @@ function resetSession() {
 function showScreen(screen) {
   document.body.dataset.screen = screen;
   (screen === "title" ? gameMascot : titleMascot).silence();
+  alfi.apply(screen === "game" && store.session?.alfi === "revealed");
 
   if (screen === "title") {
     title.canContinue = !!store.session;
@@ -692,19 +936,32 @@ function showScreen(screen) {
 }
 
 async function activateSession(session, state) {
+  // Una partida contra Alfi ya empezada no repite la entrada.
+  if (session.alfi === "hidden" && normalizeState(state).moves.length) session.alfi = "revealed";
   store.session = session;
+  if (session.cpu) {
+    alfi.side = session.cpu.color;
+    alfi.setEnergy(session.alfiEnergy ?? fullEnergy);
+  }
   store.localSide = null;
   api.playerId = session.playerId ?? null;
 
   applyGameState(state);
   sessions.persist(session);
   showScreen("game");
-  gameMascot.talk(
-      store.state?.waitingForOpponent ? "waiting" : store.state?.moves.length ? "idle" : "start", 1
-  );
+  if (alfi.active && session.alfi === "revealed") {
+    // Al recargar una partida contra Alfi, te recibe él (salvo que esté dormido).
+    if (!alfi.asleep) alfi.seat.talk("bossReturn", 1);
+  } else {
+    activeMascot().talk(
+        store.state?.waitingForOpponent ? "waiting" : store.state?.moves.length ? "idle" : "start", 1
+    );
+  }
 
   setConnection("Conectado", "online");
   schedulePoll();
+  scheduleCpu();
+  scheduleAlfiWait();
 }
 
 function joinSession(value) {
@@ -718,7 +975,7 @@ function joinSession(value) {
   return openSession(id, "PVP");
 }
 
-async function openSession(id, mode) {
+async function openSession(id, mode, difficulty) {
   if (sessionBusy || (!id && !modeDefinition(mode).available)) {
     return;
   }
@@ -734,7 +991,7 @@ async function openSession(id, mode) {
   renderGame();
 
   try {
-    const { session, state } = await sessions.open(id, mode);
+    const { session, state } = await sessions.open(id, mode, difficulty);
 
     if (generation === sessionVersion) {
       await activateSession(session, state);
@@ -764,8 +1021,23 @@ byId("menu-button").addEventListener("click", () => {
 byId("result-rematch").addEventListener("click", () => {
   const mode = store.session?.gamemode ?? "PRACTICE";
   byId("result-dialog").close();
-  openSession(null, mode);
+  openSession(null, mode, store.session?.difficulty);
 });
+
+for (const level of cpuLevels) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "title-option";
+  button.innerHTML = `<img class="title-option-art" src="./assets/ui/mode-pvcpu.png" alt="" aria-hidden="true" />
+    <span><strong></strong><small></small></span>`;
+  button.querySelector("strong").textContent = level.name;
+  button.querySelector("small").textContent = level.detail;
+  button.addEventListener("click", () => {
+    byId("cpu-dialog").close();
+    openSession(null, "PVCPU", level.id);
+  });
+  byId("cpu-levels").append(button);
+}
 
 for (const [id, mode] of [["pvp-invite", "PVP"], ["pvp-local", "LOCAL"]]) {
   byId(id).addEventListener("click", () => {
@@ -963,11 +1235,17 @@ for (const [id, key] of [
   }
 
   element.addEventListener("input", () => {
-    preferences[key] = checkbox
+    const value = checkbox
         ? element.checked
         : numeric
             ? Number(element.value)
             : element.value;
+
+    if (alfi.resist(key, value)) {
+      syncControls();
+      return;
+    }
+    preferences[key] = value;
 
     syncSettings();
 
@@ -975,7 +1253,7 @@ for (const [id, key] of [
       applyMascot();
       savePreferences(preferences);
       if (preferences.mascot) {
-        const mascot = document.body.dataset.screen === "game" ? gameMascot : titleMascot;
+        const mascot = document.body.dataset.screen === "game" ? activeMascot() : titleMascot;
         mascot.talk("greeting");
       }
       return;
@@ -987,7 +1265,8 @@ for (const [id, key] of [
       renderGame();
       titleMascot.dress(preferences.theme);
       gameMascot.dress(preferences.theme);
-      const mascot = document.body.dataset.screen === "game" ? gameMascot : titleMascot;
+      alfi.dress(preferences.theme);
+      const mascot = document.body.dataset.screen === "game" ? activeMascot() : titleMascot;
       mascot.talk(`theme-${preferences.theme}`, 1);
       return;
     }
@@ -998,13 +1277,42 @@ for (const [id, key] of [
 
 byId("volume").addEventListener("change", () => audio.play("move"));
 
+// Refleja en los controles de ajustes los valores actuales (p. ej. tras imponerlos Alfi).
+function syncControls() {
+  for (const [id, key] of [
+    ["theme-select", "theme"],
+    ["volume", "volume"],
+    ["music-volume", "musicVolume"],
+    ["music-enabled", "music"],
+    ["muted", "muted"],
+    ["mascot-enabled", "mascot"],
+  ]) {
+    const element = byId(id);
+    if (element.type === "checkbox") element.checked = preferences[key];
+    else element.value = preferences[key];
+  }
+  syncSettings();
+}
+
+alfi.onRulesChanged = () => {
+  applyTheme(preferences.theme);
+  applyMascot();
+  audio.updatePreferences();
+  music.sync();
+  renderAppearance(preferences);
+  syncControls();
+  renderGame();
+};
+
 byId("sound-toggle").addEventListener("click", () => {
+  if (alfi.resist("muted", !preferences.muted)) return syncControls();
   preferences.muted = !preferences.muted;
   byId("muted").checked = preferences.muted;
   updateAudio();
 });
 
 byId("music-toggle").addEventListener("click", async () => {
+  if (alfi.resist("music", !preferences.music)) return syncControls();
   preferences.music = !preferences.music;
   byId("music-enabled").checked = preferences.music;
   await audio.unlock();

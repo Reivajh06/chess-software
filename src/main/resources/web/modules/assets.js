@@ -19,6 +19,28 @@ const tileFace = { size: 540, y: 175, lightX: 175, darkX: 1025 };
 const redesignedTileSheetSize = { width: 512, height: 256 };
 const redesignedTileFace = { size: 256, y: 0, lightX: 0, darkX: 256 };
 
+import { colorSwapped, shownColor } from "./colors.js";
+
+// Aspectos especiales de una pieza concreta (p. ej. el rey de Alfi). Clave "COLOR:TIPO" del bando real.
+const pieceSkins = new Map();
+
+export function setPieceSkin(color, type, create) {
+  if (create) pieceSkins.set(`${color}:${type}`, create);
+  else pieceSkins.delete(`${color}:${type}`);
+}
+
+// Distingue en las cachés de render una pieza con aspecto especial o con los colores cambiados.
+export function variantTag(type, color) {
+  return `${pieceSkins.has(`${color}:${type}`) ? ":skin" : ""}${colorSwapped() ? ":swap" : ""}`;
+}
+
+// Una pieza de la partida: su aspecto especial si lo tiene, o el sprite del color con el que se ve.
+export function gamePiece(type, color, style = "classic") {
+  const skin = pieceSkins.get(`${color}:${type}`);
+  if (skin) return skin();
+  return pieceImage(type, shownColor(color), style);
+}
+
 export function pieceImage(type, color, style = "classic") {
   const theme = themes[style] ?? themes.classic;
   const sprite = document.createElement("span");

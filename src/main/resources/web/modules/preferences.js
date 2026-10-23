@@ -19,9 +19,11 @@ function percentage(value, fallback) {
   return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : fallback;
 }
 
+// held: valores reales del jugador mientras algo (el modo Alfi) los sustituye temporalmente.
 export function savePreferences(preferences) {
+  const { held, ...current } = preferences;
   try {
-    localStorage.setItem("archchess.preferences", JSON.stringify(preferences));
+    localStorage.setItem("archchess.preferences", JSON.stringify({ ...current, ...held }));
   } catch {}
 }
 export function saveSession(session) {

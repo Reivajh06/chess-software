@@ -1699,7 +1699,7 @@ dialog::backdrop {
   visibility: visible;
   animation: letter-pop 0.14s steps(2);
 }
-body[data-mascot="off"] .mascot {
+body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
   display: none;
 }
 .mascot-dismiss {
@@ -2112,4 +2112,325 @@ body[data-mascot="off"] .mascot {
 }
 .invite-intro {
   margin: 0 0 14px;
+}
+
+/* Modo Alfi: el rival de la dificultad máxima se sienta frente al jugador, junto a sus piezas. */
+.mascot-seat {
+  --mascot-size: 84px;
+  position: relative;
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+.mascot-seat[hidden] {
+  display: none;
+}
+.mascot-seat .mascot-bubble {
+  position: absolute;
+  z-index: 4;
+  left: calc(var(--mascot-size) + 22px);
+  top: 50%;
+  width: calc(var(--board-fit) - var(--mascot-size) - 44px);
+  max-width: 560px;
+  transform: translateY(-50%);
+}
+.mascot-seat:not(.is-active) .mascot-bubble {
+  display: none;
+}
+.mascot-seat .mascot-bubble::before {
+  top: calc(50% - 1.5 * var(--pixel));
+  bottom: auto;
+}
+.mascot-seat .mascot-bubble::after {
+  top: calc(50% - var(--pixel));
+  bottom: auto;
+}
+body[data-alfi="on"] #game-mascot,
+body[data-alfi="on"] #opponent-avatar {
+  display: none;
+}
+body[data-alfi="on"] .play-area {
+  --board-fit: min(100cqw, calc(100cqh - 156px));
+}
+body[data-alfi="on"] .player[data-side="opponent"] {
+  min-height: 88px;
+}
+.player[data-side="opponent"]:has(.mascot-seat.is-active) .player-identity,
+.player[data-side="opponent"]:has(.mascot-seat.is-active) .turn {
+  visibility: hidden;
+}
+.alfi-broken {
+  visibility: hidden;
+}
+
+/* Revelación: silencio, Alfi en el centro, botones rotos y glitch. */
+/* Alfi abandona el panel justo antes de la jugada fuera de turno. */
+body.alfi-hush #game-mascot {
+  visibility: hidden;
+}
+body.alfi-hush .board-frame {
+  filter: saturate(0.35) brightness(0.8);
+  transition: filter 0.4s steps(4);
+}
+.alfi-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #000c;
+  animation: alfi-dim 0.45s steps(4);
+}
+.alfi-stage[hidden] {
+  display: none;
+}
+.alfi-stage.is-leaving {
+  background: transparent;
+  transition: background 0.5s steps(5);
+}
+.mascot-intro {
+  width: min(860px, 100%);
+}
+.mascot-intro .mascot-sprite {
+  cursor: default;
+  animation: alfi-drop 0.5s steps(5);
+}
+.mascot-intro .mascot-bubble {
+  background: #000;
+  box-shadow:
+    0 0 0 var(--pixel) #fff,
+    0 0 0 calc(2 * var(--pixel)) #000;
+}
+.mascot-intro .mascot-bubble::before,
+.mascot-intro .mascot-bubble::after {
+  background: #fff;
+}
+.mascot-intro .mascot-name {
+  color: #9cc3ff;
+}
+.mascot-intro .mascot-text {
+  color: #fff;
+}
+@keyframes alfi-dim {
+  from {
+    background: transparent;
+  }
+}
+@keyframes alfi-drop {
+  from {
+    transform: translateY(-40vh);
+  }
+  80% {
+    transform: translateY(8px);
+  }
+}
+.alfi-rubble {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+}
+.alfi-rubble .alfi-shard {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  animation: alfi-shard 1.2s steps(10) forwards;
+}
+@keyframes alfi-shard {
+  12% {
+    transform: translate(calc(var(--dx) * 0.3), -6px) rotate(calc(var(--spin) * 0.3));
+  }
+  to {
+    transform: translate(var(--dx), 70vh) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+body.alfi-glitch .game-screen,
+body.alfi-glitch .topbar {
+  animation: alfi-glitch 0.7s steps(1) 2;
+}
+@keyframes alfi-glitch {
+  0% {
+    transform: translate(-6px, 0);
+    filter: drop-shadow(5px 0 #e0455a) drop-shadow(-5px 0 #6fc4ff);
+  }
+  15% {
+    transform: translate(4px, 2px);
+    clip-path: inset(10% 0 55% 0);
+  }
+  30% {
+    transform: translate(0, -3px);
+    filter: invert(1) hue-rotate(180deg);
+    clip-path: none;
+  }
+  45% {
+    transform: translate(-3px, 0) skewX(4deg);
+    filter: drop-shadow(-6px 0 #e0455a) drop-shadow(6px 0 #6fc4ff);
+  }
+  60% {
+    transform: translate(5px, 1px);
+    clip-path: inset(40% 0 20% 0);
+    filter: none;
+  }
+  75% {
+    transform: none;
+    clip-path: none;
+    filter: saturate(2) contrast(1.4);
+  }
+  90% {
+    transform: translate(-2px, 0);
+    filter: drop-shadow(3px 0 #e0455a);
+  }
+}
+@media (max-width: 850px) {
+  .mascot-seat {
+    --mascot-size: 64px;
+  }
+  body[data-alfi="on"] .play-area {
+    --board-fit: 100cqw;
+  }
+  .mascot-intro {
+    flex-direction: column;
+    --mascot-size: 150px;
+  }
+  .mascot-intro .mascot-bubble::before,
+  .mascot-intro .mascot-bubble::after {
+    display: none;
+  }
+}
+
+/* Rey de Alfi: Alfi en miniatura con corona, con contorno oscuro para distinguirlo como pieza rival. */
+.piece-sprite.alfi-king {
+  overflow: visible;
+  filter:
+    drop-shadow(2px 0 0 #15111c)
+    drop-shadow(-2px 0 0 #15111c)
+    drop-shadow(0 2px 0 #15111c)
+    drop-shadow(0 -2px 0 #15111c);
+}
+
+/* Alfiles bailarines: siguen el pulso del tema de Alfi (las poses las marca alfi-boss.js).
+   Los pares hacen el paso en espejo. */
+.alfi-dancers {
+  display: none;
+}
+body[data-alfi="on"] .alfi-dancers {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  min-height: 72px;
+  padding: 6px 4px 0;
+  box-shadow: inset 0 calc(-1 * var(--pixel)) var(--line);
+}
+body[data-alfi="on"] .alfi-crowd {
+  flex: 1;
+  justify-content: center;
+  gap: clamp(6px, 2vw, 26px);
+  min-height: 0;
+  height: 100%;
+  padding: 0 0 6px;
+  box-shadow: none;
+}
+.alfi-dancer {
+  width: 56px;
+  height: 56px;
+  transform-origin: 50% 100%;
+  transition: transform 0.08s steps(2);
+}
+.alfi-crowd .alfi-dancer {
+  width: 40px;
+  height: 40px;
+}
+.alfi-dancers[data-pose="dip"] .alfi-dancer {
+  transform: translateY(3px) scaleY(0.9);
+}
+.alfi-dancers[data-pose="left"] .alfi-dancer,
+.alfi-dancers[data-pose="right"] .alfi-dancer:nth-child(even) {
+  transform: translateX(-6px) rotate(-10deg);
+}
+.alfi-dancers[data-pose="right"] .alfi-dancer,
+.alfi-dancers[data-pose="left"] .alfi-dancer:nth-child(even) {
+  transform: translateX(6px) rotate(10deg);
+}
+.alfi-dancers[data-pose="hop"] .alfi-dancer {
+  transform: translateY(-12px);
+}
+.alfi-dancers[data-pose="hop"] .alfi-dancer:nth-child(even) {
+  transform: translateY(-18px) scaleX(-1);
+}
+.alfi-dancers[data-pose="spin"] .alfi-dancer {
+  transform: scaleX(-1);
+}
+.alfi-crowd[data-pose="hop"] .alfi-dancer {
+  transform: translateY(-6px);
+}
+.alfi-crowd[data-pose="hop"] .alfi-dancer:nth-child(even) {
+  transform: translateY(-9px) scaleX(-1);
+}
+@media (max-width: 850px) {
+  .alfi-crowd .alfi-dancer:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+/* Aguante de Alfi: diez segmentos que se apagan con cada trampa. Al llegar a cero se duerme. */
+.alfi-energy[hidden] {
+  display: none;
+}
+.alfi-energy-bar {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: var(--pixel);
+  margin-top: 6px;
+}
+.alfi-energy-bar i {
+  height: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+.alfi-energy-bar i.on {
+  background: #ffe14d;
+  box-shadow: inset 0 -3px #0003;
+}
+.alfi-energy[data-level="tired"] .alfi-energy-bar i.on {
+  background: #e8a33a;
+}
+.alfi-energy[data-level="exhausted"] .alfi-energy-bar i.on {
+  background: #e0455a;
+}
+.alfi-energy[data-level="asleep"] #alfi-energy-state {
+  color: var(--muted);
+}
+
+/* Contra el jugador, Alfi está concentrado: quieto mientras no habla, sin flotar ni balancearse. */
+.mascot-seat:not(.is-talking) .mascot-sprite > .piece-sprite,
+.mascot-seat:not(.is-talking) .mascot-sprite::after {
+  animation: none;
+}
+
+/* Durante el cambio de colores Alfi se aparta abajo y el fondo se aclara para que se vea el tablero. */
+.alfi-stage.is-watching {
+  align-items: end;
+  background: #0005;
+}
+.alfi-stage.is-watching .mascot-intro {
+  --mascot-size: 150px;
+}
+
+/* Trampa de Alfi: destello azul en el marco del tablero, como su ojo. */
+.board-frame.alfi-cheat {
+  animation: alfi-cheat 0.6s steps(3);
+}
+@keyframes alfi-cheat {
+  0%,
+  66% {
+    box-shadow: 0 0 0 4px #9cc3ff, 0 0 0 8px #3b6fd8;
+    filter: brightness(1.25) saturate(0.7);
+  }
+}
+
+/* Final en derrota: pantalla a oscuras, solo Alfi y su risa. */
+.alfi-stage.is-dark {
+  background: #000;
 }

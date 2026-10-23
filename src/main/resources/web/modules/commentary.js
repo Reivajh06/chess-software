@@ -1,4 +1,5 @@
 import { labels, pieceValues } from "./state.js";
+import { shownColor } from "./colors.js";
 
 const chance = {
   check: 1, promotion: 1, blunder: 1, queenLost: 1, queenWon: 1, castle: 1, enPassant: 1, comeback: 1,
@@ -130,7 +131,7 @@ export class Commentator {
       to: move.to ?? "",
       pieza: name(move.type),
       victima: move.capturedPiece ? name(move.capturedPiece.type) : "pieza",
-      bando: lead > 0 ? "blancas" : "negras",
+      bando: shownColor(lead > 0 ? "WHITE" : "BLACK") === "WHITE" ? "blancas" : "negras",
       ply: String(move.ply ?? after.moves.length),
       moves: String(Math.ceil((move.ply ?? after.moves.length) / 2)),
     };

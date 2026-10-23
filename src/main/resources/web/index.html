@@ -15,6 +15,7 @@
       <button id="menu-button" class="brand" type="button" aria-label="Volver al menú principal">
         <img src="./assets/archchess_logo.png" alt="" /><span class="brand-wordmark">ARCH<span>CHESS</span></span>
       </button>
+      <div class="alfi-dancers alfi-crowd" data-count="8" aria-hidden="true"></div>
       <div class="header-tools">
         <span id="connection" role="status">Sin sesión</span>
         <button id="music-toggle" class="icon-button tool-button" type="button" aria-pressed="false" aria-label="Activar música" title="Música"><span class="pixel-icon" data-icon="music"></span></button>
@@ -93,6 +94,14 @@
           </div>
         </section>
 
+        <section id="alfi-energy" class="alfi-energy" hidden aria-label="Aguante de Alfi">
+          <div class="score-heading">
+            <span class="eyebrow">Aguante de Alfi</span>
+            <span id="alfi-energy-state" class="score-lead">En forma</span>
+          </div>
+          <div id="alfi-energy-bar" class="alfi-energy-bar" role="meter" aria-label="Aguante de Alfi" aria-valuemin="0" aria-valuemax="100"></div>
+        </section>
+
         <section id="last-move-card" class="last-move-card" hidden>
           <span class="eyebrow">Última jugada</span>
           <div class="last-move-body">
@@ -109,6 +118,8 @@
           <div class="mascot-bubble" hidden><button class="mascot-dismiss" type="button" aria-label="Ocultar a Alfi" title="Ocultar a Alfi (se recupera en Ajustes)">×</button><span class="mascot-name">ALFI</span><p class="mascot-text" aria-live="polite"></p></div>
         </div>
 
+        <div class="alfi-dancers" data-count="3" aria-hidden="true"></div>
+
         <div id="review-banner" class="review-banner" hidden>
           <span class="eyebrow">Modo revisión</span>
           <strong id="review-label">Posición</strong>
@@ -116,7 +127,7 @@
         </div>
 
         <nav class="match-actions" aria-label="Acciones">
-          <button id="flip" type="button"><span aria-hidden="true">⇅</span> Girar tablero</button>
+          <button id="flip" type="button" data-alfi-breaks><span aria-hidden="true">⇅</span> Girar tablero</button>
           <button id="invite" type="button" hidden><span aria-hidden="true">✉</span> Copiar invitación</button>
           <button id="leave" type="button"><span aria-hidden="true">◄</span> Menú principal</button>
         </nav>
@@ -129,6 +140,10 @@
 
       <section class="play-area" aria-label="Tablero de juego">
         <div class="player" data-side="opponent">
+          <div id="alfi-seat" class="mascot mascot-seat" hidden>
+            <button class="mascot-sprite" type="button" aria-label="Alfi, tu rival" title="Alfi"></button>
+            <div class="mascot-bubble" hidden><span class="mascot-name">ALFI</span><p class="mascot-text" aria-live="polite"></p></div>
+          </div>
           <span id="opponent-avatar" class="avatar"></span>
           <div class="player-identity">
             <strong id="opponent-name">Oponente</strong><small id="opponent-detail"></small>
@@ -170,6 +185,7 @@
           <span id="move-count" class="badge">0</span>
         </div>
         <div id="move-history" class="move-history" role="list" aria-label="Jugadas en orden cronológico"></div>
+        <div class="alfi-dancers" data-count="3" data-first="WHITE" aria-hidden="true"></div>
         <nav class="history-controls" aria-label="Revisar movimientos">
           <button id="history-start" type="button" aria-label="Posición inicial" title="Inicio">|‹</button
           ><button id="history-prev" type="button" aria-label="Movimiento anterior" title="Anterior (←)">‹</button
@@ -233,6 +249,15 @@
       </div>
     </dialog>
 
+    <dialog id="cpu-dialog" class="pixel-frame pvp-dialog" aria-labelledby="cpu-title">
+      <div class="dialog-heading">
+        <h2 id="cpu-title">Contra CPU</h2>
+        <button type="button" data-close="cpu-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <p class="settings-note pvp-intro">¿Qué nivel quieres?</p>
+      <div id="cpu-levels" class="title-menu"></div>
+    </dialog>
+
     <dialog id="invite-dialog"class="pixel-frame invite-dialog" aria-labelledby="invite-title">
       <div class="dialog-heading">
         <h2 id="invite-title">Invitar a un rival</h2>
@@ -273,5 +298,11 @@
         <div class="confetti" aria-hidden="true"></div>
       </div>
     </dialog>
+    <div id="alfi-stage" class="alfi-stage" hidden>
+      <div id="alfi-intro" class="mascot mascot-large mascot-intro">
+        <button class="mascot-sprite" type="button" tabindex="-1" aria-label="Alfi"></button>
+        <div class="mascot-bubble" hidden><span class="mascot-name">ALFI</span><p class="mascot-text" aria-live="polite"></p></div>
+      </div>
+    </div>
   </body>
 </html>

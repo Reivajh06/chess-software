@@ -131,3 +131,56 @@ Object.assign(synthCues, {
     [[72, 1], [74, 1], [72, 1], [null, 1], [67, 1], [72, 3]],
     [[48, 4], [43, 4]], 0.12),
 });
+
+// Efectos de la revelación de Alfi.
+Object.assign(synthCues, {
+  alfiAppear(context, output, start) {
+    return [
+      tone(context, output, { type: "triangle", from: 70, to: 38, start, length: 0.5, volume: 0.5 }),
+      noise(context, output, { start, length: 0.35, volume: 0.18, frequency: 400, to: 120, q: 0.7 }),
+    ];
+  },
+  alfiEye(context, output, start) {
+    return [
+      tone(context, output, { from: note(95), to: note(83), start, length: 0.22, volume: 0.07 }),
+      tone(context, output, { type: "triangle", from: note(71), start, length: 0.3, volume: 0.16 }),
+    ];
+  },
+  scramble(context, output, start) {
+    return [tone(context, output, { from: vary(1400, 0.3), start, length: 0.025, volume: 0.05, attack: 0.002 })];
+  },
+  shatter(context, output, start) {
+    return [
+      noise(context, output, { start, length: 0.3, volume: 0.3, frequency: 5200, to: 900, q: 0.6 }),
+      ...[0, 0.05, 0.11, 0.18].map((offset, index) =>
+        tone(context, output, { from: vary(2400 - index * 300, 0.1), start: start + offset, length: 0.05, volume: 0.06, attack: 0.002 })),
+    ];
+  },
+  glitch(context, output, start) {
+    return [0, 0.07, 0.16, 0.22, 0.34, 0.41].flatMap((offset, index) => [
+      noise(context, output, { start: start + offset, length: 0.05, volume: 0.16, frequency: index % 2 ? 900 : 3800, q: 2 }),
+      tone(context, output, { from: vary(index % 2 ? 110 : 1760, 0.2), start: start + offset, length: 0.04, volume: 0.06, attack: 0.002 }),
+    ]);
+  },
+});
+
+Object.assign(synthCues, {
+  // "heh heh heh": tres golpecitos graves que bajan.
+  alfiLaugh(context, output, start) {
+    return [0, 0.13, 0.26].flatMap((offset, index) => [
+      tone(context, output, { from: note(55 - index * 2) * 1.08, to: note(55 - index * 2), start: start + offset, length: 0.09, volume: 0.14 }),
+      tone(context, output, { type: "triangle", from: note(43 - index * 2), start: start + offset, length: 0.08, volume: 0.22 }),
+    ]);
+  },
+});
+
+Object.assign(synthCues, {
+  // Voz del Alfi rival: el mismo pitido de texto, unos siete semitonos más grave y con más cuerpo.
+  alfiTalk(context, output, start) {
+    const pitch = note(55 + Math.floor(Math.random() * 5));
+    return [
+      tone(context, output, { from: pitch * 1.05, to: pitch, start, length: 0.05, volume: 0.07 }),
+      tone(context, output, { type: "triangle", from: pitch / 2, start, length: 0.05, volume: 0.12 }),
+    ];
+  },
+});
