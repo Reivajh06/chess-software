@@ -10,23 +10,39 @@ public class CastlingRightsUpdater implements Updater {
 
     @Override
     public void update(GameStateBuilder gameStateBuilder, GameState previousState, Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
+        /* CASTLING UPDATE CHECKS
+         * - ON ROOK MOVED, REMOVE THE CASTLING OF ITS SIDE, THIS DOES NOT AFFECT ROOK PROMOTIONS
+         * - ON CASTLING RIGHT PREVIOUSLY REMOVED, JUST RETURNED SAID RIGHT REVOKED TOO
+         * - CAN CHECK IF ROOK IS AVAILABLE ON SAID SIDE, AS IT IS CHECKED IF THAT RIGHT WAS PREVIOUSLY REMOVED
+         * - CHECK IF MOVED PIECE IS KING, TO REVOKE ALL ITS CASTLING RIGHTS
+         * - DONT MANAGE CASTLING AVAILABILITY. IF THE CASTLING CANNOT BE EXECUTED BECAUSE IS A DANGEROUS MOVE, THIS WILL
+         * BE HANDLED BY THE CASTLING SPECIFIC MOVE RULE. DONT REVOKE RIGHTS WHEN THIS HAPPENS, IT DOES NOT MATTER
+         */
+
         CastlingRights updatedRights = new CastlingRights();
 
-        updateWhiteRights(updatedRights, previousState, move, movedPiece, capturedPiece, from, to);
-        updateBlackRights(updatedRights, previousState, move, movedPiece, capturedPiece, from, to);
+        updateRights(updatedRights, previousState, move, movedPiece, capturedPiece, from, to);
 
         gameStateBuilder.castlingRights(updatedRights);
     }
 
-    private void updateWhiteRights(CastlingRights castlingRights, GameState previousState, Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
-        if(movedPiece.color() == Color.WHITE) {
-            if(movedPiece.type() == PieceType.KING) return;
+    private void updateRights(CastlingRights castlingRights, GameState previousState, Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
+        if(movedPiece.color() == Color.BLACK && movedPiece.type() == PieceType.KING) return;
 
+        if(canCastleKingside(Color.BLACK, previousState)) castlingRights.grantRight(Color.BLACK, Castling.KINGSIDE);
+        if(canCastleQueenside(Color.BLACK, previousState)) castlingRights.grantRight(Color.BLACK, Castling.QUEENSIDE);
 
-        }
+        if(canCastleKingside(Color.WHITE, previousState)) castlingRights.grantRight(Color.WHITE, Castling.KINGSIDE);
+        if(canCastleQueenside(Color.WHITE, previousState)) castlingRights.grantRight(Color.WHITE, Castling.QUEENSIDE);
     }
 
-    private void updateBlackRights(CastlingRights castlingRights, GameState previousState, Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
-
+    private boolean canCastleQueenside(Color color, GameState previousState) {
+        return false;
     }
+
+    private boolean canCastleKingside(Color color, GameState previousState) {
+        return false;
+    }
+
+
 }
