@@ -12,6 +12,8 @@ import java.util.Map;
 
 public class GameConditions {
 
+    private static final int AUTOMATIC_DRAW_THRESHOLD = 75;
+
     public static boolean moveUnchecksKing(GameState gameState, Move move, Tile from, Tile to) {
         Piece pieceMoved = gameState.board().pieceAt(from);
         Piece pieceCaptured = null;
@@ -55,7 +57,7 @@ public class GameConditions {
     }
 
     public static boolean onDraw(GameState gameState) {
-        return onStalemate(gameState) || onDeadPosition(gameState) || onThreefoldRepetition(gameState);
+        return onStalemate(gameState) || onDeadPosition(gameState) || onThreefoldRepetition(gameState) || onFullMovesThreshold(gameState);
     }
 
     public static boolean noLegalMoves(GameState gameState, Color color) {
@@ -99,18 +101,10 @@ public class GameConditions {
     }
 
     public static boolean onThreefoldRepetition(GameState gameState) {
-        /*
-        * Threefold Repetition
-        A player can ask for a draw when a position is reached (or is about to be reached) at least three times in the same game.
-        *  This repetition is only possible when all the pieces of the same size and color are occupying identical squares as they were before
-        * and all the possible moves are also the same. As a result, if capturing en passant was previously an option that is no longer available, this position is not considered a repetition.
-
-        When a threefold repetition occurs, the game does not necessarily need to end immediately. The game only ends in a draw if the player who has the move requests a tie.
-
-        Most commonly, threefold repetitions happen when a player is losing and finds a perpetual check to save his game.
-        *
-        * */
-
         return false;
+    }
+
+    public static boolean onFullMovesThreshold(GameState gameState) {
+        return gameState.fullMoves() >= AUTOMATIC_DRAW_THRESHOLD;
     }
 }
