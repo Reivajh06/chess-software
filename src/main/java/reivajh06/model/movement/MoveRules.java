@@ -52,7 +52,7 @@ public class MoveRules {
 			List<Move> moveset = rivalPiece.moveset();
 
 			for(Move move : moveset) {
-				if(move.effect().equals(MoveEffect.NO_CAPTURE)) return true;
+				if(move.effect().equals(MoveEffect.NO_CAPTURE)) continue;
 
 				boolean isTileCompromised = GameController.calculateMoveTiles(ctx.gameState(), rivalPiece.color(), rivalTile, move).contains(ctx.to());
 
@@ -98,7 +98,7 @@ public class MoveRules {
 
 		Color color = board.pieceAt(ctx.from()).color();
 
-		if(!ctx.gameState().castlingRights().hasRight(color, Castling.QUEENSIDE)) return false;
+		if(!ctx.gameState().castlingRights().hasRight(color, Castling.KINGSIDE)) return false;
 
 		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
