@@ -77,6 +77,7 @@ public class MoveRules {
 		Color color = board.pieceAt(ctx.from()).color();
 
 		if(!ctx.gameState().castlingRights().hasRight(color, Castling.QUEENSIDE)) return false;
+		if(ctx.gameState().checkedColor() == color) return false;
 
 		for(File file = File.C; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
@@ -99,6 +100,7 @@ public class MoveRules {
 		Color color = board.pieceAt(ctx.from()).color();
 
 		if(!ctx.gameState().castlingRights().hasRight(color, Castling.KINGSIDE)) return false;
+		if(ctx.gameState().checkedColor() == color) return false;
 
 		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
@@ -120,13 +122,5 @@ public class MoveRules {
 		int yOffset = Math.abs(from.file().code - to.file().code);
 
 		return (xOffset == 1) && (yOffset == 1);
-	}
-
-	private static boolean isVerticalMove(Tile from, Tile to) {
-		return to.file().code - from.file().code == 0;
-	}
-
-	private static boolean isHorizontalMove(Tile from, Tile to) {
-		return to.rank().number - from.rank().number == 0;
 	}
 }
