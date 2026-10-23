@@ -17,7 +17,10 @@ public class EnPassantUpdater implements Updater {
 
 		Board board = previousState.board();
 
-		if(board.pieceAt(to).color() == Color.WHITE) gameStateBuilder.enPassantDestination(new Tile(to.file(), Rank.previous(to.rank())));
+		if(board.pieceAt(to).color() == Color.WHITE) {
+			gameStateBuilder.enPassantDestination(new Tile(to.file(), Rank.previous(to.rank())));
+			return;
+		}
 
 		gameStateBuilder.enPassantDestination(board.pieceAt(to).color() == Color.WHITE ?
 				new Tile(to.file(), Rank.previous(to.rank()))

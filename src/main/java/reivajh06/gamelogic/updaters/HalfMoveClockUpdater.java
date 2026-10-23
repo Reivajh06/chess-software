@@ -11,9 +11,15 @@ public class HalfMoveClockUpdater implements Updater{
 
     @Override
     public void update(GameStateBuilder gameStateBuilder, GameState previousState, Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
-        if(movedPiece.type() == PieceType.PAWN) gameStateBuilder.halfMoveClock(0);
+        if(movedPiece.type() == PieceType.PAWN) {
+            gameStateBuilder.halfMoveClock(0);
+            return;
+        }
 
-        if(capturedPiece != null) gameStateBuilder.halfMoveClock(0);
+        if(capturedPiece != null) {
+            gameStateBuilder.halfMoveClock(0);
+            return;
+        }
 
         gameStateBuilder.halfMoveClock(previousState.halfMoveClock() + 1);
     }
