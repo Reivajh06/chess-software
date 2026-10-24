@@ -1,12 +1,10 @@
 package reivajh06.gamelogic;
 
+import reivajh06.FenParser;
 import reivajh06.model.*;
 import reivajh06.model.movement.MoveEvent;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public record GameState(
 		Board board,
@@ -18,21 +16,26 @@ public record GameState(
 		CastlingRights castlingRights,
 		Tile enPassantDestination,
 		int halfMoveClock,
-		int fullMoves
+		int fullMoves,
+		Map<Position, Integer> positions
 ) {
 
     public static GameState startingState() {
-        return new GameStateBuilder()
-                .board(Board.startingBoard())
-                .turnColor(Color.WHITE)
-                .checkedColor(null)
+		GameState initialState = new GameStateBuilder()
+				.board(Board.startingBoard())
+				.turnColor(Color.WHITE)
+				.checkedColor(null)
 				.eatenPieces(Map.of(Color.BLACK, new ArrayList<>(), Color.WHITE, new ArrayList<>()))
-                .status(GameStatus.ACTIVE)
+				.status(GameStatus.ACTIVE)
 				.castlingRights(CastlingRights.allRights())
-                .enPassantDestination(null)
-                .halfMoveClock(0)
-                .fullMoves(1)
-                .build();
+				.enPassantDestination(null)
+				.halfMoveClock(0)
+				.fullMoves(1)
+				.build();
+
+		initialState.positions.put(new Position(FenParser.gameStateToFen(initialState)), 1);
+
+        return initialState;
     }
 
     public MoveEvent lastMove() {

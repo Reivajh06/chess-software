@@ -1,14 +1,9 @@
 package reivajh06.gamelogic;
 
-import reivajh06.FenParser;
-import reivajh06.gamelogic.evaluators.CheckedColorEvaluator;
-import reivajh06.gamelogic.evaluators.Evaluator;
-import reivajh06.gamelogic.evaluators.GameStatusEvaluator;
-import reivajh06.gamelogic.evaluators.MovesHistoryEvaluator;
+import reivajh06.gamelogic.evaluators.*;
 import reivajh06.gamelogic.updaters.*;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
-import reivajh06.model.movement.MoveEvent;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -36,6 +31,7 @@ public class GameDirector {
 		evaluators = List.of(
 				new CheckedColorEvaluator(),
 				new MovesHistoryEvaluator(),
+				new PositionsEvaluator(),
 				new GameStatusEvaluator()
 		);
 	}
@@ -105,10 +101,12 @@ public class GameDirector {
 		updatedGameStateBuilder.board(session.gameState().board().copy());
 		updatedGameStateBuilder.movesHistory(new ArrayDeque<>(session.gameState().movesHistory()));
 		updaters.forEach(u -> u.update(updatedGameStateBuilder, session.gameState(), move, movedPiece, capturedPiece, from, to));
+		updatedGameStateBuilder.positions(session.gameState().positions());
 
 		GameState transitiveState = updatedGameStateBuilder.build();
 
 		updatedGameStateBuilder.movesHistory(transitiveState.movesHistory());
+		updatedGameStateBuilder.positions(new HashMap<>(session.gameState().positions()));
 
 		evaluators.forEach(e -> e.evaluate(updatedGameStateBuilder, transitiveState, move, movedPiece, capturedPiece, from, to));
 

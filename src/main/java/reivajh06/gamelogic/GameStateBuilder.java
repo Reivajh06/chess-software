@@ -7,8 +7,6 @@ import java.util.*;
 
 public class GameStateBuilder {
 
-    public static final List<Castling> CASTLING_ALL = List.of(Castling.KINGSIDE, Castling.QUEENSIDE);
-
     private Color turnColor;
     private Board board;
     private Deque<MoveEvent> movesHistory = new ArrayDeque<>();
@@ -19,6 +17,7 @@ public class GameStateBuilder {
     private Tile enPassantDestination;
     private int halfMoveClock;
     private int fullMoves = 0;
+    private Map<Position, Integer> positions = new HashMap<>();
 
     public GameStateBuilder board(Board board) {
         this.board = board;
@@ -70,6 +69,11 @@ public class GameStateBuilder {
         return this;
     }
 
+    public GameStateBuilder positions(Map<Position, Integer> positions) {
+        this.positions = positions;
+        return this;
+    }
+
     public GameState build() {
         return new GameState(
                 board,
@@ -81,7 +85,8 @@ public class GameStateBuilder {
                 castlingRights,
                 enPassantDestination,
                 halfMoveClock,
-                fullMoves
+                fullMoves,
+                positions
         );
     }
 }

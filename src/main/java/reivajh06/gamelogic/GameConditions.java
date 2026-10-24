@@ -57,7 +57,7 @@ public class GameConditions {
     }
 
     public static boolean onDraw(GameState gameState) {
-        return onStalemate(gameState) || onDeadPosition(gameState) || onThreefoldRepetition(gameState) || onFullMovesThreshold(gameState);
+        return onStalemate(gameState) || onDeadPosition(gameState) || onFiveFoldRepetition(gameState) || onFullMovesThreshold(gameState);
     }
 
     public static boolean noLegalMoves(GameState gameState, Color color) {
@@ -100,8 +100,8 @@ public class GameConditions {
         return new HashSet<>(tilesRemaining.stream().map(t -> board.pieceAt(t).type()).toList()).containsAll(List.of(pieceTypes));
     }
 
-    public static boolean onThreefoldRepetition(GameState gameState) {
-        return false;
+    public static boolean onFiveFoldRepetition(GameState gameState) {
+        return gameState.positions().entrySet().stream().anyMatch(e -> e.getValue() >= 5);
     }
 
     public static boolean onFullMovesThreshold(GameState gameState) {
