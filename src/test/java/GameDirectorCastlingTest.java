@@ -4,7 +4,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.model.Castling;
 import reivajh06.model.Color;
 import reivajh06.model.Tile;
@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-class GameUpdaterCastlingTest {
+class GameDirectorCastlingTest {
     private static final String OPEN_ROOKS =
             "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
 
@@ -38,7 +38,7 @@ class GameUpdaterCastlingTest {
     }
 
     private static boolean canMove(GameSession session, String from, String to) {
-        Map<Integer, List<Tile>> legal = new GameUpdater(session).pieceMoves(new Tile(from));
+        Map<Integer, List<Tile>> legal = new GameDirector(session).pieceMoves(new Tile(from));
         Tile destination = new Tile(to);
         return legal.values().stream().flatMap(Collection::stream).anyMatch(destination::equals);
     }

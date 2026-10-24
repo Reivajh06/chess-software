@@ -156,7 +156,7 @@ The endpoint returns current state with field names reflecting `GameState` and `
 
 `GameUpdater.updateMovesHistory` calls `movesHistory.addFirst(...)`, so the raw deque is in reverse chronological order. **Do not reverse it in the backend** when using this DTO: the frontend recognizes `movesHistory` and reverses it for chronological move display. If a future backend instead chooses chronological `moves`, it must name the property `moves` and use the frontend's creation-style ordering convention. Do not emit both history collections.
 
-`GameUpdater` stores the post-move FEN by calling `FenParser.gameStateToFen(updatedBoard, ...)`; `MoveEvent.gameStateFen` is therefore the correct source for each historical position. The frontend builds ply 0 from the standard initial FEN and ply N from the Nth chronological event's `gameStateFen`. It does not need full copied `Board` objects for history.
+`GameDirector` stores the post-move FEN by calling `FenParser.gameStateToFen(updatedBoard, ...)`; `MoveEvent.gameStateFen` is therefore the correct source for each historical position. The frontend builds ply 0 from the standard initial FEN and ply N from the Nth chronological event's `gameStateFen`. It does not need full copied `Board` objects for history.
 
 **Do not serialize `MoveEvent.move` or the entire `Piece` object.** `Move` contains behavioral conditions and effects (including lambdas); its JSON representation is not a wire contract. Read only the event's identity/piece/color/from/to/capture/FEN fields. Similarly, no need to send `GameState.board` if `fen` is already present; FEN also covers castling rights, en passant, half-move clock, and full-move number.
 

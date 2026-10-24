@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
 import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.model.Tile;
 
 import java.util.*;
@@ -24,7 +24,7 @@ public class PostLegalMoves implements Handler {
 			return;
 		}
 
-		GameUpdater updater = new GameUpdater(session);
+		GameDirector updater = new GameDirector(session);
 
 		Map<Integer, List<Tile>> pieceMoves = updater.pieceMoves(new Tile(selectedPieceDetails.get("from")));
 

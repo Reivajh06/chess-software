@@ -3,7 +3,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Piece;
 import reivajh06.model.Tile;
@@ -70,7 +70,7 @@ class MoveValidationTest {
     }
 
     private static boolean isOffered(GameSession session, String from, String to) {
-        return new GameUpdater(session).pieceMoves(new Tile(from)).values().stream()
+        return new GameDirector(session).pieceMoves(new Tile(from)).values().stream()
                 .flatMap(Collection::stream)
                 .anyMatch(new Tile(to)::equals);
     }
@@ -79,7 +79,7 @@ class MoveValidationTest {
         Piece moved = session.gameState().board().pieceAt(new Tile(from));
         int historySize = session.gameState().movesHistory().size();
 
-        new GameUpdater(session).movePieceAndUpdate(moveId, new Tile(from), new Tile(to));
+        new GameDirector(session).movePieceAndUpdate(moveId, new Tile(from), new Tile(to));
 
         // El estado nuevo trabaja sobre una copia del tablero: se comprueba la pieza (tipo y color), no la instancia.
         Piece arrived = session.gameState().board().pieceAt(new Tile(to));
@@ -96,7 +96,7 @@ class MoveValidationTest {
         String before = session.toFEN();
         int historySize = session.gameState().movesHistory().size();
         try {
-            new GameUpdater(session).movePieceAndUpdate(moveId, new Tile(from), new Tile(to));
+            new GameDirector(session).movePieceAndUpdate(moveId, new Tile(from), new Tile(to));
         } catch (RuntimeException rejected) {
             // The rejection mechanism is not part of the contract; only the unchanged state is.
         }

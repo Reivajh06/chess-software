@@ -5,7 +5,7 @@ import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameState;
 import reivajh06.gamelogic.GameStateBuilder;
 import reivajh06.gamelogic.GameStatus;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Board;
 import reivajh06.model.Castling;
@@ -52,7 +52,7 @@ final class ChessTestSupport {
         if (piece.color() != session.gameState().turnColor()) {
             throw new IllegalArgumentException("Wrong side to move: " + piece.color());
         }
-        GameUpdater updater = new GameUpdater(session);
+        GameDirector updater = new GameDirector(session);
         List<Integer> matching = updater.pieceMoves(from).entrySet().stream()
                 .filter(e -> e.getValue().contains(to))
                 .map(Map.Entry::getKey)

@@ -6,7 +6,7 @@ import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Color;
 import reivajh06.model.PieceType;
 import reivajh06.model.Tile;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.model.movement.MoveEffect;
 import reivajh06.model.movement.MoveEvent;
 
@@ -112,7 +112,7 @@ public final class ChessDebugCli {
     private static void printLegal(GameSession session, String arg) {
         if (!arg.matches("(?i)[a-h][1-8]")) throw new IllegalArgumentException("Usage: legal e2");
         Tile from = new Tile(arg);
-        GameUpdater updater = new GameUpdater(session);
+        GameDirector updater = new GameDirector(session);
         List<String> moves = updater.pieceMoves(from).entrySet().stream()
                 .flatMap(e -> e.getValue().stream()
                         .map(to -> from.name().toLowerCase(Locale.ROOT) + to.name().toLowerCase(Locale.ROOT)

@@ -8,7 +8,7 @@ import reivajh06.gamelogic.Difficulty;
 import reivajh06.gamelogic.GameConditions;
 import reivajh06.gamelogic.GameSession;
 import reivajh06.gamelogic.GameStatus;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.gamelogic.Gamemode;
 import reivajh06.model.Board;
 import reivajh06.model.Piece;
@@ -83,7 +83,7 @@ class GameSimulationTest {
 
     private static void assertMoveUnavailable(GameSession session, String from, String to) {
         Tile destination = new Tile(to);
-        Map<Integer, List<Tile>> legalMoves = new GameUpdater(session).pieceMoves(new Tile(from));
+        Map<Integer, List<Tile>> legalMoves = new GameDirector(session).pieceMoves(new Tile(from));
         boolean available = legalMoves.values().stream()
                 .flatMap(Collection::stream)
                 .anyMatch(destination::equals);
@@ -323,7 +323,7 @@ class GameSimulationTest {
         assertEquals(PieceType.PAWN, arrived.type(), "the move itself only carries the pawn to the last rank");
         assertEquals(1, session.gameState().movesHistory().size());
 
-        new GameUpdater(session).promotePiece(new Tile(target), PieceType.QUEEN);
+        new GameDirector(session).promotePiece(new Tile(target), PieceType.QUEEN);
         Piece promoted = session.gameState().board().pieceAt(new Tile(target));
         assertNotNull(promoted);
         assertEquals(color, promoted.color());
@@ -335,8 +335,8 @@ class GameSimulationTest {
     void promotionRequiresAPawnOnTheLastRank() {
         GameSession session = at("7k/P7/6K1/8/8/8/8/8 w - - 0 1");
         String before = session.toFEN();
-        new GameUpdater(session).promotePiece(new Tile("a7"), PieceType.QUEEN);
-        new GameUpdater(session).promotePiece(new Tile("g6"), PieceType.QUEEN);
+        new GameDirector(session).promotePiece(new Tile("a7"), PieceType.QUEEN);
+        new GameDirector(session).promotePiece(new Tile("g6"), PieceType.QUEEN);
         assertEquals(before, session.toFEN());
     }
 
@@ -445,9 +445,9 @@ class GameSimulationTest {
         int initialCount = session.gameState().movesHistory().size();
         int pawnMoves = session.gameState().board().pieceAt(new Tile("e2")).timesMoved();
         for (int i = 0; i < 3; i++) {
-            new GameUpdater(session).pieceMoves(new Tile("e2"));
-            new GameUpdater(session).pieceMoves(new Tile("e1"));
-            new GameUpdater(session).pieceMoves(new Tile("g1"));
+            new GameDirector(session).pieceMoves(new Tile("e2"));
+            new GameDirector(session).pieceMoves(new Tile("e1"));
+            new GameDirector(session).pieceMoves(new Tile("g1"));
         }
         assertEquals(initialFen, session.toFEN());
         assertEquals(initialCount, session.gameState().movesHistory().size());

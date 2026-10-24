@@ -1,19 +1,27 @@
 package reivajh06.gamelogic;
 
 import reivajh06.FenParser;
+import reivajh06.gamelogic.evaluators.CheckedColorEvaluator;
+import reivajh06.gamelogic.evaluators.Evaluator;
+import reivajh06.gamelogic.evaluators.GameStatusEvaluator;
+import reivajh06.gamelogic.evaluators.MovesHistoryEvaluator;
 import reivajh06.gamelogic.updaters.*;
 import reivajh06.model.*;
 import reivajh06.model.movement.Move;
 import reivajh06.model.movement.MoveEvent;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class GameUpdater {
+public class GameDirector {
 
 	private final GameSession session;
 	private final List<Updater> updaters;
+	private final List<Evaluator> evaluators;
 
-	public GameUpdater(GameSession session) {
+	public GameDirector(GameSession session) {
 		this.session = session;
 
 		updaters = List.of(
@@ -23,6 +31,12 @@ public class GameUpdater {
 				new TurnColorUpdater(),
 				new EatenPiecesUpdater(),
 				new CastlingRightsUpdater()
+		);
+
+		evaluators = List.of(
+				new CheckedColorEvaluator(),
+				new MovesHistoryEvaluator(),
+				new GameStatusEvaluator()
 		);
 	}
 
@@ -86,60 +100,18 @@ public class GameUpdater {
 	}
 
 	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
-		GameStateBuilder builder = new GameStateBuilder();
+		GameStateBuilder updatedGameStateBuilder = new GameStateBuilder();
 
-		builder.board(session.gameState().board().copy());
-		builder.movesHistory(new ArrayDeque<>(session.gameState().movesHistory()));
-		updaters.forEach(u -> u.update(builder, session.gameState(), move, movedPiece, capturedPiece, from, to));
+		updatedGameStateBuilder.board(session.gameState().board().copy());
+		updatedGameStateBuilder.movesHistory(new ArrayDeque<>(session.gameState().movesHistory()));
+		updaters.forEach(u -> u.update(updatedGameStateBuilder, session.gameState(), move, movedPiece, capturedPiece, from, to));
 
-		GameState transitiveState = builder.build();
+		GameState transitiveState = updatedGameStateBuilder.build();
 
-		String fen = FenParser.gameStateToFen(transitiveState);
+		updatedGameStateBuilder.movesHistory(transitiveState.movesHistory());
 
-		transitiveState.movesHistory().addFirst(updateMovesHistory(
-				movedPiece,
-				move,
-				from,
-				to,
-				capturedPiece,
-				fen
-		));
+		evaluators.forEach(e -> e.evaluate(updatedGameStateBuilder, transitiveState, move, movedPiece, capturedPiece, from, to));
 
-		return new GameStateBuilder()
-				.board(transitiveState.board())
-				.checkedColor(updateCheckedColor(movedPiece, transitiveState))
-				.turnColor(transitiveState.turnColor())
-				.movesHistory(transitiveState.movesHistory())
-				.fullMoves(transitiveState.fullMoves())
-				.halfMoveClock(transitiveState.halfMoveClock())
-				.eatenPieces(transitiveState.eatenPieces())
-				.castlingRights(transitiveState.castlingRights())
-				.enPassantDestination(transitiveState.enPassantDestination())
-				.status(updateGameStatus(movedPiece, transitiveState))
-				.build();
-	}
-
-	private Color updateCheckedColor(Piece movedPiece, GameState transitiveState) {
-		Color kingColor = Color.rivalColor(movedPiece.color());
-
-		return GameConditions.isKingChecked(transitiveState, kingColor) ?
-				kingColor
-				: null;
-	}
-
-	private MoveEvent updateMovesHistory(Piece movedPiece, Move move, Tile from, Tile to, Piece capturedPiece, String fen) {
-		return new MoveEvent(movedPiece, move, from, to, capturedPiece, fen);
-	}
-
-	private GameStatus updateGameStatus(Piece movedPiece, GameState transitiveState) {
-		Color rivalColor = Color.rivalColor(movedPiece.color());
-
-		if(GameConditions.isCheckMate(transitiveState, rivalColor)) return movedPiece.color() == Color.BLACK ?
-				GameStatus.BLACK_WIN
-				: GameStatus.WHITE_WIN;
-
-		return GameConditions.onDraw(transitiveState) ?
-				GameStatus.DRAW
-				: GameStatus.ACTIVE;
+		return updatedGameStateBuilder.build();
 	}
 }

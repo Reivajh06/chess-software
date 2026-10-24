@@ -4,7 +4,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import reivajh06.gamelogic.GameConditions;
 import reivajh06.gamelogic.GameController;
 import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameUpdater;
+import reivajh06.gamelogic.GameDirector;
 import reivajh06.model.Color;
 import reivajh06.model.Tile;
 
@@ -104,7 +104,7 @@ class ChessRulesTest {
     }
 
     private static boolean canMove(GameSession session, String from, String to) {
-        return new GameUpdater(session).pieceMoves(new Tile(from)).values().stream()
+        return new GameDirector(session).pieceMoves(new Tile(from)).values().stream()
                 .flatMap(Collection::stream)
                 .anyMatch(new Tile(to)::equals);
     }
