@@ -6,9 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import reivajh06.FenParser;
 import reivajh06.Json;
 import reivajh06.Sessions;
-import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameState;
-import reivajh06.model.movement.MoveEvent;
+import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.chess.gamelogic.GameState;
+import reivajh06.chess.model.movement.MoveEvent;
 
 import java.util.*;
 

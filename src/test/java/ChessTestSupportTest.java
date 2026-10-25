@@ -1,9 +1,9 @@
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import reivajh06.gamelogic.GameSession;
-import reivajh06.model.Color;
-import reivajh06.model.Tile;
+import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.chess.model.Color;
+import reivajh06.chess.model.Tile;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;

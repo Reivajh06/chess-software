@@ -1,6 +1,6 @@
 package reivajh06;
 
-import reivajh06.gamelogic.GameSession;
+import reivajh06.chess.gamelogic.GameSession;
 
 import java.util.Map;
 import java.util.UUID;

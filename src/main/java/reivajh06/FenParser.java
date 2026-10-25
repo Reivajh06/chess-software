@@ -1,8 +1,8 @@
 package reivajh06;
 
-import reivajh06.gamelogic.CastlingRights;
-import reivajh06.gamelogic.GameState;
-import reivajh06.model.*;
+import reivajh06.chess.gamelogic.CastlingRights;
+import reivajh06.chess.gamelogic.GameState;
+import reivajh06.chess.model.*;
 
 public class FenParser {
 

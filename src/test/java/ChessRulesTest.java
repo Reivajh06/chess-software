@@ -1,12 +1,12 @@
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import reivajh06.gamelogic.GameConditions;
-import reivajh06.gamelogic.GameController;
-import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameDirector;
-import reivajh06.model.Color;
-import reivajh06.model.Tile;
+import reivajh06.chess.gamelogic.GameConditions;
+import reivajh06.chess.gamelogic.GameController;
+import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.chess.gamelogic.GameDirector;
+import reivajh06.chess.model.Color;
+import reivajh06.chess.model.Tile;
 
 import java.util.Collection;
 

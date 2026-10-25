@@ -6,11 +6,11 @@ import org.jetbrains.annotations.NotNull;
 import reivajh06.FenParser;
 import reivajh06.Json;
 import reivajh06.Sessions;
-import reivajh06.gamelogic.Difficulty;
-import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameState;
-import reivajh06.gamelogic.Gamemode;
-import reivajh06.model.Color;
+import reivajh06.chess.gamelogic.Difficulty;
+import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.chess.gamelogic.GameState;
+import reivajh06.chess.gamelogic.Gamemode;
+import reivajh06.chess.model.Color;
 
 import java.util.ArrayList;
 import java.util.HashMap;

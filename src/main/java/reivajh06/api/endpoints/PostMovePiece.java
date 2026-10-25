@@ -5,9 +5,9 @@ import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
-import reivajh06.gamelogic.GameSession;
-import reivajh06.gamelogic.GameDirector;
-import reivajh06.model.Tile;
+import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.chess.gamelogic.GameDirector;
+import reivajh06.chess.model.Tile;
 
 import java.util.Map;
 import java.util.UUID;
