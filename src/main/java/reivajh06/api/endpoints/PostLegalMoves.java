@@ -2,6 +2,7 @@ package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
@@ -20,7 +21,7 @@ public class PostLegalMoves implements Handler {
 		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
 
 		if(session == null) {
-			ctx.status(404);
+			ctx.status(HttpStatus.NOT_FOUND);
 			return;
 		}
 
@@ -28,7 +29,7 @@ public class PostLegalMoves implements Handler {
 
 		Map<Integer, List<Tile>> pieceMoves = updater.pieceMoves(new Tile(selectedPieceDetails.get("from")));
 
-		ctx.status(200).result(jsonResponse(pieceMoves));
+		ctx.status(HttpStatus.OK).result(jsonResponse(pieceMoves));
 	}
 
 	private String jsonResponse(Map<Integer, List<Tile>> pieceMoves) {

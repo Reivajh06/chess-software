@@ -1,41 +1,55 @@
 # ArchChess frontend API contract
 
-This document describes the **current Java HTTP interface** used by the frontend for live board and move-history updates.
+This document describes the HTTP interface between the web frontend (`src/main/resources/web`) and the Java backend (`reivajh06.api`). It covers:
 
-## Current route availability
+- What the frontend sends and expects on every route.
+- What each Java handler does today.
+- What is still **pending backend**: mainly the plugin engines that play the CPU/AI seats.
 
-| HTTP | Route | Current Java handler | Availability |
+Last updated: 2026-10-26, for the plugin redesign (`plugins` on creation, `playerType` on moves).
+
+## Overview
+
+### Routes
+
+| HTTP | Route | Handler | Status |
 | --- | --- | --- | --- |
-| `POST` | `/api/sessions` | `PostCreateSession` | Registered. `201` for every mode. |
-| `POST` | `/api/sessions/{sessionId}/legal-moves` | `PostLegalMoves` | Registered. Returns indexed movement rules and tiles. |
-| `POST` | `/api/sessions/{sessionId}/moves` | `PostMovePiece` | Registered. On success, returns an **empty** `200` body. |
-| `GET` | `/api/sessions/{sessionId}` | `GetReadCurrentState` | Registered. Returns current FEN and newest-first history encoded as a JSON string. |
-| `POST` | `/api/sessions/{sessionId}/join` | `PostJoinSession` | Registered. Seats the invited player (section 5). |
-| `POST` | `/api/sessions/{sessionId}/promote` | `PostPromotePiece` | Registered. On success, returns an **empty** `200` body. |
-| `GET` | `/api/server` | `GetServerAddress` | Registered. Host address for invitations (section 5). |
+| `POST` | `/api/sessions` | `PostCreateSession` | Implemented. Ignores `plugins` for now (pending, section 1). |
+| `GET` | `/api/sessions/{sessionId}` | `GetReadCurrentState` | Implemented. |
+| `POST` | `/api/sessions/{sessionId}/join` | `PostJoinSession` | Implemented. |
+| `POST` | `/api/sessions/{sessionId}/legal-moves` | `PostLegalMoves` | Implemented. |
+| `POST` | `/api/sessions/{sessionId}/moves` | `PostMovePiece` | `PLAYER` moves are implemented. Machine moves (`CPU`/`AI`) are pending (section 4). |
+| `POST` | `/api/sessions/{sessionId}/promote` | `PostPromotePiece` | Implemented. |
+| `GET` | `/api/server` | `GetServerAddress` | Implemented. |
+| `GET` | `/api/sessions/{sessionId}/promote` | `GetServerAddress` | Registered by mistake: answers the server address. The frontend never calls it. |
 
-All registered requests use JSON request bodies. `Context.result(Json.toJson(...))` may send JSON with a `text/plain` content type, so the frontend parses JSON from the response body rather than relying on `Content-Type`.
+### Conventions
+
+- Request bodies are JSON. Handlers answer with `Context.result(Json.toJson(...))`, which may arrive as `text/plain`, so the frontend parses the body as JSON and ignores `Content-Type`.
+- Squares are lowercase algebraic strings (`"e2"`). The frontend also accepts Gson-serialized `Tile` records (`{ "file": "E", "rank": "R2" }`) wherever the server sends a square.
+- Colours are `WHITE` / `BLACK`. Game statuses are `ACTIVE`, `WHITE_WIN`, `BLACK_WIN` and `DRAW`.
+- `playerId` is the only player credential. The frontend sends it with `legal-moves`, `moves` and `promote` when it has one. The server never has to return another seat's ID.
+- Every request times out after 10 s in the frontend (`ChessApi.request`).
 
 ## HTTP status codes
 
-### Codes used by each endpoint
+### Codes each handler uses today
 
-Status codes currently set by each handler. "Implicit" means that the handler sets no status and Javalin answers with its default. Unhandled exceptions are answered by Javalin with `500`.
+"Implicit" means the handler sets no status and Javalin answers with its default. Unhandled exceptions become `500`.
 
-| Endpoint | Handler | Success | Explicit errors | Cases ending in an unhandled exception (`500`) |
-| --- | --- | --- | --- | --- |
-| `POST /api/sessions` | `PostCreateSession` | `201` | — | Malformed JSON; unknown `gamemode` or `difficulty`. |
-| `GET /api/sessions/{sessionId}` | `GetReadCurrentState` | `200` (implicit) | `404` unknown session | `sessionId` that is not a UUID. |
-| `POST /api/sessions/{sessionId}/join` | `PostJoinSession` | `200` | `409` both seats taken | Unknown session (no `null` check); `sessionId` that is not a UUID. |
-| `POST /api/sessions/{sessionId}/legal-moves` | `PostLegalMoves` | `200` | `404` unknown session | `sessionId` that is not a UUID; malformed `from` square. |
-| `POST /api/sessions/{sessionId}/moves` | `PostMovePiece` | `200` (implicit, empty body) | `404` unknown session | `sessionId` that is not a UUID; malformed square; `moveId` outside the moveset; no piece on `from`. |
-| `POST /api/sessions/{sessionId}/promote` | `PostPromotePiece` | `200` (empty body) | `404` unknown session | `sessionId` that is not a UUID; unknown `newType`; no piece on `tile`. |
-| `GET /api/server` | `GetServerAddress` | `200` (implicit) | `503` address lookup failed | — |
-| `GET /api/sessions/{sessionId}/promote` | `GetServerAddress` | `200` (implicit) | `503` address lookup failed | — |
+| Endpoint | Success | Explicit errors | Ends in `500` when… |
+| --- | --- | --- | --- |
+| `POST /api/sessions` | `201` | — | Malformed JSON; unknown `gamemode` or `difficulty`. |
+| `GET /api/sessions/{id}` | `200` (implicit) | `404` unknown session | `id` is not a UUID. |
+| `POST /api/sessions/{id}/join` | `200` | `409` both seats taken | Unknown session (no `null` check); `id` is not a UUID. |
+| `POST /api/sessions/{id}/legal-moves` | `200` | `404` unknown session | `id` is not a UUID; malformed `from`. |
+| `POST /api/sessions/{id}/moves` | `200` (implicit, empty) | `404` unknown session | `id` is not a UUID; malformed square; `moveId` outside the moveset; no piece on `from`; any turn whose colour has no registered player type (section 9). |
+| `POST /api/sessions/{id}/promote` | `200` (empty) | `404` unknown session | `id` is not a UUID; unknown `newType`; no piece on `tile`. |
+| `GET /api/server` | `200` (implicit) | `503` address lookup failed | — |
 
-A move that `GameUpdater.movePieceAndUpdate` ignores (game not `ACTIVE`) is answered with `200`. Error responses carry no body.
+A move that `GameDirector.movePieceAndUpdate` ignores (game not `ACTIVE`, no piece on `from`) still answers `200`. Error responses carry no body today.
 
-### Codes recognized by the frontend
+### Codes the frontend recognizes
 
 `modules/api.js` declares the error statuses in `HttpStatus`:
 
@@ -47,38 +61,55 @@ A move that `GameUpdater.movePieceAndUpdate` ignores (game not `ACTIVE`) is answ
 | `409` | `CONFLICT` | "Esa acción no es posible en el estado actual de la partida." |
 | `503` | `SERVICE_UNAVAILABLE` | "El servidor no está disponible ahora mismo." |
 
-Any other non-`2xx` status is shown as "Error del servidor (N)." An error body of the form `{ "error": "<CODE>", "message": "<text>" }` is read when present: `message` replaces the default text and `error` is kept as `ApiError.code`.
+Any other non-`2xx` status is shown as "Error del servidor (N).". If an error body like `{ "error": "<CODE>", "message": "<text>" }` is present, `message` replaces the default text and `error` is kept as `ApiError.code`. The backend can use this to explain plugin failures (for example, "El motor no responde.").
 
-Status-specific behavior:
-
-| Code | Request | Frontend behavior |
+| Code | Request | Frontend behaviour |
 | --- | --- | --- |
-| `404` | State polling | Polling stops and the notice "La partida ya no existe en el servidor…" is shown. |
-| `404` | State read when restoring a saved session | The saved seat is forgotten and the menu is shown. |
+| `404` | State polling | Polling stops and "La partida ya no existe en el servidor…" is shown. |
+| `404` | State read while restoring a saved session | The saved seat is forgotten and the menu is shown. |
 | `404` | `/join` | "La sala no existe." |
 | `409` | `/join` | "La sala ya está completa." |
-| any | `/moves`, `/promote` | The message is shown, the selection is cleared and the state is read again. |
-| any | `/server` | The invitation link is left empty. |
+| any | `/moves` (`PLAYER`), `/promote` | The message is shown, the selection is cleared and the state is read again. |
+| any | `/moves` (`CPU`/`AI`) | The message is shown, the state is read again and the machine move is retried after a growing wait (1 s, 2 s, 4 s… up to 15 s). |
+| any | `/server` | The invitation link is left empty and the copy button stays disabled. |
 
-The backend stores a session as `GameSession` (`id`, `gamemode`, `difficulty`, `whiteId`, `blackId`, `gameState`) and the current position in `GameState`. The frontend retains session IDs, the player ID and colour the server assigned on `/join`, gamemode, difficulty, and board orientation; a state poll should not redefine session identity or player assignment.
-
-## 1. Create a session (already implemented)
+## 1. Create a session
 
 `POST /api/sessions`
 
 ```json
-{ "gamemode": "PRACTICE", "difficulty": "PRACTICE" }
+{ "gamemode": "PVCPU", "difficulty": "EASY", "plugins": ["stockfish"] }
 ```
 
-Current success response (`201 Created`):
+| Field | Values |
+| --- | --- |
+| `gamemode` | `PRACTICE`, `PVP`, `PVCPU`, `PVAI`, `AIVAI`. The frontend's local two-player mode (`LOCAL`) is sent as `PVP`. |
+| `difficulty` | `PRACTICE` for practice, `EASY` / `MEDIUM` / `HARD` for PvCPU, `NOT_CPU` for everything else. |
+| `plugins` | Always sent, possibly empty. See below. |
+
+### Plugins (pending backend)
+
+`plugins` lists the engines that play the machine seats, by plugin name. Plugins are `.jar` files in `C:/Program Files (x86)/Common Files/archchess/plugins` (`PluginsManager.pluginsFolder`). The frontend defaults live in `modePlugins` (`modules/modes.js`):
+
+| `gamemode` | `plugins` sent | Backend use |
+| --- | --- | --- |
+| `PVP`, `PRACTICE` | `[]` | Ignored. |
+| `PVCPU` | `["stockfish"]` | Only the first element. |
+| `PVAI` | `["ollama"]` | Only the first element. |
+| `AIVAI` | `["ollama", "stockfish"]` | One per machine seat, in order. Future AI/CPU mixes use the same list. |
+
+- Names are sent **without** `.jar`. `PluginsManager.reloadPlugins` keys plugins by `File.getName()`, which keeps the extension, so the lookup must strip it or add it.
+- An unknown plugin should be rejected here with `400` and a `message`. The error then shows up in the menu instead of on the first CPU move.
+
+### Response (`201 Created`)
 
 ```json
 {
   "sessionId": "6e26bb12-02ae-4e08-a99f-c0af94d67608",
-  "gamemode": "PRACTICE",
-  "difficulty": "PRACTICE",
-  "whiteId": "f3435c46-1a64-40c5-9b03-4b0bb3390020",
-  "blackId": "f3435c46-1a64-40c5-9b03-4b0bb3390020",
+  "gamemode": "PVCPU",
+  "difficulty": "EASY",
+  "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb",
+  "playerColor": "WHITE",
   "state": {
     "status": "ACTIVE",
     "turn": "WHITE",
@@ -90,93 +121,67 @@ Current success response (`201 Created`):
 }
 ```
 
-This shows what **`PostCreateSession` actually returns**. In particular, it unconditionally sets `waitingForOpponent: true`, even for practice. The frontend overrides that display-only value to `false` for `PRACTICE`, since its IDs are equal and no opponent must join. The response is a *creation DTO*, not a serialized `GameState`.
+- `playerId` and `playerColor` are the **creator's** seat and are required. Without a valid pair the frontend fails with "El servidor no ha asignado un color al creador de la sala.".
+- `state` is a creation DTO (`turn`, `moves`), not the state-read DTO. The frontend accepts both.
+- `waitingForOpponent` is always `true` here. The frontend overrides it to `false` for `PRACTICE` and for the machine modes, where nobody else has to join.
 
-For PvP the session starts **with no players** (`whiteId` and `blackId` are `null`) and creation seats the creator. The creation response must then carry only the creator's seat, never `whiteId`/`blackId`:
+### Seats per mode
 
-```json
-{
-  "sessionId": "6e26bb12-02ae-4e08-a99f-c0af94d67608",
-  "gamemode": "PVP",
-  "difficulty": "NOT_CPU",
-  "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb",
-  "playerColor": "BLACK",
-  "state": { "status": "ACTIVE", "turn": "WHITE", "checkedColor": null, "waitingForOpponent": true, "fen": "…", "moves": [] }
-}
-```
+| Mode | Seats on creation (server) | What the frontend does next |
+| --- | --- | --- |
+| `PRACTICE` | Both seats share one ID; the creator gets `WHITE`. | Moves both colours with that ID. |
+| `PVP` | The creator gets a random colour; the other seat stays `null`. | Shows the invitation (section 5). |
+| `LOCAL` (sent as `PVP`) | As `PVP`. | Calls `/join` itself to fill the second seat. Both colours are played on this device. |
+| `PVCPU`, `PVAI` | The creator gets a random colour; the server seats the machine on the other one. | **Never calls `/join`.** The machine plays the colour opposite `playerColor`. |
+| `AIVAI` | The server seats both machines. | Never calls `/join`. Ignores `playerId`/`playerColor` and only watches; the board is not interactive. |
 
-The colour is random; the other seat stays `null` until the invited player calls `/join` (section 5). Requests must never infer movement authority from board orientation. For `PRACTICE` one ID moves both colours: the frontend takes it from `playerId` or, as today, from `whiteId`.
+With `difficulty: "HARD"` (Alfi, section 7) the player must get `WHITE`. The frontend can no longer arrange that, so **the server should give the creator `WHITE` in that case**.
 
-## 2. Read a session's current state and move events (already implemented)
+## 2. Read the current state
 
-`GET /api/sessions/{sessionId}` (no request body).
-
-The endpoint returns current state with field names reflecting `GameState` and `MoveEvent`. Its `movesHistory` field currently contains a **JSON-encoded string**, which the frontend parses before reversing its newest-first events. The example below shows that decoded history for readability; the frontend also accepts an array if the backend returns structured history:
+`GET /api/sessions/{sessionId}` (no body).
 
 ```json
 {
   "status": "ACTIVE",
+  "waitingForOpponent": false,
   "turnColor": "WHITE",
   "checkedColor": null,
   "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
   "eatenPieces": { "WHITE": [], "BLACK": [] },
-  "movesHistory": [
-    {
-      "pieceMoved": { "color": "BLACK", "type": "PAWN" },
-      "from": "e7",
-      "to": "e5",
-      "pieceCaptured": null,
-      "gameStateFen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
-    },
-    {
-      "pieceMoved": { "color": "WHITE", "type": "PAWN" },
-      "from": "e2",
-      "to": "e4",
-      "pieceCaptured": null,
-      "gameStateFen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
-    }
-  ]
+  "movesHistory": "[{\"pieceMoved\":{…},\"from\":…,\"to\":…,\"pieceCaptured\":null,\"gameStateFen\":\"…\"}, …]"
 }
 ```
 
-### Mapping from the actual Java records
-
-| Frontend state DTO field | Backend source | Frontend use |
+| Field | Backend source | Frontend use |
 | --- | --- | --- |
-| `fen` | `FenParser.gameStateToFen(session.gameState())` | **Authoritative current board** and side/castling/en-passant/clock state. |
-| `turnColor` | `GameState.turnColor()` | Whose turn it is (`WHITE` or `BLACK`). |
-| `checkedColor` | `GameState.checkedColor()` | `WHITE`, `BLACK`, or `null` for highlighting and check sound. |
-| `status` | `GameState.status()` | `ACTIVE`, `WHITE_WIN`, `BLACK_WIN`, or `DRAW`. |
-| `eatenPieces` | `GameState.eatenPieces()` | Map keyed by *captured piece color*; use `{color,type}` for each piece. |
-| `movesHistory` | `GameState.movesHistory()` via `movesHistoryAsJson` | JSON string containing a `Deque<MoveEvent>`; **newest event first**. |
-| `movesHistory[].pieceMoved` | `MoveEvent.pieceMoved()` | `{color,type}` describing the piece that moved. |
-| `movesHistory[].from`, `.to` | `MoveEvent.from()`, `.to()` | Algebraic square strings (`"e2"`) or Java Tile record JSON. |
-| `movesHistory[].pieceCaptured` | `MoveEvent.pieceCaptured()` | `null` or `{color,type}`; a non-null value identifies a capture. |
-| `movesHistory[].gameStateFen` | `MoveEvent.gameStateFen()` | Board snapshot **after** that event; required for history review. |
+| `fen` | `FenParser.gameStateToFen(gameState)` | **Authoritative board**, plus side to move, castling, en passant and clocks. |
+| `turnColor` | `GameState.turnColor()` | Whose turn it is. Also decides when a machine seat must move. |
+| `checkedColor` | `GameState.checkedColor()` | `WHITE`, `BLACK` or `null`: check highlight and sound. |
+| `status` | `GameState.status()` | Ends the game and shows the result. |
+| `waitingForOpponent` | `whiteId == null \|\| blackId == null` | Locks the board while a PvP seat is empty. A missing field means `false`. |
+| `eatenPieces` | `GameState.eatenPieces()` | Map keyed by the captured piece's colour. Each entry needs `{ color, type }`. |
+| `movesHistory` | `GameState.movesHistory()` | JSON **string** (an array is also accepted) with the move events, **newest first**. The frontend reverses it. |
 
-`GameUpdater.updateMovesHistory` calls `movesHistory.addFirst(...)`, so the raw deque is in reverse chronological order. **Do not reverse it in the backend** when using this DTO: the frontend recognizes `movesHistory` and reverses it for chronological move display. If a future backend instead chooses chronological `moves`, it must name the property `moves` and use the frontend's creation-style ordering convention. Do not emit both history collections.
+Each history event carries `pieceMoved` (`{ color, type }`), `from`, `to`, `pieceCaptured` (`null` or `{ color, type }`) and `gameStateFen` (the position **after** the move). The frontend rebuilds history review from `gameStateFen`. Do not serialize `MoveEvent.move` (it holds lambdas) or whole `Piece` objects.
 
-`GameDirector` stores the post-move FEN by calling `FenParser.gameStateToFen(updatedBoard, ...)`; `MoveEvent.gameStateFen` is therefore the correct source for each historical position. The frontend builds ply 0 from the standard initial FEN and ply N from the Nth chronological event's `gameStateFen`. It does not need full copied `Board` objects for history.
+Rules:
 
-**Do not serialize `MoveEvent.move` or the entire `Piece` object.** `Move` contains behavioral conditions and effects (including lambdas); its JSON representation is not a wire contract. Read only the event's identity/piece/color/from/to/capture/FEN fields. Similarly, no need to send `GameState.board` if `fen` is already present; FEN also covers castling rights, en passant, half-move clock, and full-move number.
+- Do not reverse the history in the backend, and do not send both `movesHistory` and `moves`.
+- State reads must not include `whiteId`, `blackId` or any player ID.
+- `sessionId`, `gamemode`, `difficulty` and the seat are kept by the frontend from creation/join. A state read never redefines them.
 
-A Java `Tile(File.E, Rank.R4)` serialized directly through Gson is an object like `{ "file": "E", "rank": "R4" }`. The frontend also accepts these for `from`, `to`, and legal destinations, but lowercase square strings are simpler for a final HTTP DTO. `pieceMoved` and `pieceCaptured` must contain `type` and `color` at minimum.
+The frontend polls this route every second while a game is open (backing off to 15 s on errors) and after every move. It discards responses that belong to a previous session.
 
-`waitingForOpponent` is **not part of the Java `GameState` record**; it is session/registration information. A future PvP state-read response can optionally add it when the backend actually tracks registrations. It must not be derived from FEN or the length of `movesHistory`. State reads must not include `whiteId`, `blackId`, or another player's ID. `sessionId`, `gamemode`, and `difficulty` are locally retained from creation/join.
-
-### Reading in the frontend
-
-`normalizeState` handles both existing creation DTOs (`state.turn`, `state.moves: []`) and the state-read DTO (`turnColor`, newest-first `movesHistory`, FEN snapshots). It decodes JSON-string history or accepts array history, normalizes each event to a chronological display entry, converts Tile records to squares, extracts capture from `pieceCaptured`, and obtains board pieces from `fen`. Invalid history produces an error instead of silently clearing the move list. The UI highlights checks, reconstructs move history, and updates the board from the resulting state.
-
-## 3. Request a piece's legal moves (already implemented)
+## 3. Request a piece's legal moves
 
 `POST /api/sessions/{sessionId}/legal-moves`
 
 ```json
-{ "from": "e2", "playerId": "f3435c46-1a64-40c5-9b03-4b0bb3390020" }
+{ "from": "e2", "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb" }
 ```
 
-`PostLegalMoves` currently reads only `from`. The optional `playerId` is for future identity enforcement, not currently validated by this handler. The handler constructs `GameUpdater(session)` and calls `pieceMoves(new Tile(from))`. It returns an array of **canonical piece-moveset indices**, not map iteration indices:
+`PostLegalMoves` reads only `from`. Outside practice, a piece whose colour does not have the turn gets no moves (`GameDirector.pieceMoves`). Response:
 
 ```json
 {
@@ -187,59 +192,84 @@ A Java `Tile(File.E, Rank.R4)` serialized directly through Gson is an object lik
 }
 ```
 
-The order of `moves` is unspecified. `moveId` comes from `GameController.pieceMovesetTiles` / `legalPieceMoves`, where each key is the integer index in `piece.moveset()`. It **must not** be calculated by the frontend from the array position. `tiles` currently contains Gson-serialized `Tile` records, though the frontend also accepts lowercase strings. Empty legal rule lists are filtered out, and an immobile piece returns `moves: []`.
+- `moveId` is the index of the rule in `piece.moveset()`. The frontend never derives it from the array position.
+- Rules with no tiles are left out, and an immobile piece returns `moves: []`.
+- When several rules reach the same square, the frontend asks the player which one to use.
+- Clicking a square that was not returned just clears the selection.
 
-The frontend keeps a `destination → [{moveId, optional label}]` mapping for the selected position. Multiple rules may share one destination; the UI offers an explicit choice rather than guessing the index. Clicking a destination that was not returned simply deselects (there is no `moveId` to send). The frontend does not check turn or piece ownership: any piece can be selected while the game is active, and the server decides which moves it may make by answering `legal-moves` (an empty list for a piece that cannot move now) and by validating `/moves`.
+The frontend asks for legal moves one piece at a time (see section 9). Since the plugin redesign, the CPU no longer uses this route. Only Alfi's double move still calls it (section 7).
 
-## 4. Execute a move and refresh the board (already implemented)
+## 4. Make a move
 
-`POST /api/sessions/{sessionId}/moves`
+`POST /api/sessions/{sessionId}/moves`. Each request plays **exactly one** move, never a move plus the reply. `playerType` says who computes it.
+
+### Player move (`playerType: "PLAYER"`)
 
 ```json
 {
+  "playerType": "PLAYER",
   "from": "e2",
   "to": "e4",
   "moveId": 1,
-  "playerId": "f3435c46-1a64-40c5-9b03-4b0bb3390020"
+  "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb"
 }
 ```
 
-`PostMovePiece` currently extracts only `from`, `to`, and the numeric `moveId` (Gson may deserialize it as `Double`). It executes `updater.movePieceAndUpdate(moveId, fromTile, toTile)` and sends **no JSON or FEN** on success; the response is an empty `200 OK`. `playerId` is presently ignored. Promotion is a separate request (see below).
+- The server applies `moveset().get(moveId)` from `from` to `to` and answers an **empty `200`**. `moveId` may arrive as a `Double` through Gson.
+- The frontend then reads the state (section 2). If a future response carries a state DTO (`{ "state": … }` or a direct state), the frontend applies it without the extra read.
+- Every move the frontend sends with explicit squares is a `PLAYER` move: the human's moves and also Alfi's cheats (section 7).
+
+### Machine move (`playerType: "CPU"` or `"AI"`, pending backend)
+
+When `turnColor` belongs to a machine seat, the frontend waits 0.7–1.3 s and sends:
+
+```json
+{ "playerType": "CPU" }
+```
+
+There are no squares and no `playerId`, because the machine's seat ID never reaches the frontend. `PVCPU` sends `CPU`; `PVAI` and `AIVAI` send `AI` (`machineTypes` in `modules/modes.js`).
+
+The server should:
+
+1. Ask the session's plugin for one move for the current FEN (`PluginExecutor.requestMove(session.toFEN())`).
+2. Find the `moveId` whose legal tiles from `from` contain `to` (`GameController.legalPieceMoves`), and reject the move if there is none. Never apply an engine move without checking it.
+3. Apply it with `movePieceAndUpdate` and, if there is a promotion, `promotePiece(to, type)`.
+4. Answer `200` with the move it played:
+
+```json
+{ "from": "e7", "to": "e8", "promote_to": "QUEEN" }
+```
+
+- `promote_to` (also accepted as `promotion` or `promoteTo`) is `null` or missing when there is no promotion.
+- Squares are read case-insensitively.
+- The frontend rejects a reply without two valid squares ("El motor ha devuelto una jugada no válida.").
+- After the reply the frontend reads the state and animates the move from the history.
+
+Decide the move type from the body's `playerType`, **not** from the player type registered for `turnColor`. Alfi's rewind and board flip send `PLAYER` moves for squares and turns that the server has registered as `cpu` (section 7).
 
 ### Promotion
 
 `POST /api/sessions/{sessionId}/promote`
 
 ```json
-{ "tile": "a8", "newType": "QUEEN", "playerId": "f3435c46-1a64-40c5-9b03-4b0bb3390020" }
+{ "tile": "a8", "newType": "QUEEN", "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb" }
 ```
 
-`PostPromotePiece` reads `tile` and `newType` (`QUEEN`, `ROOK`, `BISHOP` or `KNIGHT`) and calls `GameUpdater.promotePiece`, replacing the pawn on its last rank. It answers an empty `200`. When a pawn destination is on rank 1 or 8 the frontend shows the piece picker; once a piece is chosen it posts the move first, then `/promote` with the move's `to` square, and finally reads the state.
+`newType` is `QUEEN`, `ROOK`, `BISHOP` or `KNIGHT`. `PostPromotePiece` replaces a pawn standing on its last rank and answers an empty `200`.
 
-The frontend execution sequence is:
+When a player's pawn reaches rank 1 or 8, the frontend shows the piece picker. It then posts the move, then `/promote` with the move's `to` square, then reads the state. Machine moves do **not** call `/promote`: the server promotes as part of the machine move.
 
-1. Select a piece and fetch legal rules; keep the returned canonical `moveId` attached to the selected destination.
-2. On a legal click, send `{from,to,moveId}` (and locally retained `playerId` if available) with no client-generated `Move` object.
-3. If the move response contains a future `{state: ...}` or direct state DTO, apply it immediately. For today's **empty `200`**, call `GET /api/sessions/{sessionId}` and apply the returned state.
-4. Rebuild board pieces from `fen`, history from `movesHistory`, checked king from `checkedColor`, and game result from `status`. Clear the stale legal-moves selection.
-5. Continue polling the state endpoint to pick up opponent moves. Discard outdated responses when changing sessions.
+## 5. PvP: join, server address and invitation
 
-The frontend uses the state handler's **GET** route for post-move refreshes, polling, and restoring saved sessions. Each successful refresh redraws the board and history from the authoritative state.
+### Join
 
-The current `PostMovePiece` does not revalidate `to` against the legal destination set, and `movePieceAndUpdate` can silently return before mutation if the turn or status is wrong. Frontend legal highlighting is UX protection, **not** server-side move authorization. These backend limitations are recorded here, not modified in this frontend-only change.
+`POST /api/sessions/{sessionId}/join` with `{}` as the body. The server assigns the seat:
 
-## 5. Join a PvP session and wait for the rival (pending backend)
+1. The creator is seated on creation (section 1) and **never calls `/join`**.
+2. The invited player calls `/join` and gets the free seat with a new ID.
+3. Any later `/join` gets **`409 Conflict`** ("La sala ya está completa.").
 
-`POST /api/sessions/{sessionId}/join` with `{}` as the request body.
-
-Only the invited player calls it, to say it wants to join that session. **The server assigns the seat**, so nobody chooses a colour and no player ID travels in the invitation:
-
-1. `POST /api/sessions` creates a `GameSession` with `whiteId = null` and `blackId = null`.
-2. In the same request it seats the creator: both seats are free, so the server picks the colour at random, generates a new player ID (UUID), stores it in that seat and returns it as `playerId` + `playerColor` (section 1). The creator **never calls `/join`**.
-3. The invited player opens the invitation and calls `/join`, the only caller of this route. The server gives it the remaining free seat with a new ID.
-4. Any later `/join` finds both seats taken and fails with **`409 Conflict`**. The frontend shows "La sala ya está completa."
-
-Successful response (`200`), only ever sent to the caller that got the seat:
+Response (`200`), sent only to the caller that got the seat:
 
 ```json
 {
@@ -247,28 +277,24 @@ Successful response (`200`), only ever sent to the caller that got the seat:
   "playerColor": "BLACK",
   "gamemode": "PVP",
   "difficulty": "NOT_CPU",
-  "state": { "status": "ACTIVE", "turnColor": "WHITE", "waitingForOpponent": false, "fen": "…", "movesHistory": "[]" }
+  "state": { "status": "ACTIVE", "turnColor": "WHITE", "waitingForOpponent": false, "fen": "…", "moves": [] }
 }
 ```
 
-- `playerId` and `playerColor` are required. The frontend keeps them and sends `playerId` with every legal-moves and move request; it is that player's only credential, so **never return the other seat's ID** and never put either ID in state reads.
-- `state` uses the same DTO as the state read. `gamemode` and `difficulty` are optional (the guest assumes `PVP`).
-- Unknown session: `404`.
-- Check-and-assign must be **atomic** (for example `synchronized` on the `GameSession`): two guests joining at the same time must never both get the last seat.
-- No player records are needed: the two seats are the registry, and `waitingForOpponent` is simply "a seat is still `null`".
-- The frontend keeps its seat in `sessionStorage`, so a page reload reads the state without joining again. A player who loses that tab (closes it, opens the link elsewhere) gets `409` once the room is full; reclaiming a seat would need player records later.
+- `playerId` and `playerColor` are required. Never return the other seat's ID.
+- Check-and-assign should be atomic (`synchronized` on the session). `GameSession.assignColor` is not synchronized yet.
+- The frontend keeps its seat in `sessionStorage`. A reload reads the state without joining again.
+- Machine modes never call `/join` (section 1). `LOCAL` calls it once, from the creator's own device.
 
-`waitingForOpponent` must then appear in **every** `GET /api/sessions/{sessionId}` state read for PvP sessions: `true` while `whiteId` or `blackId` is still `null`, `false` once both seats are taken. Omitting it means `false` to the frontend, so a missing field unlocks the board.
+While a state read says `waitingForOpponent: true`, the frontend:
 
-While `waitingForOpponent` is `true` the frontend:
+- Locks the board.
+- Shows "Esperando rival".
+- Has the mascot chat with `waiting` lines every 11 s.
 
-- Locks the board for the creator (`boardInteractive` returns `false`), so the game cannot start early.
-- Shows "Esperando rival" in the turn card and the opponent panel.
-- Has Alfi chat with `waiting` lines every few seconds.
+When the field flips to `false`, the mascot announces the rival and the board unlocks.
 
-When a state read flips it to `false`, Alfi announces the rival with an `opponentJoined` line and the board unlocks. White moves first as usual.
-
-### Server address (pending backend)
+### Server address
 
 `GET /api/server`
 
@@ -276,86 +302,82 @@ When a state read flips it to `false`, Alfi announces the rival with an `opponen
 { "address": "192.168.1.69", "port": 5000 }
 ```
 
-- `address`: the IPv4 address of the network interface with the default route, the one other machines on the same network use to reach this server. One string, never a loopback address.
-- `port`: the port the server listens on (`5000`).
-
-Get the address by "connecting" a UDP socket. UDP `connect()` sends no packet; it only makes the operating system pick the outgoing interface, which skips Docker, WSL, VMware and similar virtual adapters (`InetAddress.getLocalHost()` may return any of those):
-
-```java
-try (DatagramSocket socket = new DatagramSocket()) {
-    socket.connect(InetAddress.getByName("8.8.8.8"), 53);
-    String address = socket.getLocalAddress().getHostAddress(); // e.g. 192.168.1.69
-}
-```
-
-It works offline as long as the machine has a default route (a router). Compute it on every request and never cache it: the machine may change networks. If it fails or yields `0.0.0.0`, respond `503`; the frontend then shows that the invitation cannot be built.
+`address` is the IPv4 address of the interface with the default route. The server finds it by "connecting" a UDP socket to `8.8.8.8:53`, which sends no packet. If the lookup fails, the server answers `503`.
 
 ### Invitation link
 
-The creator shares `http://<host>:<port>/?session=<sessionId>`. The link names only the session: whoever opens it calls `/join` and gets the free seat.
+The link is `http://<host>:<port>/?session=<sessionId>`. When the page was opened through `localhost`, `127.x` or `[::1]`, the frontend asks `/api/server` for `<host>` every time the invitation dialog opens and never stores it. A page opened through a LAN address or a domain uses its own origin.
 
-`<host>` is never a loopback address. It depends on the machine hosting the server, so the frontend discovers it every time the invitation dialog opens and **never stores it**. When the page was opened through `localhost`, `127.x` or `[::1]`:
+## 6. Modes in the frontend
 
-It asks the server with `GET /api/server` (above) and builds the link with the reply. There is no manual entry: if the request fails, the dialog shows an error and the copy button stays disabled.
+| Mode | Menu | Who moves | Machine moves |
+| --- | --- | --- | --- |
+| `PRACTICE` | Available | The player, both colours | — |
+| `PVP` (invitation) | Available | One player per device | — |
+| `LOCAL` | Available (from the PvP dialog) | Both players on one device; the board turns to the side to move | — |
+| `PVCPU` | Available (difficulty dialog) | The player vs. the CPU | `{ "playerType": "CPU" }` |
+| `PVAI` | **Disabled** until the backend supports it | The player vs. the AI | `{ "playerType": "AI" }` |
+| `AIVAI` | **Disabled** until the backend supports it | Two machines; the page only watches | `{ "playerType": "AI" }` for each colour |
 
-Javalin listens on every interface, so other machines can reach port `5000` if the firewall allows it. A page already opened through a LAN address or domain uses its own origin.
+`PVAI` and `AIVAI` already follow the flow above. Turning them on only requires `available: true` in `modules/modes.js`.
 
-## 6. UI behavior connected to this contract
-
-- A selected piece is visually outlined and its legal destinations are highlighted. Selecting a piece of the other color or one with no legal moves produces no warning; an empty legal-moves response simply leaves no destination highlights. Clicking an empty square outside the available destinations is also silent.
-- Board movement uses **click/tap**, not drag and drop. Native piece/tile image dragging is disabled; the board uses the regular mouse cursor rather than the hand cursor.
-- The Web Audio module uses the supplied 8-bit and 16-bit samples for piece selection, ordinary moves, king moves, captures, checks, and win/draw/lose. The soundset selector sits alongside the board theme in settings and persists with volume and mute. Samples are cached and decoded after a user gesture; switching sets or muting stops queued sounds. A move/check/result sound is triggered by an actual new state/history transition, not every state poll.
-- Live moves slide into place (knights hop). During a capture the attacker makes contact and briefly recoils, then the captured piece tips onto its side and slides away before disappearing. The capture sound is timed to contact. Animations respect reduced-motion preferences and are skipped for history review or session restoration.
-- Board redraw and history updates are tied to the authoritative returned state. On an empty move response the frontend requests the current state immediately; it does not assume the POST response has a body.
-- The backend still needs the PvP join endpoint. This frontend patch does **not** add backend HTTP routes, game-rule fixes, promotion, or artificial opponents.
-
-## 7. PvCPU and the Alfi mode (frontend mock on the existing routes)
-
-Until the server integrates an engine, the CPU opponent is simulated in the frontend with the existing routes only.
-
-### What the frontend does today
+## 7. PvCPU and the Alfi mode
 
 | Step | Route | Notes |
 | --- | --- | --- |
-| Create the game | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD" }`. |
-| Seat the CPU | `POST /api/sessions/{id}/join` | The frontend occupies the second seat itself, so `waitingForOpponent` becomes `false`. With `HARD` the player always gets the seat whose colour is `WHITE` (creator or joined seat). |
-| CPU move | `POST /legal-moves` for each of its pieces, then `POST /moves` | A random legal move. Pawns reaching the last rank promote to a queen through `/promote`. |
-| Alfi's opening cheat (`HARD`) | `POST /moves` only | Before White's first move a black pawn advances with `moveId` 0 or 1. `legal-moves` returns nothing for the colour without the turn (`GameUpdater.pieceMoves`), but `/moves` applies any moveset index and `TurnColorUpdater` hands the turn back to White. |
+| Create | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD", "plugins": ["stockfish"] }` |
+| Seat the CPU | — | The server seats it on creation. It plays the colour opposite `playerColor`. |
+| CPU move | `POST /moves` with `{ "playerType": "CPU" }` | Sent whenever `turnColor` is the CPU's colour and no other CPU action is in progress. |
 
-The `HARD` level is the Alfi easter egg: the rival is shown as "Stockfish" until that cheat, then Alfi reveals himself.
+`HARD` is the Alfi easter egg. The rival is presented as "Stockfish" until Alfi reveals himself, and from then on his moves still come from the plugin.
 
 ### Alfi's cheats
 
-**Teleport.** `POST /moves` does not check the turn, the path or the move's condition: it takes `moveset().get(moveId)` and applies its effect from `from` to `to`. The effect of index 0 is `DIRECT_CAPTURE` for every piece except the pawn (`NO_CAPTURE`), so `moveId: 0` moves any piece to any **empty** square. `TurnColorUpdater` then gives the turn to the rival of whoever moved. The cheats rely on this; the backend must keep that behaviour (or offer an equivalent route) for them to keep working.
+The cheats rely on `POST /moves` **not** checking the turn, the path or the move's condition. It takes `moveset().get(moveId)` and applies its effect from `from` to `to`. For every piece except the pawn, index 0 has the `DIRECT_CAPTURE` effect, so `moveId: 0` moves that piece to any **empty** square. `TurnColorUpdater` then gives the turn to the rival of whoever moved. All cheats are `PLAYER` moves.
 
-| Cheat | How it works | Route |
+| Cheat | How it works | When it is sent |
 | --- | --- | --- |
-| Double move | After his normal move, Alfi sends a second legal move (from the list `legal-moves` gave before the first one, for another piece). His piece moved, so the turn stays with the player | `POST /moves` |
-| Dodge | When the player captures one of his pieces (not the king), the piece is teleported to a free neighbouring square first; the player's move lands on the empty square | `POST /moves` with `moveId: 0` |
-| Rewind | If the player's move gives check (without capture, promotion or castling), that piece is teleported back to its square; the player's piece moved, so the turn goes to Alfi | `POST /moves` with `moveId: 0` |
-| Flip the board | Once per game, when the player leads by 5 points of material: the two seats swap in the frontend (`playerColor` and the CPU colour) | None (seats are not validated by the server) |
+| Opening push | Before White's first move, a black pawn advances with `moveId` 0 or 1. | Player's turn. |
+| Double move | Before his plugin move, Alfi reads his legal moves with `legal-moves`. After the plugin move, he plays one of those moves with another piece. | Player's turn. |
+| Dodge | When the player is about to capture one of his pieces (not the king), that piece first teleports to a free neighbouring square. | Player's turn. |
+| Rewind | If the player's move gives check (no capture, promotion or castling), that piece teleports back. | **CPU's turn**. |
+| Board flip | Once per game, when the player leads by 5 points: the frontend swaps `playerColor` and the CPU colour. Nothing is sent. From then on, the human moves pieces of the colour the server registered as `cpu`. | Any turn. |
 
-Each cheat costs Alfi energy (double 20, dodge 15, rewind 25, flip 40, out of 100). At zero he falls asleep and plays clean.
+Rewind and the board flip only keep working if the server applies `PLAYER` moves as sent, whatever player type it registered for `turnColor` (section 4).
 
-### Cheats that need a new route
+Each cheat costs Alfi energy out of 100: double 20, dodge 15, rewind 25, flip 40. At zero he falls asleep and plays clean.
 
-`POST /promote` now only accepts a pawn on the last rank (`GameUpdater.promotePiece`), so it can no longer turn other pieces into a bishop. These cheats edit pieces in a way no current route allows; a **single** generic route would cover all of them:
+### Cheats that need a new route (not built)
 
-| Cheat | What it needs |
-| --- | --- |
-| Turn a player's piece into a bishop | Change a piece's type |
-| Steal a piece (change its colour) | Change a piece's colour |
-| When Alfi captures, turn a piece from his captured pool into one of his | Change a captured piece's colour and put it on the board; update `eatenPieces` |
-| Bring back one of his captured pieces | Put a piece from `eatenPieces` back on the board; update `eatenPieces` |
+These cheats edit pieces in ways no current route allows:
 
-Proposed route: `POST /api/sessions/{id}/edit` with `{ "changes": [{ "tile": "e4", "piece": { "type": "BISHOP", "color": "BLACK" } | null }], "revive": { "color": "BLACK", "type": "ROOK" } }`. It returns the same state as `GET /api/sessions/{id}`; `revive` removes one matching piece from `eatenPieces`. These four cheats are not built yet; they will be once the route exists.
+- Turn a player's piece into a bishop.
+- Steal a piece (change its colour).
+- Turn a piece from his captured pool into one of his.
+- Bring back one of his captured pieces.
 
-### Backend issues found while testing (2026-10-23)
+A single generic route would cover all of them:
 
-1. **Every `POST /moves` fails with 500 at `HEAD`.** `GameUpdater.updateGameState` builds the new `GameState` only from the six `Updater`s, and none of them sets `board`, `movesHistory`, `status` or `checkedColor` on the `GameStateBuilder`. `board` ends up `null` and `FenParser.boardToFen` (line 17, called from `GameUpdater.java:95`) throws `NullPointerException`. The history would also restart empty on every move.
-2. **`legal-moves` corrupts the live board.** `MovesValidator`/`GameController.legalPieceMoves` call `GameConditions.moveUnchecksKing`, which applies each candidate move to the session's real `Board` and undoes it in a `finally`. Two consequences:
-   - **Concurrent requests race.** 32 `legal-moves` requests sent at once, 10 times, returned 80 errors (500) and left the starting position as `1nb1kbnp/ppppppp1/8/8/8/8/PPP1PPPP/RNBP2NR` (queens, a king and rooks gone, pawns where the queen stood). The same requests one after another left it intact. Any two clients asking at once (PvP, or a CPU asking for all its pieces) can trigger it.
-   - **Exceptions mid-simulation leave it broken even without concurrency.** With requests one at a time, 40 random moves still lost a black bishop (f8) with no capture. The log shows `NullPointerException` in `GameConditions.isKingCheckedBy` (`GameConditions.java:32`, reached from `isKingChecked` line 39) and in `MoveRules.SAFE_MOVE` (`MoveRules.java:52`): both iterate a list of piece tiles taken before nested simulations moved those pieces, so `pieceAt(tile)` returns `null`. When that happens inside `moveUnchecksKing`, `undoMove` runs with a half-applied move (and `pieceCaptured` still `null`), so pieces vanish.
-   - Suggested fix: check legality on a **copy** of the board (or of the `GameState`) instead of the live one, and serialise writes per session (e.g. `synchronized (session)` in the move/promote handlers).
+`POST /api/sessions/{id}/edit` with `{ "changes": [{ "tile": "e4", "piece": { "type": "BISHOP", "color": "BLACK" } | null }], "revive": { "color": "BLACK", "type": "ROOK" } }`
 
-The frontend now asks for legal moves one piece at a time, which avoids the race but not the second problem.
+It would return the same DTO as `GET /api/sessions/{id}`. `revive` removes one matching piece from `eatenPieces`.
+
+## 8. UI behaviour tied to this contract
+
+- Moves are made by click/tap, not drag and drop. A selected piece is outlined and its legal destinations are highlighted.
+- Board, history, check and result are always redrawn from the authoritative state. Move, capture, check and result sounds are triggered by a new history entry, not by every poll.
+- Live moves are animated: slides, knight hops, and captures that knock the piece over. History review and session restoration are not animated, and animations respect reduced motion.
+- While a machine is thinking, the board is locked for the player.
+
+## 9. Known backend issues (2026-10-26)
+
+1. **`PostMovePiece` throws `NullPointerException` for any colour without a registered player type.** It calls `session.playerType(turnColor).equals("cpu")`, but `PostCreateSession` only registers the creator's rival (and, in `AIVAI`, the creator). So the creator's own colour in `PVP`, `PVCPU` and `PVAI` has no type, and neither does `WHITE` in `PRACTICE`. Every move of the creator would fail with `500`. Use `"cpu".equals(session.playerType(...))`, or register both colours.
+2. **`PRACTICE` registers its black side as `cpu`.** The condition `gamemode != Gamemode.PVP` includes practice.
+3. **The machine-move branch of `PostMovePiece` is empty.** It also needs the body's `playerType` (section 4), and the response with the played move.
+4. **`plugins` is not read on creation yet.** The session does not store which plugin plays each seat.
+5. **The creation response always says `waitingForOpponent: true`.** The frontend works around it, but for machine modes and practice it should be `false`.
+6. **`legal-moves` still simulates moves on the live board.** `GameConditions.moveUnchecksKing` applies each candidate move to the session's `Board` and undoes it in a `finally`. Concurrent requests, or an exception mid-simulation, can corrupt the position. Nothing serialises requests per session. With machine moves computed on the server while the frontend polls, the fix is more pressing: check legality on a copy of the board, and `synchronized (session)` in the move, promote and join handlers.
+7. **Plugin package:**
+   - `PluginReader.read` returns the line with its `$archchess:` prefix, which `PluginResponse` then cannot parse as JSON.
+   - `readLine()` has no timeout, so a hung engine would hang the HTTP request (the frontend gives up after 10 s).
+   - `requestMove` still returns `Object` instead of `PluginResponse`.

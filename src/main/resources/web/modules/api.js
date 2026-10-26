@@ -71,8 +71,10 @@ export class ChessApi {
       this.controllers.delete(controller);
     }
   }
-  create(mode, difficulty) {
-    return this.request("/sessions", { gamemode: mode, difficulty });
+  // plugins: nombres de los motores (.jar en la carpeta de plugins del servidor), en el orden en que
+  // ocupan los asientos de máquina. PvP y práctica los ignoran; PvCPU y PvAI usan solo el primero.
+  create(mode, difficulty, plugins = []) {
+    return this.request("/sessions", { gamemode: mode, difficulty, plugins });
   }
   join(id) {
     return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});
@@ -100,6 +102,7 @@ export class ChessApi {
     if (!Number.isSafeInteger(moveId) || moveId < 0)
       throw new TypeError("La jugada necesita un moveId válido del servidor.");
     const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
+      playerType: "PLAYER",
       from,
       moveId,
       to,
@@ -115,4 +118,25 @@ export class ChessApi {
         state.pieces != null || state.gameStateFen != null)) return response;
     return this.state(id);
   }
+  // Jugada de una máquina (playerType "CPU" o "AI"): el servidor pide un único movimiento al plugin de
+  // ese asiento, lo aplica (coronación incluida) y devuelve la jugada hecha. Después se lee el estado.
+  async machineMove(id, playerType, playerId = null) {
+    const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
+      playerType,
+      ...(playerId ? { playerId } : {}),
+    });
+    const move = playedMove(response);
+    return { move, state: await this.state(id) };
+  }
+}
+
+// La respuesta del plugin llega como { from, to, promote_to } (o promotion); las casillas pueden venir
+// en mayúsculas y la coronación vacía cuando no la hay.
+function playedMove(response) {
+  const from = typeof response.from === "string" ? response.from.trim().toLowerCase() : null;
+  const to = typeof response.to === "string" ? response.to.trim().toLowerCase() : null;
+  if (!/^[a-h][1-8]$/.test(from ?? "") || !/^[a-h][1-8]$/.test(to ?? ""))
+    throw new ApiError("El motor ha devuelto una jugada no válida.");
+  const promotion = response.promotion ?? response.promote_to ?? response.promoteTo ?? null;
+  return { from, to, promotion: promotion ? String(promotion).toUpperCase() : null };
 }

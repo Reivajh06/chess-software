@@ -27,7 +27,7 @@ test("accepts the backend's text/plain JSON creation response and shared practic
   assert.equal(session.playerId, playerId);
   assert.equal(api.playerId, playerId);
   assert.equal(calls.length, 1);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PRACTICE", difficulty: "PRACTICE" });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PRACTICE", difficulty: "PRACTICE", plugins: [] });
   const store = new GameStore();
   store.session = session;
   store.apply(initial);
@@ -48,8 +48,35 @@ test("selection and moves send only the acting player ID, without token headers 
   assert.equal(calls[0].options.method, "POST");
   assert.ok(calls[0].path.endsWith("/legal-moves"));
   assert.deepEqual(JSON.parse(calls[0].options.body), { playerId, from: "e2" });
-  assert.deepEqual(JSON.parse(calls[1].options.body), { playerId, from: "e2", to: "e4", moveId: 1 });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { playerType: "PLAYER", playerId, from: "e2", to: "e4", moveId: 1 });
   assert.equal(calls[1].options.headers["X-Player-Token"], undefined);
+});
+
+test("PvCPU sends its plugin on creation and asks the server for the machine's move", async (t) => {
+  const cpuId = "0fbf132e-638b-434c-a55d-38d61160afcb";
+  const replies = [
+    { ...created, gamemode: "PVCPU", difficulty: "EASY", playerId, playerColor: "WHITE" },
+    { from: "E7", to: "e5", promote_to: null },
+    { ...state, turnColor: "WHITE", waitingForOpponent: false },
+  ];
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    calls.push({ path, options });
+    return new Response(JSON.stringify(replies[calls.length - 1]), { status: 200 });
+  });
+  const api = new ChessApi();
+  const { session, state: initial } = await new SessionAccess(api).open(null, "PVCPU", "EASY");
+  // El servidor ya sienta a la CPU: no se llama a /join.
+  assert.equal(calls.length, 1);
+  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVCPU", difficulty: "EASY", plugins: ["stockfish"] });
+  assert.deepEqual(session.cpu, { color: "BLACK", playerType: "CPU", plugin: "stockfish" });
+  assert.equal(initial.waitingForOpponent, false);
+
+  const { move } = await api.machineMove(session.sessionId, session.cpu.playerType, session.cpu.playerId);
+  assert.ok(calls[1].path.endsWith("/moves"));
+  assert.deepEqual(JSON.parse(calls[1].options.body), { playerType: "CPU" });
+  assert.deepEqual(move, { from: "e7", to: "e5", promotion: null });
+  assert.equal(calls[2].options.method, "GET");
 });
 
 const events = [

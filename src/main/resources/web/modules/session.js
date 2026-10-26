@@ -1,8 +1,13 @@
 import { saveSession, readSession, forgetSession } from "./preferences.js";
 import { ApiError, HttpStatus } from "./api.js";
-import { modeDefinition } from "./modes.js";
+import { machineTypes, modeDefinition, pluginsFor } from "./modes.js";
 
 const colors = ["WHITE", "BLACK"];
+const rival = (color) => (color === "WHITE" ? "BLACK" : "WHITE");
+
+// La respuesta de creación marca siempre waitingForOpponent; con una máquina sentada nadie más tiene que
+// unirse, así que el tablero no se bloquea.
+const seated = (state) => (state ? { ...state, waitingForOpponent: false } : undefined);
 
 export class SessionAccess {
   constructor(api) {
@@ -12,7 +17,9 @@ export class SessionAccess {
   async open(sessionId, mode = "PVP", cpuDifficulty = "EASY") {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : mode === "PVCPU" ? cpuDifficulty : "NOT_CPU";
     const local = !sessionId && mode === "LOCAL";
-    const created = sessionId ? null : await this.api.create(modeDefinition(mode).server ?? mode, difficulty);
+    const plugins = pluginsFor(mode);
+    const created = sessionId ? null :
+      await this.api.create(modeDefinition(mode).server ?? mode, difficulty, plugins);
     const id = sessionId ?? created.sessionId ?? created.id;
     if (!id)
       throw new Error("El servidor no ha proporcionado el ID de sesión.");
@@ -20,19 +27,25 @@ export class SessionAccess {
     let gamemode = local ? mode : (created?.gamemode ?? mode);
     let seat;
     let cpu = null;
-    if (!sessionId && gamemode === "PVCPU") {
-      // Simulación hasta que el servidor tenga motor: la CPU ocupa el segundo asiento desde este equipo.
+    let machines = null;
+    if (!sessionId && (gamemode === "PVCPU" || gamemode === "PVAI")) {
+      // El servidor sienta al motor al crear la partida, en el color contrario al del creador; sus
+      // jugadas las calcula con el plugin elegido. En la dificultad máxima espera Alfi.
       const creator = this.creatorSeat(created, gamemode);
-      const second = await this.join(id);
-      // En la dificultad máxima espera Alfi, y contra él siempre se juega con blancas.
-      const swap = difficulty === "HARD" && creator.playerColor !== "WHITE";
-      const [human, machine] = swap ? [second, creator] : [creator, second];
-      seat = {
-        playerId: human.playerId,
-        playerColor: human.playerColor,
-        state: second.state ?? second.gameState ?? await this.api.state(id),
+      seat = { ...creator, state: seated(created.state ?? created.gameState) };
+      cpu = {
+        color: rival(creator.playerColor),
+        playerType: machineTypes[gamemode],
+        plugin: plugins[0],
       };
-      cpu = { playerId: machine.playerId, color: machine.playerColor };
+    } else if (!sessionId && gamemode === "AIVAI") {
+      // Los dos asientos son máquinas: este equipo solo mira y pide cada jugada cuando le toca a una.
+      machines = colors.map((color, index) => ({
+        color,
+        playerType: machineTypes[gamemode],
+        plugin: plugins[index] ?? plugins[0],
+      }));
+      seat = { playerId: null, playerColor: null, state: seated(created.state ?? created.gameState) };
     } else if (local) {
       // Ambos jugadores comparten este equipo: ocupamos también el segundo asiento.
       const creator = this.creatorSeat(created, "PVP");
@@ -45,10 +58,8 @@ export class SessionAccess {
     } else if (sessionId) {
       seat = await this.join(id);
       gamemode = seat.gamemode ?? gamemode;
-    } else if (gamemode === "PVP" || gamemode === "PRACTICE") {
-      seat = this.creatorSeat(created, gamemode);
     } else {
-      seat = { playerId: null, playerColor: gamemode === "AIVAI" ? null : "WHITE" };
+      seat = this.creatorSeat(created, gamemode);
     }
 
     const session = {
@@ -57,7 +68,8 @@ export class SessionAccess {
       playerColor: seat.playerColor,
       gamemode,
       difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
-      ...(cpu ? { cpu, alfi: difficulty === "HARD" ? "hidden" : null } : {}),
+      ...(cpu ? { cpu, alfi: gamemode === "PVCPU" && difficulty === "HARD" ? "hidden" : null } : {}),
+      ...(machines ? { machines } : {}),
     };
 
     this.api.playerId = session.playerId;

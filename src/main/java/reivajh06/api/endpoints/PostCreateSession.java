@@ -2,6 +2,7 @@ package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import reivajh06.FenParser;
 import reivajh06.Json;
@@ -19,8 +20,6 @@ import java.util.UUID;
 
 public class PostCreateSession implements Handler {
 
-	private static final int SUCCESS = 201;
-
 	@Override
 	public void handle(@NotNull Context ctx) {
 		Map<String, String> sessionType = Json.fromJson(ctx.body(), Map.class);
@@ -30,13 +29,18 @@ public class PostCreateSession implements Handler {
 		Difficulty difficulty = Difficulty.valueOf(sessionType.get("difficulty"));
 
 		GameSession session = new GameSession(gamemode, difficulty);
-		Color creatorColor = session.assignColor(creatorId);
+		Color creatorColor = gamemode == Gamemode.PRACTICE ?
+				Color.WHITE
+				: session.assignColor(creatorId);
 
-		if(gamemode == Gamemode.PRACTICE) creatorColor = Color.WHITE;
+		if(gamemode != Gamemode.PVP) {
+			UUID rivalId = UUID.randomUUID();
+			session.assignColor(rivalId);
+		}
 
 		Sessions.registerSession(session);
 
-		ctx.status(SUCCESS).result(jsonResponse(creatorId, creatorColor, session));
+		ctx.status(HttpStatus.OK).result(jsonResponse(creatorId, creatorColor, session));
 	}
 
 	private String jsonResponse(UUID playerId, Color playerColor, GameSession session) {

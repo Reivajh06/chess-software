@@ -1,39 +1,36 @@
 package reivajh06.plugins;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PluginsManager {
 
-    public String pluginsFolder = "C:\\Program Files (x86)\\Common Files\\archchess\\plugins\\";
-    public List<String> plugins;
+    public String pluginsFolder = "C:/Program Files (x86)/Common Files/archchess/plugins";
+    public Map<String, PluginExecutor> plugins;
 
-    public PluginsManager(List<String> plugins) {
-        this.plugins = plugins;
+    public PluginsManager() {
+        plugins = new HashMap<>();
     }
 
     public boolean setPluginsFolder(String pluginsFolder) {
         File file = new File(pluginsFolder);
 
         if(!file.isDirectory() || !file.exists()) return false;
-        if(!file.canRead() || !file.canRead()) return false;
+        if(!file.canRead() || !file.canWrite()) return false;
 
         this.pluginsFolder = pluginsFolder;
         return true;
     }
 
-    public void inspectFolder() {
+    public void reloadPlugins() {
         File folder = new File(pluginsFolder);
 
-        File[] content = folder.listFiles(f -> f.isFile() && f.toPath().endsWith(".jar"));
+        File[] content = folder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
 
-        plugins = new ArrayList<>(
-                Arrays.stream(content)
-                .map(File::getName)
-                .toList()
-        );
+        plugins = Arrays.stream(content).collect(Collectors.toMap(File::getName, f -> pluginExecutor(f.getName())));
     }
 
     public PluginExecutor pluginExecutor(String pluginName) {

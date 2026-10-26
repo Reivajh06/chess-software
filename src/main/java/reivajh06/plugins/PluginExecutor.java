@@ -34,7 +34,7 @@ public class PluginExecutor {
 		}
 	}
 
-	public Object requestMove(String fen) {
+	public synchronized Object requestMove(String fen) {
 		try {
 			PluginWriter writer = new PluginWriter(process.outputWriter());
 			writer.send("move %s".formatted(fen));

@@ -3,6 +3,8 @@ package reivajh06.chess.gamelogic;
 import reivajh06.FenParser;
 import reivajh06.chess.model.Color;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -12,6 +14,7 @@ public class GameSession {
 
     private UUID whiteId;
     private UUID blackId;
+    private Map<Color, String> playerTypes;
 
     private final Gamemode gamemode;
     private final Difficulty difficulty;
@@ -23,6 +26,7 @@ public class GameSession {
         this.gamemode = gamemode;
         this.difficulty = difficulty;
         this.gameState = GameState.startingState();
+        playerTypes = new HashMap<>();
 
         if(gamemode.equals(Gamemode.PRACTICE)) whiteId = blackId = UUID.randomUUID();
     }
@@ -80,5 +84,13 @@ public class GameSession {
 
     public String toFEN() {
         return FenParser.gameStateToFen(gameState);
+    }
+
+    public void registerPlayer(Color color, String playerType) {
+        playerTypes.put(color, playerType);
+    }
+
+    public String playerType(Color color) {
+        return playerTypes.get(color);
     }
 }

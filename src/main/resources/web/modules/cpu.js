@@ -12,7 +12,8 @@ export function outOfTurnPawnPush(pieces, color) {
   return { from: `${file}${start}`, to: `${file}${double ? two : one}`, moveId: double ? 1 : 0, promotion: null };
 }
 
-// Jugadas legales que el servidor ofrece para las piezas de un color (solo si es su turno).
+// Jugadas legales que el servidor ofrece para las piezas de un color (solo si es su turno). Las jugadas
+// normales de la CPU las calcula su plugin en el servidor; esta lista solo la usa la doble jugada de Alfi.
 // Se piden de una en una: el servidor simula cada jugada sobre el tablero real de la partida, y varias
 // peticiones a la vez se pisan y lo corrompen (piezas que desaparecen o cambian).
 export async function legalOptions(api, sessionId, pieces, color) {
@@ -39,9 +40,4 @@ export async function legalOptions(api, sessionId, pieces, color) {
     const promotes = pieces.get(move.from)?.type === "PAWN" && /[18]$/.test(move.to);
     return { ...move, promotion: promotes ? "QUEEN" : null };
   });
-}
-
-// Rival simulado mientras el servidor no integra un motor: elige al azar entre las jugadas legales.
-export function pickMove(options) {
-  return options[Math.floor(Math.random() * options.length)] ?? null;
 }

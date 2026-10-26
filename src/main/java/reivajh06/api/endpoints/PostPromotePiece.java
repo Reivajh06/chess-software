@@ -2,6 +2,7 @@ package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
@@ -20,7 +21,7 @@ public class PostPromotePiece implements Handler {
         GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
 
         if(session == null) {
-            ctx.status(404);
+            ctx.status(HttpStatus.NOT_FOUND);
             return;
         }
 
@@ -29,6 +30,6 @@ public class PostPromotePiece implements Handler {
         GameDirector updater = new GameDirector(session);
         updater.promotePiece(new Tile(promotionDetails.get("tile")), PieceType.valueOf(promotionDetails.get("newType")));
 
-        ctx.status(200);
+        ctx.status(HttpStatus.OK);
     }
 }

@@ -16,7 +16,7 @@ import { GameAudio } from "./modules/audio.js";
 import { BackgroundMusic } from "./modules/music.js";
 import { applyTheme, populateThemes } from "./modules/themes.js";
 import { cpuLevels, modeDefinition } from "./modules/modes.js";
-import { legalOptions, outOfTurnPawnPush, pickMove } from "./modules/cpu.js";
+import { legalOptions, outOfTurnPawnPush } from "./modules/cpu.js";
 import { cheatChances, cleanPlies, flipLead, freeNeighbours, materialLead, secondMove, teleport } from "./modules/cheats.js";
 import { AlfiBoss, fullEnergy } from "./modules/alfi-boss.js";
 import { rivalKind } from "./modules/alfi-reactions.js";
@@ -77,6 +77,7 @@ music.onBeat = (beat) => alfi.beat(beat);
 const activeMascot = () => (alfi.active ? alfi.seat : gameMascot);
 let hoveredEntry = null;
 let cpuTimer = null;
+let cpuFailures = 0;
 
 const title = new TitleScreen({
   onStart: (mode) => mode === "PVP"
@@ -368,18 +369,31 @@ function scheduleAlfiWait(nudges = 0) {
   }, nudges ? 30000 : 22000);
 }
 
-// Rival simulado: juega cuando le toca. En la dificultad máxima, antes de nada, entra Alfi.
+// Asiento de máquina al que le toca mover: el rival en PvCPU/PvAI o cualquiera de los dos en IA contra IA.
+function machineToMove() {
+  const session = store.session;
+  const turn = store.state?.turn;
+  if (session?.cpu?.color === turn) return session.cpu;
+  return session?.machines?.find((machine) => machine.color === turn) ?? null;
+}
+
+// Las máquinas juegan cuando les toca; la jugada la calcula su plugin en el servidor. En la dificultad
+// máxima, antes de nada, entra Alfi.
 function scheduleCpu() {
   clearTimeout(cpuTimer);
   const session = store.session;
-  if (!session?.cpu || store.cpuBusy || store.state?.status !== "ACTIVE") return;
+  if (!(session?.cpu || session?.machines) || store.cpuBusy || store.state?.status !== "ACTIVE") return;
+  if (store.state.waitingForOpponent) return;
   if (session.alfi === "hidden") {
     revealAlfi();
     return;
   }
-  if (store.state.turn !== session.cpu.color) return;
+  const machine = machineToMove();
+  if (!machine) return;
   const generation = sessionVersion;
-  cpuTimer = setTimeout(() => playCpu(generation), 700 + Math.random() * 600);
+  // Si el plugin o el servidor fallan, cada reintento espera más (hasta 15 s).
+  const backoff = cpuFailures ? Math.min(15000, 1000 * 2 ** cpuFailures) : 0;
+  cpuTimer = setTimeout(() => playCpu(generation, machine), 700 + Math.random() * 600 + backoff);
 }
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -392,18 +406,23 @@ function wantsCheat(kind) {
     store.state.moves.length >= cleanPlies && alfi.canAfford(kind) && Math.random() < cheatChances[kind];
 }
 
-async function playCpu(generation) {
+async function playCpu(generation, machine) {
   if (generation !== sessionVersion) return;
   store.cpuBusy = true;
   try {
-    if (await alfiFlip()) return;
-    const color = store.session.cpu.color;
-    const options = await legalOptions(api, store.session.sessionId, store.state.pieces, color);
-    const move = pickMove(options);
-    if (!move || generation !== sessionVersion) return;
-    await submitMove(move);
+    const rival = machine === store.session.cpu;
+    if (rival && await alfiFlip()) return;
+    // La doble jugada sale de las jugadas legales de antes de la primera: después ya no es su turno y
+    // legal-moves no le ofrece nada. Solo se piden si Alfi va a hacer la trampa.
+    const double = rival && wantsCheat("double");
+    const options = double
+      ? await legalOptions(api, store.session.sessionId, store.state.pieces, machine.color)
+      : null;
+    if (generation !== sessionVersion) return;
+    const move = await submitMachineMove(machine);
+    cpuFailures = move ? 0 : cpuFailures + 1;
     // Doble jugada: el turno ya es del jugador, pero Alfi vuelve a mover.
-    if (generation === sessionVersion && wantsCheat("double")) {
+    if (move && options && generation === sessionVersion) {
       const second = secondMove(options, move, store.state.pieces);
       if (second && alfi.cheat("double")) {
         await wait(700);
@@ -427,8 +446,6 @@ async function alfiFlip() {
   if (!alfi.cheat("flip")) return false;
   session.flipped = true;
   [session.playerColor, session.cpu.color] = [session.cpu.color, session.playerColor];
-  [session.playerId, session.cpu.playerId] = [session.cpu.playerId, session.playerId];
-  api.playerId = session.playerId;
   sessions.persist(session);
   alfi.side = session.cpu.color;
   await wait(600);
@@ -844,7 +861,32 @@ function offerMoveChoice({ options }) {
   byId("move-choice-dialog").showModal();
 }
 
-async function submitMove({ from, to, moveId, promotion = null }) {
+function submitMove({ from, to, moveId, promotion = null }) {
+  return sendMove(() => api.move(
+      store.session.sessionId,
+      from,
+      to,
+      moveId,
+      promotion
+  ));
+}
+
+// Pide al servidor la jugada del plugin de esa máquina y devuelve la jugada hecha (o null si falla).
+async function submitMachineMove(machine) {
+  let played = null;
+  await sendMove(async () => {
+    const { move, state } = await api.machineMove(
+        store.session.sessionId,
+        machine.playerType ?? "CPU",
+        machine.playerId
+    );
+    played = move;
+    return state;
+  });
+  return played;
+}
+
+async function sendMove(request) {
   clearMoveWarning();
   liveSession.stop();
   api.cancel();
@@ -854,13 +896,7 @@ async function submitMove({ from, to, moveId, promotion = null }) {
   let stateApplied = false;
 
   try {
-    const response = await api.move(
-        store.session.sessionId,
-        from,
-        to,
-        moveId,
-        promotion
-    );
+    const response = await request();
 
     if (sessionVersion === generation) {
       stateApplied = applyGameState(response);
@@ -903,6 +939,7 @@ function resetSession() {
   clearTimeout(waitingTimer);
 
   clearTimeout(cpuTimer);
+  cpuFailures = 0;
   clearTimeout(alfiWaitTimer);
   alfi.abort();
 

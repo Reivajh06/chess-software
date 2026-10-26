@@ -2,6 +2,7 @@ package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import reivajh06.FenParser;
 import reivajh06.Json;
@@ -25,11 +26,11 @@ public class PostJoinSession implements Handler {
 		Color assignedColor = session.assignColor(playerId);
 
 		if(assignedColor == null) {
-			ctx.status(409);
+			ctx.status(HttpStatus.CONFLICT);
 			return;
 		}
 
-		ctx.status(200).result(jsonResponse(playerId, assignedColor, session));
+		ctx.status(HttpStatus.OK).result(jsonResponse(playerId, assignedColor, session));
 	}
 
 	private String jsonResponse(UUID playerId, Color playerColor, GameSession session) {
