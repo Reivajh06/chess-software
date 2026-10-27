@@ -1,15 +1,17 @@
 package reivajh06.api;
 
+import io.javalin.http.HttpStatus;
+
 public class ApiException extends RuntimeException {
 
-	private final int errorCode;
+	private final HttpStatus status;
 
-	public ApiException(int errorCode, String message) {
+	public ApiException(HttpStatus status, String message) {
 		super(message);
-		this.errorCode = errorCode;
+		this.status = status;
 	}
 
-	public int errorCode() {
-		return errorCode;
+	public HttpStatus status() {
+		return status;
 	}
 }

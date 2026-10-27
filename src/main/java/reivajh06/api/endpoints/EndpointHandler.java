@@ -11,10 +11,13 @@ public abstract class EndpointHandler<O> implements Handler {
 	public void handle(Context ctx) {
 		try {
 			O output = run(ctx);
+
+			if(output == null) return;
+
 			ctx.result(Json.toJson(output));
 
 		} catch(ApiException e) {
-			ctx.status(e.errorCode());
+			ctx.status(e.status());
 		}
 	}
 

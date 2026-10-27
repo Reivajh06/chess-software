@@ -4,7 +4,7 @@ import reivajh06.chess.model.Tile;
 
 import java.util.UUID;
 
-public record MoveDto(
+public record MovePieceDto(
 		String playerType,
 		Tile from,
 		Tile to,
