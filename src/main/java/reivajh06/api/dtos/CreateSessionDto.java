@@ -1,4 +1,4 @@
-package reivajh06.api.dto;
+package reivajh06.api.dtos;
 
 import reivajh06.chess.gamelogic.Difficulty;
 import reivajh06.chess.gamelogic.Gamemode;

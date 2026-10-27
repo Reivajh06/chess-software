@@ -1,4 +1,4 @@
-package reivajh06.api.dto;
+package reivajh06.api.dtos;
 
 import reivajh06.chess.model.Tile;
 

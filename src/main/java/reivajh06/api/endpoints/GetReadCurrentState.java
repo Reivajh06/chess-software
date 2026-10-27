@@ -1,15 +1,22 @@
 package reivajh06.api.endpoints;
 
-import reivajh06.api.ports.EndpointOperator;
-import reivajh06.api.ports.InputDeserializer;
-import reivajh06.api.ports.OutputSerializer;
+import io.javalin.http.Context;
+import reivajh06.Sessions;
+import reivajh06.api.ApiException;
 import reivajh06.chess.gamelogic.GameSession;
 
 import java.util.UUID;
 
-public class GetReadCurrentState extends EndpointHandler<UUID, GameSession> {
+public class GetReadCurrentState extends EndpointHandler<GameSession> {
 
-	public GetReadCurrentState(InputDeserializer<UUID> inputDeserializer, OutputSerializer<GameSession> outputSerializer, EndpointOperator<UUID, GameSession> endpointOperator) {
-		super(inputDeserializer, outputSerializer, endpointOperator);
+	@Override
+	protected GameSession run(Context ctx) {
+		UUID uuid = UUID.fromString(ctx.pathParam("uuid"));
+
+		GameSession session = Sessions.fetchSession(uuid);
+
+		if(session == null) throw new ApiException(404, "Session not found");
+
+		return session;
 	}
 }
