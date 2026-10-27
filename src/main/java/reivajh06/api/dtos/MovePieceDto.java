@@ -9,6 +9,6 @@ public record MovePieceDto(
 		Tile from,
 		Tile to,
 		Integer moveId,
-		UUID playerID
+		UUID playerId
 ) {
 }

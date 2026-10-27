@@ -5,33 +5,34 @@ import io.javalin.http.HttpStatus;
 import reivajh06.Json;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
-import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.api.dtos.MovePieceDto;
 import reivajh06.chess.gamelogic.GameDirector;
-import reivajh06.chess.model.Tile;
+import reivajh06.chess.gamelogic.GameSession;
 
 import java.util.Map;
 import java.util.UUID;
 
-public class PostMovePiece extends EndpointHandler {
+public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
 
 	@Override
-	protected Object run(Context ctx) {
-		Map<String, Object> moveRequest = Json.fromJson(ctx.body(), Map.class);
-
-		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
+	protected Void run(Map<String, String> pathParamMap, MovePieceDto moveRequest) {
+		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
 		GameDirector updater = new GameDirector(session);
 
-		Object moveId = moveRequest.get("moveId");
-
 		updater.movePieceAndUpdate(
-				moveId instanceof Double ? ((Double) moveId).intValue() : (Integer) moveId,
-				new Tile((String) moveRequest.get("from")),
-				new Tile((String) moveRequest.get("to"))
+				moveRequest.moveId(),
+				moveRequest.from(),
+				moveRequest.to()
 		);
 
 		return null;
+	}
+
+	@Override
+	protected MovePieceDto deserializeBody(Context ctx) {
+		return Json.fromJson(ctx.body(), MovePieceDto.class);
 	}
 }

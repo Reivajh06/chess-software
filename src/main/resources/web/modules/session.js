@@ -1,6 +1,6 @@
 import { saveSession, readSession, forgetSession } from "./preferences.js";
 import { ApiError, HttpStatus } from "./api.js";
-import { machineTypes, modeDefinition, pluginsFor } from "./modes.js";
+import { machineTypes, modeDefinition } from "./modes.js";
 
 const colors = ["WHITE", "BLACK"];
 const rival = (color) => (color === "WHITE" ? "BLACK" : "WHITE");
@@ -17,9 +17,8 @@ export class SessionAccess {
   async open(sessionId, mode = "PVP", cpuDifficulty = "EASY") {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : mode === "PVCPU" ? cpuDifficulty : "NOT_CPU";
     const local = !sessionId && mode === "LOCAL";
-    const plugins = pluginsFor(mode);
     const created = sessionId ? null :
-      await this.api.create(modeDefinition(mode).server ?? mode, difficulty, plugins);
+      await this.api.create(modeDefinition(mode).server ?? mode, difficulty);
     const id = sessionId ?? created.sessionId ?? created.id;
     if (!id)
       throw new Error("El servidor no ha proporcionado el ID de sesión.");
@@ -29,22 +28,17 @@ export class SessionAccess {
     let cpu = null;
     let machines = null;
     if (!sessionId && (gamemode === "PVCPU" || gamemode === "PVAI")) {
-      // El servidor sienta al motor al crear la partida, en el color contrario al del creador; sus
-      // jugadas las calcula con el plugin elegido. En la dificultad máxima espera Alfi.
+      // El servidor sienta a la máquina al crear la partida, en el color contrario al del creador, y
+      // calcula sus jugadas. En la dificultad máxima espera Alfi.
       const creator = this.creatorSeat(created, gamemode);
       seat = { ...creator, state: seated(created.state ?? created.gameState) };
       cpu = {
         color: rival(creator.playerColor),
         playerType: machineTypes[gamemode],
-        plugin: plugins[0],
       };
     } else if (!sessionId && gamemode === "AIVAI") {
       // Los dos asientos son máquinas: este equipo solo mira y pide cada jugada cuando le toca a una.
-      machines = colors.map((color, index) => ({
-        color,
-        playerType: machineTypes[gamemode],
-        plugin: plugins[index] ?? plugins[0],
-      }));
+      machines = colors.map((color) => ({ color, playerType: machineTypes[gamemode] }));
       seat = { playerId: null, playerColor: null, state: seated(created.state ?? created.gameState) };
     } else if (local) {
       // Ambos jugadores comparten este equipo: ocupamos también el segundo asiento.

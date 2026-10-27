@@ -377,7 +377,7 @@ function machineToMove() {
   return session?.machines?.find((machine) => machine.color === turn) ?? null;
 }
 
-// Las máquinas juegan cuando les toca; la jugada la calcula su plugin en el servidor. En la dificultad
+// Las máquinas juegan cuando les toca; la jugada la calcula el servidor. En la dificultad
 // máxima, antes de nada, entra Alfi.
 function scheduleCpu() {
   clearTimeout(cpuTimer);
@@ -391,7 +391,7 @@ function scheduleCpu() {
   const machine = machineToMove();
   if (!machine) return;
   const generation = sessionVersion;
-  // Si el plugin o el servidor fallan, cada reintento espera más (hasta 15 s).
+  // Si el servidor falla, cada reintento espera más (hasta 15 s).
   const backoff = cpuFailures ? Math.min(15000, 1000 * 2 ** cpuFailures) : 0;
   cpuTimer = setTimeout(() => playCpu(generation, machine), 700 + Math.random() * 600 + backoff);
 }
@@ -871,7 +871,7 @@ function submitMove({ from, to, moveId, promotion = null }) {
   ));
 }
 
-// Pide al servidor la jugada del plugin de esa máquina y devuelve la jugada hecha (o null si falla).
+// Pide al servidor la jugada de esa máquina y devuelve la jugada hecha (o null si falla).
 async function submitMachineMove(machine) {
   let played = null;
   await sendMove(async () => {

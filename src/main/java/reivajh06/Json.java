@@ -1,13 +1,18 @@
 package reivajh06;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
+import reivajh06.chess.model.Tile;
 
 import java.lang.reflect.Type;
 
 public class Json {
 
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+	private static final Gson GSON = new GsonBuilder()
+			.setPrettyPrinting()
+			.serializeNulls()
+			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, _, _) -> new Tile(json.getAsString()))
+			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, _, _) -> new JsonPrimitive(tile.name().toLowerCase()))
+			.create();
 
 	public static <T> T fromJson(String json, Type type) {
 		return GSON.fromJson(json, type);

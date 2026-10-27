@@ -5,12 +5,15 @@ import io.javalin.http.Handler;
 import reivajh06.Json;
 import reivajh06.api.ApiException;
 
-public abstract class EndpointHandler<O> implements Handler {
+import java.util.Map;
+
+public abstract class EndpointHandler<I, O> implements Handler {
 
 	@Override
 	public void handle(Context ctx) {
 		try {
-			O output = run(ctx);
+			I input = deserializeBody(ctx);
+			O output = run(ctx.pathParamMap(), input);
 
 			if(output == null) return;
 
@@ -21,5 +24,7 @@ public abstract class EndpointHandler<O> implements Handler {
 		}
 	}
 
-	protected abstract O run(Context ctx);
+	protected abstract O run(Map<String, String> pathParamMap, I input);
+
+	protected abstract I deserializeBody(Context ctx);
 }

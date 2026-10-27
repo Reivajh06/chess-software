@@ -8,11 +8,12 @@ import reivajh06.api.dtos.ServerAddressDto;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Map;
 
-public class GetServerAddress extends EndpointHandler<ServerAddressDto> {
+public class GetServerAddress extends EndpointHandler<Void, ServerAddressDto> {
 
 	@Override
-	protected ServerAddressDto run(Context ctx) throws ApiException {
+	protected ServerAddressDto run(Map<String, String> pathParamMap, Void input) {
 		try (DatagramSocket socket = new DatagramSocket()) {
 			socket.connect(InetAddress.getByName("8.8.8.8"), 53);
 			String address = socket.getLocalAddress().getHostAddress();
@@ -22,5 +23,10 @@ public class GetServerAddress extends EndpointHandler<ServerAddressDto> {
 		} catch(Exception e) {
 			throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "Error while fetching server address");
 		}
+	}
+
+	@Override
+	protected Void deserializeBody(Context ctx) {
+		return null;
 	}
 }

@@ -8,15 +8,14 @@ import reivajh06.api.ApiException;
 import reivajh06.api.dtos.ReadStateResponseDto;
 import reivajh06.chess.gamelogic.GameSession;
 
+import java.util.Map;
 import java.util.UUID;
 
-public class GetReadCurrentState extends EndpointHandler<ReadStateResponseDto> {
+public class GetReadCurrentState extends EndpointHandler<Void, ReadStateResponseDto> {
 
 	@Override
-	protected ReadStateResponseDto run(Context ctx) {
-		UUID uuid = UUID.fromString(ctx.pathParam("sessionId"));
-
-		GameSession session = Sessions.fetchSession(uuid);
+	protected ReadStateResponseDto run(Map<String, String> pathParamMap, Void input) {
+		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
@@ -29,5 +28,10 @@ public class GetReadCurrentState extends EndpointHandler<ReadStateResponseDto> {
 				session.gameState().eatenPieces(),
 				session.gameState().movesHistory()
 		);
+	}
+
+	@Override
+	protected Void deserializeBody(Context ctx) {
+		return null;
 	}
 }

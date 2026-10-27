@@ -13,7 +13,7 @@ export function outOfTurnPawnPush(pieces, color) {
 }
 
 // Jugadas legales que el servidor ofrece para las piezas de un color (solo si es su turno). Las jugadas
-// normales de la CPU las calcula su plugin en el servidor; esta lista solo la usa la doble jugada de Alfi.
+// normales de la CPU las calcula el servidor; esta lista solo la usa la doble jugada de Alfi.
 // Se piden de una en una: el servidor simula cada jugada sobre el tablero real de la partida, y varias
 // peticiones a la vez se pisan y lo corrompen (piezas que desaparecen o cambian).
 export async function legalOptions(api, sessionId, pieces, color) {

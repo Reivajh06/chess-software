@@ -53,20 +53,8 @@ export const cpuLevels = [
   { id: "HARD", name: "Difícil", detail: "La máquina a pleno rendimiento" },
 ];
 
-// Motores que ocupan los asientos de máquina de cada modo, por nombre de plugin (los .jar de
-// C:/Program Files (x86)/Common Files/archchess/plugins). PvCPU y PvAI usan solo el primero.
-export const modePlugins = {
-  PVCPU: ["stockfish"],
-  PVAI: ["ollama"],
-  AIVAI: ["ollama", "stockfish"],
-};
-
 // Tipo de jugador que se envía a /moves cuando mueve una máquina.
 export const machineTypes = { PVCPU: "CPU", PVAI: "AI", AIVAI: "AI" };
-
-export function pluginsFor(mode) {
-  return [...(modePlugins[mode] ?? [])];
-}
 
 export const menuOrder = ["PVP", "PRACTICE", "PVAI", "PVCPU", "AIVAI"];
 

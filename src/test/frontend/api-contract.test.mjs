@@ -27,7 +27,7 @@ test("accepts the backend's text/plain JSON creation response and shared practic
   assert.equal(session.playerId, playerId);
   assert.equal(api.playerId, playerId);
   assert.equal(calls.length, 1);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PRACTICE", difficulty: "PRACTICE", plugins: [] });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PRACTICE", difficulty: "PRACTICE" });
   const store = new GameStore();
   store.session = session;
   store.apply(initial);
@@ -52,7 +52,7 @@ test("selection and moves send only the acting player ID, without token headers 
   assert.equal(calls[1].options.headers["X-Player-Token"], undefined);
 });
 
-test("PvCPU sends its plugin on creation and asks the server for the machine's move", async (t) => {
+test("PvCPU creates the session and asks the server for the machine's move", async (t) => {
   const cpuId = "0fbf132e-638b-434c-a55d-38d61160afcb";
   const replies = [
     { ...created, gamemode: "PVCPU", difficulty: "EASY", playerId, playerColor: "WHITE" },
@@ -68,8 +68,8 @@ test("PvCPU sends its plugin on creation and asks the server for the machine's m
   const { session, state: initial } = await new SessionAccess(api).open(null, "PVCPU", "EASY");
   // El servidor ya sienta a la CPU: no se llama a /join.
   assert.equal(calls.length, 1);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVCPU", difficulty: "EASY", plugins: ["stockfish"] });
-  assert.deepEqual(session.cpu, { color: "BLACK", playerType: "CPU", plugin: "stockfish" });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVCPU", difficulty: "EASY" });
+  assert.deepEqual(session.cpu, { color: "BLACK", playerType: "CPU" });
   assert.equal(initial.waitingForOpponent, false);
 
   const { move } = await api.machineMove(session.sessionId, session.cpu.playerType, session.cpu.playerId);
