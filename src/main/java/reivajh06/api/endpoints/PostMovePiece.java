@@ -1,13 +1,10 @@
 package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
-import reivajh06.api.dtos.MovePieceDto;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.model.Tile;

@@ -5,22 +5,22 @@ import io.javalin.http.HttpStatus;
 import reivajh06.FenParser;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
-import reivajh06.api.dtos.ReadStateDto;
+import reivajh06.api.dtos.ReadStateResponseDto;
 import reivajh06.chess.gamelogic.GameSession;
 
 import java.util.UUID;
 
-public class GetReadCurrentState extends EndpointHandler<ReadStateDto> {
+public class GetReadCurrentState extends EndpointHandler<ReadStateResponseDto> {
 
 	@Override
-	protected ReadStateDto run(Context ctx) {
+	protected ReadStateResponseDto run(Context ctx) {
 		UUID uuid = UUID.fromString(ctx.pathParam("sessionId"));
 
 		GameSession session = Sessions.fetchSession(uuid);
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		return new ReadStateDto(
+		return new ReadStateResponseDto(
 				session.gameState().status(),
 				false,
 				session.gameState().turnColor(),

@@ -1,17 +1,13 @@
 package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
-import reivajh06.Json;
 import reivajh06.api.ApiException;
 import reivajh06.api.ChessAPI;
 import reivajh06.api.dtos.ServerAddressDto;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Map;
 
 public class GetServerAddress extends EndpointHandler<ServerAddressDto> {
 
