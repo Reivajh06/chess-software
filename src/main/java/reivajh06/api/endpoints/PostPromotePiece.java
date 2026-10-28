@@ -30,8 +30,6 @@ public class PostPromotePiece extends EndpointHandler<PromotePieceDto, Void> {
 
     @Override
     protected PromotePieceDto deserializeBody(Context ctx) {
-        return null;
+        return Json.fromJson(ctx.body(), PromotePieceDto.class);
     }
-
-
 }
