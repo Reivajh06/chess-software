@@ -8,8 +8,6 @@ import reivajh06.api.ApiException;
 import reivajh06.api.dtos.PromotePieceDto;
 import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.gamelogic.GameSession;
-import reivajh06.chess.model.PieceType;
-import reivajh06.chess.model.Tile;
 
 import java.util.Map;
 import java.util.UUID;

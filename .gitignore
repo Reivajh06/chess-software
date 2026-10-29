@@ -5,6 +5,7 @@ target/
 .kotlin
 .claude
 .codex
+temp/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

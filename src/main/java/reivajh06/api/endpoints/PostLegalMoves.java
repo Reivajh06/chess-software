@@ -6,11 +6,14 @@ import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
-import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.gamelogic.GameDirector;
+import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Tile;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class PostLegalMoves implements Handler {
 

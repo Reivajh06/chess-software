@@ -8,27 +8,16 @@ import java.util.stream.Collectors;
 
 public class PluginsManager {
 
-    public String pluginsFolder = "C:/Program Files (x86)/Common Files/archchess/plugins";
+    public File pluginsFolder;
     public Map<String, PluginExecutor> plugins;
 
-    public PluginsManager() {
+    public PluginsManager(File home) {
         plugins = new HashMap<>();
-    }
-
-    public boolean setPluginsFolder(String pluginsFolder) {
-        File file = new File(pluginsFolder);
-
-        if(!file.isDirectory() || !file.exists()) return false;
-        if(!file.canRead() || !file.canWrite()) return false;
-
-        this.pluginsFolder = pluginsFolder;
-        return true;
+        pluginsFolder = new File(home, "plugins");
     }
 
     public void reloadPlugins() {
-        File folder = new File(pluginsFolder);
-
-        File[] content = folder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
+        File[] content = pluginsFolder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
 
         plugins = Arrays.stream(content).collect(Collectors.toMap(File::getName, f -> pluginExecutor(f.getName())));
     }

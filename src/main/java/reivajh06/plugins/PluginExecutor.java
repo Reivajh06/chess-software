@@ -1,5 +1,6 @@
 package reivajh06.plugins;
 
+import java.io.File;
 import java.io.IOException;
 
 public class PluginExecutor {
@@ -7,17 +8,17 @@ public class PluginExecutor {
 	static final String PREFIX = "$archchess:";
 
 	private final String pluginName;
-	private final String pluginsRoot;
+	private final File pluginsFolder;
 	private Process process;
 
-	public PluginExecutor(String pluginName, String pluginsRoot) {
+	public PluginExecutor(String pluginName, File pluginsFolder) {
 		this.pluginName = pluginName;
-		this.pluginsRoot = pluginsRoot;
+		this.pluginsFolder = pluginsFolder;
 	}
 
 	public void start() throws IOException {
 		process = new ProcessBuilder()
-				.command("java", "-jar", pluginsRoot + "/" + pluginName, "")
+				.command("java", "-jar", pluginsFolder + "/" + pluginName, "")
 				.start();
 	}
 
