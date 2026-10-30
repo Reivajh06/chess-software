@@ -74,6 +74,9 @@ export class ChessApi {
   create(mode, difficulty) {
     return this.request("/sessions", { gamemode: mode, difficulty });
   }
+  createAccount(username, password) {
+    return this.request("/accounts", { username, password }, { allowEmpty: true });
+  }
   join(id) {
     return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});
   }

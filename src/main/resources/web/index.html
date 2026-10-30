@@ -18,6 +18,7 @@
       <div class="alfi-dancers alfi-crowd" data-count="8" aria-hidden="true"></div>
       <div class="header-tools">
         <span id="connection" role="status">Sin sesión</span>
+        <button id="account-open" type="button">Crear cuenta</button>
         <button id="music-toggle" class="icon-button tool-button" type="button" aria-pressed="false" aria-label="Activar música" title="Música"><span class="pixel-icon" data-icon="music"></span></button>
         <button id="sound-toggle" class="icon-button tool-button" type="button" aria-label="Silenciar sonido" title="Sonido"><span class="pixel-icon" data-icon="sound"></span></button>
         <button id="settings-open" class="icon-button tool-button" type="button" aria-label="Abrir ajustes" title="Ajustes"><span class="pixel-icon" data-icon="settings"></span></button>
@@ -52,6 +53,55 @@
           </form>
           <p id="title-error" class="title-error" role="alert" hidden></p>
           <p class="title-hint" aria-hidden="true">↑ ↓ ELEGIR · ENTER CONFIRMAR</p>
+        </section>
+      </div>
+    </main>
+
+    <main id="account-screen" class="account-screen" aria-labelledby="account-heading">
+      <div class="account-layout">
+        <section class="account-card pixel-frame">
+          <h2 id="account-heading" class="account-tab">Crear cuenta</h2>
+          <form id="account-form" class="account-form" novalidate>
+            <div class="account-field">
+              <label for="account-username">Usuario</label>
+              <input id="account-username" autocomplete="username" spellcheck="false" maxlength="20" aria-describedby="account-username-hint" />
+              <small id="account-username-hint" class="account-hint">De 3 a 20 caracteres: letras, números, «_» o «-».</small>
+            </div>
+            <div class="account-field">
+              <label for="account-password">Contraseña</label>
+              <input id="account-password" type="password" autocomplete="new-password" maxlength="64" aria-describedby="account-password-hint" />
+              <small id="account-password-hint" class="account-hint">Mínimo 8 caracteres, con al menos una letra y un número.</small>
+            </div>
+            <div class="account-field">
+              <label for="account-repeat">Repite la contraseña</label>
+              <input id="account-repeat" type="password" autocomplete="new-password" />
+            </div>
+            <p id="account-error" class="title-error" role="alert" hidden></p>
+            <p id="account-done" class="account-done" role="status" hidden></p>
+            <button id="account-submit" class="primary" type="submit">Crear cuenta</button>
+          </form>
+          <div class="account-divider" aria-hidden="true"><span></span>O<span></span></div>
+          <button id="account-anonymous" class="account-anonymous" type="button">
+            <span class="account-anon-mark" aria-hidden="true">?</span>Seguir como Anonymous
+          </button>
+        </section>
+        <section class="account-perks">
+          <h1 class="account-title">Con una cuenta<br /><span>guardas tu partida.</span></h1>
+          <ul class="account-perk-list">
+            <li class="pixel-frame">
+              <svg aria-hidden="true" width="28" height="28" viewBox="0 0 7 7" shape-rendering="crispEdges"><rect x="0" y="0" width="7" height="1"/><rect x="0" y="2" width="5" height="1"/><rect x="0" y="4" width="6" height="1"/><rect x="0" y="6" width="4" height="1"/></svg>
+              <span><strong>Historial de partidas</strong><small>Repasa cualquier partida jugada, movimiento a movimiento.</small></span>
+            </li>
+            <li class="pixel-frame">
+              <svg aria-hidden="true" width="28" height="28" viewBox="0 0 7 7" shape-rendering="crispEdges"><rect x="1" y="0" width="2" height="2"/><rect x="4" y="0" width="2" height="2"/><rect x="0" y="3" width="3" height="4"/><rect x="4" y="3" width="3" height="4"/></svg>
+              <span><strong>Amigos</strong><small>Mira quién está conectado y rétale sin pasar enlaces.</small></span>
+            </li>
+            <li class="pixel-frame">
+              <svg aria-hidden="true" width="28" height="28" viewBox="0 0 7 7" shape-rendering="crispEdges"><rect x="2" y="0" width="3" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="0" y="2" width="7" height="3"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="2" y="6" width="3" height="1"/></svg>
+              <span><strong>Partidas en línea</strong><small>Emparejamiento con otros jugadores y puntuación.</small></span>
+            </li>
+          </ul>
+          <p class="account-note">Sin cuenta puedes jugar igual a PvP por invitación, local, CPU, IA y práctica.</p>
         </section>
       </div>
     </main>

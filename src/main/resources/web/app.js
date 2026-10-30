@@ -23,6 +23,7 @@ import { rivalKind } from "./modules/alfi-reactions.js";
 import { profileLine } from "./modules/alfi-profile.js";
 import { Mascot } from "./modules/mascot.js";
 import { Commentator } from "./modules/commentary.js";
+import { AccountScreen } from "./modules/account.js";
 import {
   TitleScreen,
   renderMatch,
@@ -1053,6 +1054,13 @@ byId("menu-button").addEventListener("click", () => {
   if (!sessionBusy) {
     showScreen("title");
   }
+});
+
+const account = new AccountScreen(api, { onLeave: () => showScreen("title") });
+
+byId("account-open").addEventListener("click", () => {
+  showScreen("account");
+  account.open();
 });
 
 byId("result-rematch").addEventListener("click", () => {

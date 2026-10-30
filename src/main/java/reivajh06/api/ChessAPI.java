@@ -43,5 +43,6 @@ public class ChessAPI {
 		config.routes.get("/api/server", new GetServerAddress(port));
 		config.routes.get("/api/sessions/{sessionId}/promote", new PostPromotePiece());
 		config.routes.post("/api/sessions/{sessionId}/join", new PostJoinSession());
+		config.routes.post("/api/accounts", new PostCreateAccount());
 	}
 }

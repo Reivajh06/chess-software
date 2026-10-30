@@ -31,7 +31,7 @@
   --legal: color-mix(in srgb, var(--bg) 65%, transparent);
   --header: 64px;
   font-family: "Pixelify Sans", "Segoe UI", sans-serif;
-  font-size: 18px;
+  font-size: 20px;
 }
 * {
   box-sizing: border-box;
@@ -210,7 +210,7 @@ button.primary:hover:not(:disabled) {
 .badge {
   display: inline-block;
   padding: 5px 7px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--accent);
   background: var(--surface);
   box-shadow: 0 0 0 2px var(--line);
@@ -250,7 +250,7 @@ input[type="checkbox"] {
   letter-spacing: -1px;
 }
 .brand-wordmark {
-  font-size: 20px;
+  font-size: 22px;
 }
 .brand-wordmark span,
 .title-wordmark span {
@@ -270,7 +270,7 @@ body[data-screen="title"] .brand {
   align-items: center;
   margin-right: 10px;
   padding: 6px 9px;
-  font: 10px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
@@ -293,7 +293,11 @@ body[data-screen="title"] .brand {
 }
 
 body[data-screen="title"] #game-screen,
-body[data-screen="game"] #title-screen {
+body[data-screen="game"] #title-screen,
+body[data-screen="account"] #title-screen,
+body[data-screen="account"] #game-screen,
+body:not([data-screen="account"]) #account-screen,
+body:not([data-screen="title"]) #account-open {
   display: none;
 }
 
@@ -328,7 +332,7 @@ body[data-screen="game"] #title-screen {
 }
 .title-card-heading {
   align-self: flex-start;
-  font: 12px Silkscreen, monospace;
+  font: 14px Silkscreen, monospace;
   color: var(--muted);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -349,7 +353,7 @@ body[data-screen="game"] #title-screen {
 .title-tagline {
   margin-top: 8px;
   color: var(--muted);
-  font-size: 18px;
+  font-size: 20px;
 }
 .title-menu {
   display: grid;
@@ -389,14 +393,14 @@ body[data-screen="game"] #title-screen {
 }
 .title-option strong {
   display: block;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 500;
 }
 .title-option small {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 17px;
 }
 .title-option.is-loading:disabled {
   opacity: 1;
@@ -448,7 +452,7 @@ body[data-screen="game"] #title-screen {
   gap: 10px;
   width: 100%;
   padding: 8px 10px;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.35;
   background: color-mix(in srgb, var(--danger) 12%, var(--panel));
   box-shadow: inset var(--pixel) 0 var(--danger), 0 0 0 2px var(--line);
@@ -464,8 +468,145 @@ body[data-screen="game"] #title-screen {
   background: var(--danger);
 }
 .title-hint {
-  font: 10px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--muted);
+}
+
+#account-open {
+  margin-right: 10px;
+  padding: 5px 12px;
+  font-size: 18px;
+  white-space: nowrap;
+}
+.account-screen {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+}
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 480px) minmax(0, 440px);
+  align-items: center;
+  gap: clamp(24px, 5vw, 56px);
+  width: min(980px, 100%);
+}
+.account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 10px;
+}
+.account-tab {
+  padding: 10px 0;
+  font: 400 15px Silkscreen, monospace;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 var(--pixel) var(--accent);
+}
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.account-field label {
+  font: 14px Silkscreen, monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.account-hint {
+  color: var(--muted);
+  font-size: 16px;
+}
+.account-field input {
+  width: calc(100% - 2 * var(--pixel));
+  min-height: 46px;
+  background: var(--bg);
+}
+.account-form .primary {
+  min-height: 48px;
+}
+.account-done {
+  padding: 8px 10px;
+  font-size: 18px;
+  line-height: 1.35;
+  background: color-mix(in srgb, #7fd46a 12%, var(--panel));
+  box-shadow: inset var(--pixel) 0 #7fd46a, 0 0 0 2px var(--line);
+}
+.account-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 14px Silkscreen, monospace;
+  color: var(--muted);
+}
+.account-divider span {
+  flex: 1;
+  height: var(--pixel);
+  background: var(--line);
+}
+.account-card .account-anonymous {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+}
+.account-anon-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  font: 16px Silkscreen, monospace;
+  color: var(--muted);
+  background: var(--line);
+}
+.account-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.account-title {
+  font: 400 30px/1.2 Silkscreen, monospace;
+}
+.account-title span {
+  color: var(--accent);
+}
+.account-perk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account-perk-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 2px 4px;
+}
+.account-perk-list svg {
+  flex: none;
+  fill: var(--accent);
+}
+.account-perk-list strong {
+  display: block;
+  font-weight: 500;
+}
+.account-perk-list small {
+  display: block;
+  color: var(--muted);
+  font-size: 17px;
+}
+.account-note {
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .game-screen {
@@ -530,13 +671,13 @@ body[data-screen="game"] #title-screen {
   min-width: 0;
 }
 .player strong {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 500;
 }
 .player small {
   margin-left: 8px;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 17px;
 }
 .captured-row {
   display: flex;
@@ -556,12 +697,12 @@ body[data-screen="game"] #title-screen {
 }
 .advantage {
   margin-left: 6px;
-  font: 12px Silkscreen, monospace;
+  font: 14px Silkscreen, monospace;
   color: var(--accent);
 }
 .turn {
   padding: 6px 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--bg);
   background: var(--accent);
 }
@@ -590,7 +731,7 @@ body[data-screen="game"] #title-screen {
   scrollbar-width: thin;
 }
 .match-panel .eyebrow {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -617,13 +758,13 @@ body[data-screen="game"] #title-screen {
   min-width: 0;
 }
 .mode-text strong {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 500;
   line-height: 1.1;
 }
 .arena-status {
   color: var(--muted);
-  font-size: 15px;
+  font-size: 17px;
 }
 .arena-status[data-alert="true"] {
   color: var(--danger);
@@ -679,7 +820,7 @@ body[data-screen="game"] #title-screen {
 }
 .notice {
   padding: 7px 10px;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.35;
   background: color-mix(in srgb, var(--accent) 12%, var(--panel));
   box-shadow: inset var(--pixel) 0 var(--accent);
@@ -687,7 +828,7 @@ body[data-screen="game"] #title-screen {
 .turn-card #retry {
   justify-self: start;
   padding: 5px 10px;
-  font-size: 16px;
+  font-size: 18px;
 }
 .score-heading {
   display: flex;
@@ -695,7 +836,7 @@ body[data-screen="game"] #title-screen {
   justify-content: space-between;
 }
 .score-lead {
-  font: 12px Silkscreen, monospace;
+  font: 14px Silkscreen, monospace;
   color: var(--accent);
 }
 .material-bar {
@@ -715,7 +856,7 @@ body[data-screen="game"] #title-screen {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .last-move-card {
   display: grid;
@@ -747,13 +888,13 @@ body[data-screen="game"] #title-screen {
   min-width: 0;
 }
 #last-move-route {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 #last-move-detail {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 16px;
 }
 .last-move-card.is-capture #last-move-detail {
   color: var(--accent);
@@ -762,12 +903,12 @@ body[data-screen="game"] #title-screen {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 .review-banner strong {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
 }
 .review-banner button {
   padding: 7px 10px;
-  font-size: 16px;
+  font-size: 18px;
 }
 .match-actions {
   display: grid;
@@ -780,7 +921,7 @@ body[data-screen="game"] #title-screen {
   gap: 10px;
   padding: 7px 12px;
   text-align: left;
-  font-size: 17px;
+  font-size: 19px;
 }
 .match-actions button span {
   width: 18px;
@@ -795,7 +936,7 @@ body[data-screen="game"] #title-screen {
   background: var(--surface);
 }
 .spectator-banner span {
-  font: 11px Silkscreen, monospace;
+  font: 13px Silkscreen, monospace;
   color: var(--accent);
 }
 .session-details {
@@ -806,7 +947,7 @@ body[data-screen="game"] #title-screen {
 }
 .session-details code {
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -816,7 +957,7 @@ body[data-screen="game"] #title-screen {
   justify-content: space-between;
 }
 .section-title h2 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 500;
 }
 .move-history {
@@ -841,7 +982,7 @@ body[data-screen="game"] #title-screen {
   height: 24px;
   margin-top: 12px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
   box-shadow: inset 0 0 0 2px var(--line);
 }
@@ -853,7 +994,7 @@ body[data-screen="game"] #title-screen {
   padding: 9px 9px 9px 14px;
   border: 0;
   text-align: left;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.3;
   background: var(--panel);
   box-shadow: inset 0 0 0 2px var(--line), inset 5px 0 #edf4ff55;
@@ -885,14 +1026,14 @@ body[data-screen="game"] #title-screen {
   height: 30px;
 }
 .move-piece-name {
-  font-size: 16px;
+  font-size: 18px;
 }
 .move-side {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 .move-side::before {
   content: "";
@@ -920,26 +1061,26 @@ body[data-screen="game"] #title-screen {
 }
 .move-square-label {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 .move-square {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 .move-arrow {
   color: var(--accent);
-  font-size: 18px;
+  font-size: 20px;
 }
 .move-capture {
   display: grid;
   gap: 4px;
   padding-top: 7px;
   border-top: 2px solid var(--line);
-  font-size: 12px;
+  font-size: 14px;
 }
 .move-capture-label {
   color: var(--accent);
-  font-size: 11px;
+  font-size: 13px;
 }
 .move-capture-piece {
   display: flex;
@@ -1090,7 +1231,7 @@ body[data-screen="game"] #title-screen {
 .coordinate {
   position: absolute;
   z-index: 3;
-  font: clamp(9px, 0.9vw, 11px) Silkscreen, monospace;
+  font: clamp(11px, 1vw, 13px) Silkscreen, monospace;
   pointer-events: none;
 }
 .coordinate.rank {
@@ -1136,7 +1277,7 @@ body[data-screen="game"] #title-screen {
   max-width: calc(100% - 20px);
   padding: 9px 12px;
   transform: translateX(-50%);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.2;
   background: var(--panel);
   box-shadow: 0 0 0 var(--pixel) var(--accent), 0 6px 0 var(--pixel) #0007;
@@ -1171,11 +1312,11 @@ body[data-screen="game"] #title-screen {
 }
 .empty strong {
   color: var(--text);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 500;
 }
 .empty p {
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.4;
 }
 dialog {
@@ -1231,7 +1372,7 @@ dialog::backdrop {
   flex: 1;
   margin: 0;
   padding: 8px 6px 6px;
-  font: 11px Silkscreen, monospace;
+  font: 13px Silkscreen, monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
@@ -1255,7 +1396,7 @@ dialog::backdrop {
 }
 .settings-label,
 .setting-row label {
-  font: 10px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
@@ -1267,7 +1408,7 @@ dialog::backdrop {
   margin-top: 4px;
 }
 .setting-row output {
-  font: 12px Silkscreen, monospace;
+  font: 14px Silkscreen, monospace;
   color: var(--accent);
 }
 .switch-row {
@@ -1358,11 +1499,11 @@ dialog::backdrop {
   box-shadow: inset 0 0 0 var(--pixel) var(--accent);
 }
 .choice-name {
-  font-size: 16px;
+  font-size: 18px;
 }
 .choice small {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.3;
 }
 .theme-swatch {
@@ -1382,7 +1523,7 @@ dialog::backdrop {
 }
 .settings-note {
   color: var(--muted);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.45;
 }
 .move-choice-options {
@@ -1495,12 +1636,12 @@ dialog::backdrop {
   box-shadow: inset 0 0 0 2px var(--line);
 }
 .result-stats dt {
-  font: 10px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--muted);
 }
 .result-stats dd {
   margin: 4px 0 0;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
 }
 .result-image > .piece-sprite {
@@ -1673,16 +1814,16 @@ dialog::backdrop {
 .mascot-name {
   display: block;
   margin-bottom: 4px;
-  font: 10px Silkscreen, monospace;
+  font: 12px Silkscreen, monospace;
   color: var(--accent);
   letter-spacing: 1px;
 }
 .mascot-text {
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.4;
 }
 .mascot-large .mascot-text {
-  font-size: 20px;
+  font-size: 22px;
 }
 .mascot-text .word {
   white-space: nowrap;
@@ -1710,7 +1851,7 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
 }
 .mascot-dismiss:hover {
@@ -1946,6 +2087,13 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
 }
 
 @media (max-width: 980px) {
+  .account-layout {
+    grid-template-columns: minmax(0, 460px);
+    justify-content: center;
+  }
+  .account-title {
+    font-size: 24px;
+  }
   .title-layout {
     grid-template-columns: minmax(0, 460px);
     justify-content: center;
@@ -1965,7 +2113,7 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
     --mascot-size: 120px;
   }
   .mascot-large .mascot-text {
-    font-size: 17px;
+    font-size: 19px;
   }
 }
 
@@ -1990,7 +2138,7 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
   .match-actions button {
     gap: 6px;
     padding: 6px 8px;
-    font-size: 15px;
+    font-size: 17px;
   }
   .mascot-small,
   .last-move-card,
@@ -2019,7 +2167,8 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
     height: var(--header);
     padding: 0 10px;
   }
-  .title-screen {
+  .title-screen,
+  .account-screen {
     min-height: calc(100dvh - var(--header));
   }
   .brand-wordmark,
