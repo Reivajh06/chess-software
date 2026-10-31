@@ -24,8 +24,21 @@ public class Database {
 
 	public <R> List<R> execute(Query<R> query) {
 		try(Connection connection = DriverManager.getConnection(JDBC_TAG + databasePath)) {
-			Statement statement = connection.createStatement();
-			statement.execute(query.sql());
+			Statement statement;
+
+			if(!query.params().isEmpty()) {
+				statement = connection.prepareStatement(query.sql());
+
+				for(int i = 0; i < query.params().size(); i++) {
+					((PreparedStatement) statement).setObject(i + 1, query.params().get(i));
+				}
+
+				((PreparedStatement) statement).execute();
+			} else {
+				statement = connection.createStatement();
+				statement.execute(query.sql());
+			}
+
 			ResultSet resultsPointer = statement.getResultSet();
 
 			List<R> resultsList = new ArrayList<>();

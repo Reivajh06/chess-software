@@ -6,8 +6,10 @@ public class GetPlayerQuery extends Query<Player> {
 
 	public GetPlayerQuery(String username) {
 		super(
-				"SELECT USERNAME, HASH_PASSWORD FROM PLAYERS WHERE USERNAME = '%s'".formatted(username),
+				"SELECT USERNAME, HASH_PASSWORD FROM PLAYERS WHERE USERNAME = ?",
 				r -> new Player(r.getString("USERNAME"), r.getString("HASH_PASSWORD"))
 		);
+
+		params.add(username);
 	}
 }
