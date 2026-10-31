@@ -1,8 +1,6 @@
 package reivajh06.database;
 
-import reivajh06.database.queries.GetPlayerQuery;
-import reivajh06.database.queries.Query;
-import reivajh06.database.queries.RegisterPlayerQuery;
+import reivajh06.database.queries.*;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,6 +14,12 @@ public class Database {
 
 	public Database(String databasePath) {
 		this.databasePath = databasePath;
+	}
+
+	public void init() {
+		execute(new SetConcurrentAccessQuery());
+		execute(new SetTimeoutQuery());
+		execute(new CreatePlayerTableQuery());
 	}
 
 	public <R> List<R> execute(Query<R> query) {

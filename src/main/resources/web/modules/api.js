@@ -1,6 +1,7 @@
 // Mirrors the error statuses declared in ChessAPI; the API answers no other errors.
 export const HttpStatus = Object.freeze({
   BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
@@ -76,6 +77,12 @@ export class ChessApi {
   }
   createAccount(username, password) {
     return this.request("/accounts", { username, password }, { allowEmpty: true });
+  }
+  login(username, password) {
+    return this.request("/login", { username, password }, { allowEmpty: true });
+  }
+  logout() {
+    return this.request("/logout", {}, { allowEmpty: true });
   }
   join(id) {
     return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});

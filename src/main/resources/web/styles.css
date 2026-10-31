@@ -288,6 +288,10 @@ body[data-screen="title"] .brand {
 #connection[data-state="online"] {
   color: var(--text);
 }
+/* Con la cuenta iniciada, «Sin sesión» sobra: solo se ve el estado de una partida. */
+body[data-account] #connection[data-state="idle"] {
+  display: none;
+}
 #connection[data-state="online"]::before {
   background: #7fd46a;
 }
@@ -478,6 +482,34 @@ body:not([data-screen="title"]) #account-open {
   font-size: 18px;
   white-space: nowrap;
 }
+.account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 10px;
+}
+.account-chip-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  font: 16px Silkscreen, monospace;
+  color: var(--bg);
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--line);
+}
+.account-chip-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.account-chip-text strong {
+  font-weight: 500;
+}
+.account-chip-text small {
+  color: var(--muted);
+  font-size: 14px;
+}
 .account-screen {
   display: grid;
   place-items: center;
@@ -497,12 +529,42 @@ body:not([data-screen="title"]) #account-open {
   gap: 18px;
   padding: 8px 10px;
 }
-.account-tab {
-  padding: 10px 0;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.account-tabs {
+  display: flex;
+}
+.account-tabs [role="tab"] {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 4px;
   font: 400 15px Silkscreen, monospace;
-  text-align: center;
   text-transform: uppercase;
+  color: var(--muted);
+  border: 0;
+  background: none;
+  box-shadow: 0 var(--pixel) var(--line);
+}
+.account-tabs [role="tab"]:hover {
+  color: var(--text);
+}
+.account-tabs [role="tab"][aria-selected="true"] {
+  color: var(--text);
   box-shadow: 0 var(--pixel) var(--accent);
+}
+.account-form[data-mode="login"] [data-signup] {
+  display: none;
+}
+#account-logout {
+  margin-right: 10px;
+  padding: 5px 12px;
+  font-size: 18px;
 }
 .account-form {
   display: flex;
@@ -530,13 +592,6 @@ body:not([data-screen="title"]) #account-open {
 }
 .account-form .primary {
   min-height: 48px;
-}
-.account-done {
-  padding: 8px 10px;
-  font-size: 18px;
-  line-height: 1.35;
-  background: color-mix(in srgb, #7fd46a 12%, var(--panel));
-  box-shadow: inset var(--pixel) 0 #7fd46a, 0 0 0 2px var(--line);
 }
 .account-divider {
   display: flex;
@@ -2172,7 +2227,8 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
     min-height: calc(100dvh - var(--header));
   }
   .brand-wordmark,
-  #connection {
+  #connection,
+  .account-chip-text small {
     display: none;
   }
   .game-screen {

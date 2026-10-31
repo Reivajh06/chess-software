@@ -2,7 +2,6 @@ package reivajh06;
 
 import reivajh06.api.ChessAPI;
 import reivajh06.database.Database;
-import reivajh06.database.queries.CreatePlayerTableQuery;
 
 import java.io.File;
 
@@ -57,7 +56,7 @@ public class Archchess {
 		database = new Database(databasePath);
 
 		api.start();
-		database.execute(new CreatePlayerTableQuery());
+		database.init();
 	}
 
 	public Database database() {

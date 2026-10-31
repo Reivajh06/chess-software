@@ -1,6 +1,24 @@
 import { ApiError, HttpStatus } from "./api.js";
 
 const byId = (id) => document.getElementById(id);
+const accountKey = "archchess.account";
+
+// Cuenta con la que este equipo ha iniciado sesión (la sesión real la guarda el servidor).
+export function loadAccount() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(accountKey) || "null");
+    return typeof saved?.username === "string" && saved.username ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAccount(account) {
+  try {
+    if (account) localStorage.setItem(accountKey, JSON.stringify(account));
+    else localStorage.removeItem(accountKey);
+  } catch {}
+}
 
 // Reglas de la cuenta. Son las mismas que debería aplicar el backend; aquí solo avisan antes de enviar.
 export const accountRules = Object.freeze({
@@ -36,64 +54,95 @@ export function passwordProblem(password, username = "") {
   return null;
 }
 
-// Pantalla de crear cuenta: solo registra al jugador (POST /api/accounts con usuario y contraseña).
+const modes = {
+  login: { label: "Entrar", busy: "Entrando...", password: "current-password" },
+  signup: { label: "Crear cuenta", busy: "Creando...", password: "new-password" },
+};
+
+// Pantalla de cuenta: iniciar sesión (POST /api/login) o crear cuenta (POST /api/accounts).
+// En los dos casos el servidor deja la sesión iniciada; aquí solo se recuerda el usuario en este equipo.
 export class AccountScreen {
-  constructor(api, { onLeave }) {
+  constructor(api, { onLeave, onLoggedIn }) {
     this.api = api;
+    this.onLoggedIn = onLoggedIn;
+    this.mode = "login";
     this.busy = false;
 
     byId("account-form").addEventListener("submit", (event) => {
       event.preventDefault();
       this.submit();
     });
+    byId("account-tab-login").addEventListener("click", () => this.setMode("login"));
+    byId("account-tab-signup").addEventListener("click", () => this.setMode("signup"));
     byId("account-anonymous").addEventListener("click", () => onLeave());
   }
 
-  open() {
+  open(mode = "login") {
     byId("account-form").reset();
-    this.setMessage();
-    byId("account-username").focus();
+    this.setMode(mode);
+  }
+
+  setMode(mode) {
+    if (this.busy) return;
+    this.mode = mode;
+    byId("account-form").dataset.mode = mode;
+    byId("account-tab-login").setAttribute("aria-selected", String(mode === "login"));
+    byId("account-tab-signup").setAttribute("aria-selected", String(mode === "signup"));
+    byId("account-password").autocomplete = modes[mode].password;
+    byId("account-submit").textContent = modes[mode].label;
+    this.setMessage("", "account-username");
   }
 
   async submit() {
     if (this.busy) return;
     const username = byId("account-username").value.trim();
     const password = byId("account-password").value;
-    const repeat = byId("account-repeat").value;
 
-    const problem = usernameProblem(username) ?? passwordProblem(password, username);
-    if (problem) return this.setMessage(problem.message, problem.field);
-    if (password !== repeat) return this.setMessage("Las contraseñas no coinciden.", "account-repeat");
+    if (this.mode === "signup") {
+      const problem = usernameProblem(username) ?? passwordProblem(password, username);
+      if (problem) return this.setMessage(problem.message, problem.field);
+      if (password !== byId("account-repeat").value)
+        return this.setMessage("Las contraseñas no coinciden.", "account-repeat");
+    } else {
+      if (!username) return this.setMessage("Escribe tu nombre de usuario.", "account-username");
+      if (!password) return this.setMessage("Escribe tu contraseña.", "account-password");
+    }
 
     this.setBusy(true);
     this.setMessage();
     try {
-      await this.api.createAccount(username, password);
+      if (this.mode === "signup") await this.api.createAccount(username, password);
+      else await this.api.login(username, password);
       byId("account-form").reset();
-      byId("account-done").textContent = `Cuenta «${username}» creada.`;
-      byId("account-done").hidden = false;
+      saveAccount({ username });
+      this.onLoggedIn({ username });
     } catch (error) {
       if (error.name === "AbortError") return;
-      const message = error instanceof ApiError && error.status === HttpStatus.CONFLICT
-        ? "Ese nombre de usuario ya existe."
-        : error.message;
-      this.setMessage(message, error.status === HttpStatus.CONFLICT ? "account-username" : null);
+      this.showError(error);
     } finally {
       this.setBusy(false);
     }
+  }
+
+  showError(error) {
+    const status = error instanceof ApiError ? error.status : 0;
+    if (this.mode === "signup" && status === HttpStatus.CONFLICT)
+      return this.setMessage("Ese nombre de usuario ya existe.", "account-username");
+    if (this.mode === "login" && [HttpStatus.UNAUTHORIZED, HttpStatus.NOT_FOUND].includes(status))
+      return this.setMessage("Usuario o contraseña incorrectos.", "account-password");
+    this.setMessage(error.message);
   }
 
   setBusy(busy) {
     this.busy = busy;
     const submit = byId("account-submit");
     submit.disabled = busy;
-    submit.textContent = busy ? "Creando..." : "Crear cuenta";
+    submit.textContent = busy ? modes[this.mode].busy : modes[this.mode].label;
   }
 
   setMessage(error = "", focusId = null) {
     byId("account-error").textContent = error;
     byId("account-error").hidden = !error;
-    byId("account-done").hidden = true;
     if (focusId) byId(focusId).focus();
   }
 }

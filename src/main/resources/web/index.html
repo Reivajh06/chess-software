@@ -17,8 +17,13 @@
       </button>
       <div class="alfi-dancers alfi-crowd" data-count="8" aria-hidden="true"></div>
       <div class="header-tools">
-        <span id="connection" role="status">Sin sesión</span>
-        <button id="account-open" type="button">Crear cuenta</button>
+        <span id="connection" role="status" data-state="idle">Sin sesión</span>
+        <button id="account-open" type="button">Iniciar sesión</button>
+        <span id="account-chip" class="account-chip" hidden>
+          <span id="account-chip-mark" class="account-chip-mark" aria-hidden="true"></span>
+          <span class="account-chip-text"><strong id="account-chip-name"></strong><small>Tu cuenta</small></span>
+        </span>
+        <button id="account-logout" type="button" title="Cerrar sesión" hidden>Salir</button>
         <button id="music-toggle" class="icon-button tool-button" type="button" aria-pressed="false" aria-label="Activar música" title="Música"><span class="pixel-icon" data-icon="music"></span></button>
         <button id="sound-toggle" class="icon-button tool-button" type="button" aria-label="Silenciar sonido" title="Sonido"><span class="pixel-icon" data-icon="sound"></span></button>
         <button id="settings-open" class="icon-button tool-button" type="button" aria-label="Abrir ajustes" title="Ajustes"><span class="pixel-icon" data-icon="settings"></span></button>
@@ -60,25 +65,28 @@
     <main id="account-screen" class="account-screen" aria-labelledby="account-heading">
       <div class="account-layout">
         <section class="account-card pixel-frame">
-          <h2 id="account-heading" class="account-tab">Crear cuenta</h2>
-          <form id="account-form" class="account-form" novalidate>
+          <h2 id="account-heading" class="sr-only">Tu cuenta</h2>
+          <div class="account-tabs" role="tablist" aria-label="Tu cuenta">
+            <button id="account-tab-login" type="button" role="tab" aria-selected="true" aria-controls="account-form">Iniciar sesión</button
+            ><button id="account-tab-signup" type="button" role="tab" aria-selected="false" aria-controls="account-form">Crear cuenta</button>
+          </div>
+          <form id="account-form" class="account-form" data-mode="login" role="tabpanel" novalidate>
             <div class="account-field">
               <label for="account-username">Usuario</label>
               <input id="account-username" autocomplete="username" spellcheck="false" maxlength="20" aria-describedby="account-username-hint" />
-              <small id="account-username-hint" class="account-hint">De 3 a 20 caracteres: letras, números, «_» o «-».</small>
+              <small id="account-username-hint" class="account-hint" data-signup>De 3 a 20 caracteres: letras, números, «_» o «-».</small>
             </div>
             <div class="account-field">
               <label for="account-password">Contraseña</label>
-              <input id="account-password" type="password" autocomplete="new-password" maxlength="64" aria-describedby="account-password-hint" />
-              <small id="account-password-hint" class="account-hint">Mínimo 8 caracteres, con al menos una letra y un número.</small>
+              <input id="account-password" type="password" autocomplete="current-password" maxlength="64" aria-describedby="account-password-hint" />
+              <small id="account-password-hint" class="account-hint" data-signup>Mínimo 8 caracteres, con al menos una letra y un número.</small>
             </div>
-            <div class="account-field">
+            <div class="account-field" data-signup>
               <label for="account-repeat">Repite la contraseña</label>
               <input id="account-repeat" type="password" autocomplete="new-password" />
             </div>
             <p id="account-error" class="title-error" role="alert" hidden></p>
-            <p id="account-done" class="account-done" role="status" hidden></p>
-            <button id="account-submit" class="primary" type="submit">Crear cuenta</button>
+            <button id="account-submit" class="primary" type="submit">Entrar</button>
           </form>
           <div class="account-divider" aria-hidden="true"><span></span>O<span></span></div>
           <button id="account-anonymous" class="account-anonymous" type="button">

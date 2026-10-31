@@ -23,7 +23,7 @@ import { rivalKind } from "./modules/alfi-reactions.js";
 import { profileLine } from "./modules/alfi-profile.js";
 import { Mascot } from "./modules/mascot.js";
 import { Commentator } from "./modules/commentary.js";
-import { AccountScreen } from "./modules/account.js";
+import { AccountScreen, loadAccount, saveAccount } from "./modules/account.js";
 import {
   TitleScreen,
   renderMatch,
@@ -1056,11 +1056,42 @@ byId("menu-button").addEventListener("click", () => {
   }
 });
 
-const account = new AccountScreen(api, { onLeave: () => showScreen("title") });
+const account = new AccountScreen(api, {
+  onLeave: () => showScreen("title"),
+  onLoggedIn: (current) => {
+    renderAccount(current);
+    showScreen("title");
+  },
+});
+
+function renderAccount(current) {
+  byId("account-open").hidden = !!current;
+  byId("account-chip").hidden = !current;
+  byId("account-logout").hidden = !current;
+  document.body.toggleAttribute("data-account", !!current);
+  if (!current) return;
+  byId("account-chip-mark").textContent = current.username[0].toUpperCase();
+  byId("account-chip-name").textContent = current.username;
+}
+
+renderAccount(loadAccount());
 
 byId("account-open").addEventListener("click", () => {
   showScreen("account");
   account.open();
+});
+
+// Cierra la sesión en el servidor y en este equipo, aunque el servidor no conteste.
+byId("account-logout").addEventListener("click", async () => {
+  const button = byId("account-logout");
+  button.disabled = true;
+  try {
+    await api.logout();
+  } catch {}
+  button.disabled = false;
+  saveAccount(null);
+  renderAccount(null);
+  if (!sessionBusy) showScreen("title");
 });
 
 byId("result-rematch").addEventListener("click", () => {
