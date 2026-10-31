@@ -6,35 +6,35 @@ import reivajh06.Archchess;
 import reivajh06.Json;
 import reivajh06.ShaEncoder;
 import reivajh06.api.ApiException;
-import reivajh06.api.dtos.CreateAccountRequestDto;
+import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;
 
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class PostCreateAccount extends EndpointHandler<CreateAccountRequestDto, Void> {
+public class PostCreateAccount extends EndpointHandler<AccountRequestDto, Void> {
 
 	@Override
-	protected Void run(Context ctx, Map<String, String> pathParamMap, CreateAccountRequestDto request) {
+	protected Void run(Context ctx, Map<String, String> pathParamMap, AccountRequestDto request) {
 		if(!isPlayerValid(request)) throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid username/password");
 
-		Player player = new Player(request.username(), ShaEncoder.encode(request.password()));
+		Player player = new Player(request.username(), request.password());
 
-		if(Archchess.getInstance().database().playerExists(request.username())) {
+		if(Archchess.instance().database().playerExists(player)) {
 			throw new ApiException(HttpStatus.CONFLICT, "Account already exists");
 		}
 
-		Archchess.getInstance().database().registerPlayer(player);
+		Archchess.instance().database().registerPlayer(player);
 		ctx.sessionAttribute("username", player.username());
 		return null;
 	}
 
 	@Override
-	protected CreateAccountRequestDto deserializeBody(Context ctx) {
-		return Json.fromJson(ctx.body(), CreateAccountRequestDto.class);
+	protected AccountRequestDto deserializeBody(Context ctx) {
+		return Json.fromJson(ctx.body(), AccountRequestDto.class);
 	}
 
-	private boolean isPlayerValid(CreateAccountRequestDto request) {
+	private boolean isPlayerValid(AccountRequestDto request) {
 		if(request.username().contains(request.password())) return false;
 
 		Pattern usernamePattern = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");

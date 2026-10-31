@@ -1,5 +1,6 @@
 package reivajh06.database;
 
+import reivajh06.ShaEncoder;
 import reivajh06.database.queries.*;
 
 import java.sql.*;
@@ -55,8 +56,8 @@ public class Database {
 		}
 	}
 
-	public boolean playerExists(String username) {
-		return !execute(new GetPlayerQuery(username)).isEmpty();
+	public boolean playerExists(Player player) {
+		return !execute(new GetPlayerQuery(player.username(), ShaEncoder.encode(player.password()))).isEmpty();
 	}
 
 	public void registerPlayer(Player player) {

@@ -10,7 +10,7 @@ public class Archchess {
 	private static final Archchess INSTANCE = new Archchess();
 	private static final String DEFAULT_DB_PATH = "temp/archchess.db";
 
-	public static Archchess getInstance() {
+	public static Archchess instance() {
 		return INSTANCE;
 	}
 
