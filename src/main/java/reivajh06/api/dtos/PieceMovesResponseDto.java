@@ -4,6 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 public record PieceMovesResponseDto(
-		List<Map<String, Object>> moves
+		List<MoveDto> moves
 ) {
 }

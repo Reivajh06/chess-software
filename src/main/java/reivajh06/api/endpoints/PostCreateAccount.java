@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class PostCreateAccount extends EndpointHandler<CreateAccountRequestDto, Void> {
 
 	@Override
-	protected Void run(Map<String, String> pathParamMap, CreateAccountRequestDto request) {
+	protected Void run(Context ctx, Map<String, String> pathParamMap, CreateAccountRequestDto request) {
 		if(!isPlayerValid(request)) throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid username/password");
 
 		Player player = new Player(request.username(), ShaEncoder.encode(request.password()));
@@ -25,7 +25,7 @@ public class PostCreateAccount extends EndpointHandler<CreateAccountRequestDto, 
 		}
 
 		Archchess.getInstance().database().registerPlayer(player);
-
+		ctx.sessionAttribute("username", player.username());
 		return null;
 	}
 

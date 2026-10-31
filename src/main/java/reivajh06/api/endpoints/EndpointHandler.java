@@ -13,7 +13,7 @@ public abstract class EndpointHandler<I, O> implements Handler {
 	public void handle(Context ctx) {
 		try {
 			I input = deserializeBody(ctx);
-			O output = run(ctx.pathParamMap(), input);
+			O output = run(ctx, ctx.pathParamMap(), input);
 
 			if(output == null) return;
 
@@ -24,7 +24,7 @@ public abstract class EndpointHandler<I, O> implements Handler {
 		}
 	}
 
-	protected abstract O run(Map<String, String> pathParamMap, I input);
+	protected abstract O run(Context ctx, Map<String, String> pathParamMap, I input);
 
 	protected abstract I deserializeBody(Context ctx);
 }

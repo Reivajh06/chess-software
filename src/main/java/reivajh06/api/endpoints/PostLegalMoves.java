@@ -1,11 +1,13 @@
 package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import reivajh06.Json;
 import reivajh06.Sessions;
+import reivajh06.api.ApiException;
+import reivajh06.api.dtos.MoveDto;
+import reivajh06.api.dtos.PieceMovesRequestDto;
+import reivajh06.api.dtos.PieceMovesResponseDto;
 import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Tile;
@@ -15,39 +17,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class PostLegalMoves implements Handler {
+public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceMovesResponseDto> {
 
 	@Override
-	public void handle(@NotNull Context ctx) {
+	protected PieceMovesResponseDto run(Context ctx, Map<String, String> pathParamMap, PieceMovesRequestDto input) {
 		Map<String, String> selectedPieceDetails = Json.fromJson(ctx.body(), Map.class);
 
-		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParam("sessionId")));
+		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
-		if(session == null) {
-			ctx.status(HttpStatus.NOT_FOUND);
-			return;
-		}
+		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		GameDirector updater = new GameDirector(session);
+		GameDirector director = new GameDirector(session);
 
-		Map<Integer, List<Tile>> pieceMoves = updater.pieceMoves(new Tile(selectedPieceDetails.get("from")));
+		List<MoveDto> pieceMoves = director.pieceMoves(new Tile(selectedPieceDetails.get("from"))).entrySet().stream()
+				.map(e -> new MoveDto(e.getKey(),
+						e.getValue().stream()
+								.map(t -> Map.of("file", t.file().name(), "rank", t.rank().name()))
+								.toList())
+				).toList();
 
-		ctx.status(HttpStatus.OK).result(jsonResponse(pieceMoves));
+		return new PieceMovesResponseDto(pieceMoves);
 	}
 
-	private String jsonResponse(Map<Integer, List<Tile>> pieceMoves) {
-		List<Map<String, Object>> moves = new ArrayList<>();
-
-		for(var entry : pieceMoves.entrySet()) {
-			if(entry.getValue().isEmpty()) continue;
-
-			moves.add(Map.of(
-					"moveId", entry.getKey(),
-					"tiles", entry.getValue()
-					));
-		}
-
-		return Json.toJson(Map.of("moves", moves));
+	@Override
+	protected PieceMovesRequestDto deserializeBody(Context ctx) {
+		return Json.fromJson(ctx.body(), PieceMovesRequestDto.class);
 	}
-
 }

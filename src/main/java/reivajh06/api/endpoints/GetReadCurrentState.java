@@ -14,7 +14,7 @@ import java.util.UUID;
 public class GetReadCurrentState extends EndpointHandler<Void, ReadStateResponseDto> {
 
 	@Override
-	protected ReadStateResponseDto run(Map<String, String> pathParamMap, Void input) {
+	protected ReadStateResponseDto run(Context ctx, Map<String, String> pathParamMap, Void input) {
 		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");

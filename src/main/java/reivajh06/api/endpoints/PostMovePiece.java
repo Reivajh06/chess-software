@@ -15,7 +15,7 @@ import java.util.UUID;
 public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
 
 	@Override
-	protected Void run(Map<String, String> pathParamMap, MovePieceDto moveRequest) {
+	protected Void run(Context ctx, Map<String, String> pathParamMap, MovePieceDto moveRequest) {
 		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");

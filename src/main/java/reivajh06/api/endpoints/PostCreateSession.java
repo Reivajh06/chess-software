@@ -14,7 +14,7 @@ import java.util.UUID;
 public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, CreateSessionResponseDto> {
 
 	@Override
-	protected CreateSessionResponseDto run(Map<String, String> pathParamMap, CreateSessionRequestDto request) {
+	protected CreateSessionResponseDto run(Context ctx, Map<String, String> pathParamMap, CreateSessionRequestDto request) {
 		GameSession session = new GameSession(request.gamemode(), request.difficulty());
 		UUID playerId = UUID.randomUUID();
 		Color creatorColor = session.assignColor(playerId);

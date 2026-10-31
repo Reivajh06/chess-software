@@ -18,7 +18,7 @@ public class GetServerAddress extends EndpointHandler<Void, ServerAddressDto> {
 	}
 
 	@Override
-	protected ServerAddressDto run(Map<String, String> pathParamMap, Void input) {
+	protected ServerAddressDto run(Context ctx, Map<String, String> pathParamMap, Void input) {
 		try (DatagramSocket socket = new DatagramSocket()) {
 			socket.connect(InetAddress.getByName("8.8.8.8"), 53);
 			String address = socket.getLocalAddress().getHostAddress();
