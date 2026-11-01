@@ -34,6 +34,7 @@ public class ChessAPI {
 		config.routes.post("/api/sessions/{sessionId}/join", new PostJoinSession());
 		config.routes.post("/api/accounts", new PostCreateAccount());
 		config.routes.post("/api/login", new PostLogin());
+		config.routes.post("/api/logout", new PostLogout());
 
 		config.routes.get("/api/sessions/{sessionId}", new GetReadCurrentState());
 		config.routes.get("/api/server", new GetServerAddress(port));
