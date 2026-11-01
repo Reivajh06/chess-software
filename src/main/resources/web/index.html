@@ -19,10 +19,10 @@
       <div class="header-tools">
         <span id="connection" role="status" data-state="idle">Sin sesión</span>
         <button id="account-open" type="button">Iniciar sesión</button>
-        <span id="account-chip" class="account-chip" hidden>
+        <button id="account-chip" class="account-chip" type="button" title="Tu cuenta" hidden>
           <span id="account-chip-mark" class="account-chip-mark" aria-hidden="true"></span>
           <span class="account-chip-text"><strong id="account-chip-name"></strong><small>Tu cuenta</small></span>
-        </span>
+        </button>
         <button id="account-logout" type="button" title="Cerrar sesión" hidden>Salir</button>
         <button id="music-toggle" class="icon-button tool-button" type="button" aria-pressed="false" aria-label="Activar música" title="Música"><span class="pixel-icon" data-icon="music"></span></button>
         <button id="sound-toggle" class="icon-button tool-button" type="button" aria-label="Silenciar sonido" title="Sonido"><span class="pixel-icon" data-icon="sound"></span></button>
@@ -287,6 +287,23 @@
         <label class="switch-row"><span>Mostrar a Alfi, la mascota</span><input id="mascot-enabled" class="switch" type="checkbox" /></label>
         <p class="settings-note">Alfi comenta la partida: avisa de jaques y capturas, celebra los buenos golpes y se ríe un poco de los errores.</p>
       </section>
+    </dialog>
+
+    <dialog id="account-dialog" class="pixel-frame" aria-labelledby="account-dialog-title">
+      <div class="dialog-heading">
+        <h2 id="account-dialog-title">Tu cuenta</h2>
+        <button type="button" data-close="account-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <p class="settings-note">Has iniciado sesión como <strong id="account-dialog-name"></strong>.</p>
+      <form id="account-delete-form" class="account-form account-delete-form" novalidate>
+        <p class="settings-note">Borrar tu cuenta es definitivo y no se puede deshacer.</p>
+        <div class="account-field">
+          <label for="account-delete-password">Confirma tu contraseña</label>
+          <input id="account-delete-password" type="password" autocomplete="current-password" maxlength="64" />
+        </div>
+        <p id="account-delete-error" class="title-error" role="alert" hidden></p>
+        <button id="account-delete-submit" class="danger" type="submit">Borrar cuenta</button>
+      </form>
     </dialog>
 
     <dialog id="pvp-dialog" class="pixel-frame pvp-dialog" aria-labelledby="pvp-title">

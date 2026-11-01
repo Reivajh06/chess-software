@@ -146,3 +146,63 @@ export class AccountScreen {
     if (focusId) byId(focusId).focus();
   }
 }
+
+// Diálogo "Tu cuenta": borra la cuenta (DELETE /api/accounts/delete) tras confirmar la contraseña.
+export class AccountDialog {
+  constructor(api, { onDeleted }) {
+    this.api = api;
+    this.onDeleted = onDeleted;
+    this.account = null;
+    this.busy = false;
+
+    byId("account-delete-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      this.submit();
+    });
+  }
+
+  open(account) {
+    this.account = account;
+    byId("account-delete-form").reset();
+    byId("account-dialog-name").textContent = account.username;
+    this.setError();
+    byId("account-dialog").showModal();
+    byId("account-delete-password").focus();
+  }
+
+  async submit() {
+    if (this.busy) return;
+    const password = byId("account-delete-password").value;
+    if (!password) return this.setError("Escribe tu contraseña.");
+
+    this.setBusy(true);
+    this.setError();
+    try {
+      await this.api.deleteAccount(this.account.username, password);
+      byId("account-delete-form").reset();
+      byId("account-dialog").close();
+      await this.onDeleted();
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      // El servidor contesta 404 si el usuario y la contraseña no coinciden con ninguna cuenta.
+      this.setError(error instanceof ApiError && error.status === HttpStatus.NOT_FOUND
+        ? "Contraseña incorrecta."
+        : error.message);
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  setBusy(busy) {
+    this.busy = busy;
+    const submit = byId("account-delete-submit");
+    submit.disabled = busy;
+    submit.textContent = busy ? "Borrando..." : "Borrar cuenta";
+  }
+
+  setError(error = "") {
+    byId("account-delete-error").textContent = error;
+    byId("account-delete-error").hidden = !error;
+    if (error) byId("account-delete-password").focus();
+  }
+}

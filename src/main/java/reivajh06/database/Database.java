@@ -63,4 +63,8 @@ public class Database {
 	public void registerPlayer(Player player) {
 		execute(new RegisterPlayerQuery(player));
 	}
+
+	public void deletePlayer(Player player) {
+		execute(new DeletePlayerQuery(player));
+	}
 }

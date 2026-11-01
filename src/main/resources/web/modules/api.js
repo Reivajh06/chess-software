@@ -32,7 +32,7 @@ export class ChessApi {
     for (const controller of this.controllers) controller.abort();
     this.controllers.clear();
   }
-  async request(path, body, { allowEmpty = false } = {}) {
+  async request(path, body, { allowEmpty = false, method = body === undefined ? "GET" : "POST" } = {}) {
     const controller = new AbortController();
     this.controllers.add(controller);
     const timer = setTimeout(() => controller.abort("timeout"), 10000);
@@ -40,7 +40,7 @@ export class ChessApi {
       const headers = { Accept: "application/json" };
       if (body !== undefined) headers["Content-Type"] = "application/json";
       const response = await fetch(`/api${path}`, {
-        method: body === undefined ? "GET" : "POST",
+        method,
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
@@ -83,6 +83,9 @@ export class ChessApi {
   }
   logout() {
     return this.request("/logout", {}, { allowEmpty: true });
+  }
+  deleteAccount(username, password) {
+    return this.request("/accounts/delete", { username, password }, { allowEmpty: true, method: "DELETE" });
   }
   join(id) {
     return this.request(`/sessions/${encodeURIComponent(id)}/join`, {});

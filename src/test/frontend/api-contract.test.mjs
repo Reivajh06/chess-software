@@ -202,6 +202,18 @@ test("an inline updated state is consumed without a second request", async (t) =
   assert.equal(result.moves[0].to, "e4");
 });
 
+test("deleting an account sends DELETE with the credentials and accepts an empty response", async (t) => {
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    calls.push({ path, options });
+    return new Response("", { status: 200 });
+  });
+  assert.equal(await new ChessApi().deleteAccount("alfi", "secret123"), null);
+  assert.equal(calls[0].path, "/api/accounts/delete");
+  assert.equal(calls[0].options.method, "DELETE");
+  assert.deepEqual(JSON.parse(calls[0].options.body), { username: "alfi", password: "secret123" });
+});
+
 test("does not accept a 501 response even if it contains valid session JSON", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(created), { status: 501 }));
   await assert.rejects(new ChessApi().create("PVP", "NOT_CPU"),

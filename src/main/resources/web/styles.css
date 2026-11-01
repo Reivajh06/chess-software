@@ -133,6 +133,13 @@ button.primary {
 button.primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
+button.danger {
+  color: var(--bg);
+  background: var(--danger);
+}
+button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 85%, white);
+}
 .icon-button {
   display: grid;
   place-items: center;
@@ -482,11 +489,20 @@ body:not([data-screen="title"]) #account-open {
   font-size: 18px;
   white-space: nowrap;
 }
-.account-chip {
+button.account-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-right: 10px;
+  margin: 0 10px 0 0;
+  padding: 2px 6px 2px 2px;
+  text-align: left;
+  background: none;
+  box-shadow: none;
+}
+.account-delete-form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: var(--pixel) solid var(--line);
 }
 .account-chip-mark {
   display: grid;

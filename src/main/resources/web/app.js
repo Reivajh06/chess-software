@@ -23,7 +23,7 @@ import { rivalKind } from "./modules/alfi-reactions.js";
 import { profileLine } from "./modules/alfi-profile.js";
 import { Mascot } from "./modules/mascot.js";
 import { Commentator } from "./modules/commentary.js";
-import { AccountScreen, loadAccount, saveAccount } from "./modules/account.js";
+import { AccountDialog, AccountScreen, loadAccount, saveAccount } from "./modules/account.js";
 import {
   TitleScreen,
   renderMatch,
@@ -1082,7 +1082,7 @@ byId("account-open").addEventListener("click", () => {
 });
 
 // Cierra la sesión en el servidor y en este equipo, aunque el servidor no conteste.
-byId("account-logout").addEventListener("click", async () => {
+async function endAccountSession() {
   const button = byId("account-logout");
   button.disabled = true;
   try {
@@ -1092,6 +1092,15 @@ byId("account-logout").addEventListener("click", async () => {
   saveAccount(null);
   renderAccount(null);
   if (!sessionBusy) showScreen("title");
+}
+
+byId("account-logout").addEventListener("click", endAccountSession);
+
+const accountDialog = new AccountDialog(api, { onDeleted: endAccountSession });
+
+byId("account-chip").addEventListener("click", () => {
+  const current = loadAccount();
+  if (current) accountDialog.open(current);
 });
 
 byId("result-rematch").addEventListener("click", () => {
