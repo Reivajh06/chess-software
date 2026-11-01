@@ -7,6 +7,7 @@ import reivajh06.Json;
 import reivajh06.api.ApiException;
 import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;
+import reivajh06.datalake.events.LoginEvent;
 
 import java.util.Map;
 
@@ -21,12 +22,13 @@ public class PostLogin extends EndpointHandler<AccountRequestDto, Void> {
 		}
 
 		ctx.sessionAttribute("username", player.username());
+		Archchess.instance().publish(new LoginEvent(player.username()));
 
 		return null;
 	}
 
 	@Override
 	protected AccountRequestDto deserializeBody(Context ctx) {
-		return Json.fromJson(ctx.body(), AccountRequestDto.class);
+		return Json.fromJsonPretty(ctx.body(), AccountRequestDto.class);
 	}
 }

@@ -12,7 +12,6 @@ import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Tile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,7 +20,7 @@ public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceM
 
 	@Override
 	protected PieceMovesResponseDto run(Context ctx, Map<String, String> pathParamMap, PieceMovesRequestDto input) {
-		Map<String, String> selectedPieceDetails = Json.fromJson(ctx.body(), Map.class);
+		Map<String, String> selectedPieceDetails = Json.fromJsonPretty(ctx.body(), Map.class);
 
 		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
@@ -41,6 +40,6 @@ public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceM
 
 	@Override
 	protected PieceMovesRequestDto deserializeBody(Context ctx) {
-		return Json.fromJson(ctx.body(), PieceMovesRequestDto.class);
+		return Json.fromJsonPretty(ctx.body(), PieceMovesRequestDto.class);
 	}
 }

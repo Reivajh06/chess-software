@@ -28,6 +28,6 @@ public class DeleteAccount extends EndpointHandler<AccountRequestDto, Void>{
 
 	@Override
 	protected AccountRequestDto deserializeBody(Context ctx) {
-		return Json.fromJson(ctx.body(), AccountRequestDto.class);
+		return Json.fromJsonPretty(ctx.body(), AccountRequestDto.class);
 	}
 }

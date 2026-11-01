@@ -17,7 +17,7 @@ public abstract class EndpointHandler<I, O> implements Handler {
 
 			if(output == null) return;
 
-			ctx.result(Json.toJson(output));
+			ctx.result(Json.toJsonPretty(output));
 
 		} catch(ApiException e) {
 			ctx.status(e.status());
