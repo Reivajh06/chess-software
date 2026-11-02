@@ -7,6 +7,7 @@ import reivajh06.Json;
 import reivajh06.api.ApiException;
 import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;
+import reivajh06.datalake.events.CreateAccountEvent;
 
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -25,6 +26,8 @@ public class PostCreateAccount extends EndpointHandler<AccountRequestDto, Void> 
 
 		Archchess.instance().database().registerPlayer(player);
 		ctx.sessionAttribute("username", player.username());
+		Archchess.instance().publish(new CreateAccountEvent(player.username()));
+
 		return null;
 	}
 

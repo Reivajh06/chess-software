@@ -25,7 +25,6 @@ export class ApiError extends Error {
 }
 export class ChessApi {
   constructor() {
-    this.playerId = null;
     this.controllers = new Set();
   }
   cancel() {
@@ -97,27 +96,21 @@ export class ChessApi {
     return this.request(`/sessions/${encodeURIComponent(id)}`);
   }
   legal(id, from) {
-    return this.request(
-      `/sessions/${encodeURIComponent(id)}/legal-moves`,
-      { from, ...(this.playerId ? { playerId: this.playerId } : {}) },
-    );
+    return this.request(`/sessions/${encodeURIComponent(id)}/legal-moves`, { from });
   }
   promote(id, tile, newType) {
     return this.request(`/sessions/${encodeURIComponent(id)}/promote`, {
       tile,
       newType,
-      ...(this.playerId ? { playerId: this.playerId } : {}),
     }, { allowEmpty: true });
   }
   async move(id, from, to, moveId, promotion = null) {
     if (!Number.isSafeInteger(moveId) || moveId < 0)
       throw new TypeError("La jugada necesita un moveId válido del servidor.");
     const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
-      playerType: "PLAYER",
       from,
       moveId,
       to,
-      ...(this.playerId ? { playerId: this.playerId } : {}),
     }, { allowEmpty: true });
     if (promotion) {
       await this.promote(id, to, promotion);
@@ -129,13 +122,10 @@ export class ChessApi {
         state.pieces != null || state.gameStateFen != null)) return response;
     return this.state(id);
   }
-  // Jugada de una máquina (playerType "CPU" o "AI"): el servidor calcula un único movimiento para ese
-  // asiento, lo aplica (coronación incluida) y devuelve la jugada hecha. Después se lee el estado.
-  async machineMove(id, playerType, playerId = null) {
-    const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
-      playerType,
-      ...(playerId ? { playerId } : {}),
-    });
+  // Jugada de una máquina: sin casillas, el servidor sabe por los colores de la sesión quién mueve, calcula
+  // un único movimiento, lo aplica (coronación incluida) y devuelve la jugada hecha. Después se lee el estado.
+  async machineMove(id) {
+    const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {});
     const move = playedMove(response);
     return { move, state: await this.state(id) };
   }

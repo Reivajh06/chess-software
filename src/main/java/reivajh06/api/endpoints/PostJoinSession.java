@@ -7,6 +7,7 @@ import reivajh06.api.ApiException;
 import reivajh06.api.dtos.JoinDto;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Color;
+import reivajh06.database.Player;
 
 import java.util.Map;
 import java.util.UUID;
@@ -19,13 +20,13 @@ public class PostJoinSession extends EndpointHandler<Void, JoinDto> {
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		UUID playerId = UUID.randomUUID();
-		Color assignedColor = session.assignColor(playerId);
+		String id = ctx.req().getSession().getId();
+		Color assignedColor = session.assignColor(new Player(ctx.sessionAttribute("username"), ctx.ip()));
 
 		if(assignedColor == null) throw new ApiException(HttpStatus.CONFLICT, "Session is already full");
 
 		return new JoinDto(
-				playerId,
+				id,
 				assignedColor,
 				session.gamemode(),
 				session.difficulty(),

@@ -420,7 +420,7 @@ async function playCpu(generation, machine) {
       ? await legalOptions(api, store.session.sessionId, store.state.pieces, machine.color)
       : null;
     if (generation !== sessionVersion) return;
-    const move = await submitMachineMove(machine);
+    const move = await submitMachineMove();
     cpuFailures = move ? 0 : cpuFailures + 1;
     // Doble jugada: el turno ya es del jugador, pero Alfi vuelve a mover.
     if (move && options && generation === sessionVersion) {
@@ -872,15 +872,11 @@ function submitMove({ from, to, moveId, promotion = null }) {
   ));
 }
 
-// Pide al servidor la jugada de esa máquina y devuelve la jugada hecha (o null si falla).
-async function submitMachineMove(machine) {
+// Pide al servidor la jugada de la máquina a la que le toca y devuelve la jugada hecha (o null si falla).
+async function submitMachineMove() {
   let played = null;
   await sendMove(async () => {
-    const { move, state } = await api.machineMove(
-        store.session.sessionId,
-        machine.playerType ?? "CPU",
-        machine.playerId
-    );
+    const { move, state } = await api.machineMove(store.session.sessionId);
     played = move;
     return state;
   });
@@ -946,7 +942,6 @@ function resetSession() {
 
   store.reset();
   store.lastStateSignature = null;
-  api.playerId = null;
 
   byId("promotion-layer").hidden = true;
 
@@ -982,7 +977,6 @@ async function activateSession(session, state) {
     alfi.setEnergy(session.alfiEnergy ?? fullEnergy);
   }
   store.localSide = null;
-  api.playerId = session.playerId ?? null;
 
   applyGameState(state);
   sessions.persist(session);
@@ -1458,7 +1452,6 @@ if (invitation) {
 
     const generation = sessionVersion;
 
-    api.playerId = saved.playerId;
     setConnection("Conectando…");
 
     api.state(invitation)

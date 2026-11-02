@@ -7,6 +7,7 @@ import reivajh06.Json;
 import reivajh06.api.ApiException;
 import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;
+import reivajh06.datalake.events.DeleteAccountEvent;
 
 import java.util.Map;
 
@@ -22,6 +23,7 @@ public class DeleteAccount extends EndpointHandler<AccountRequestDto, Void>{
 
 		Archchess.instance().database().deletePlayer(player);
 		ctx.req().getSession().invalidate();
+		Archchess.instance().publish(new DeleteAccountEvent(player.username()));
 
 		return null;
 	}

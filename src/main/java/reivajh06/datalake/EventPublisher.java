@@ -18,7 +18,7 @@ public class EventPublisher {
 
 	public void publish(Event event) {
 		try {
-			File eventFolder = new File(datalakePath + "/" + event.getClass().getSimpleName().toLowerCase());
+			File eventFolder = new File(datalakePath + "/" + event.getClass().getSimpleName());
 			eventFolder.mkdirs();
 
 			File target = new File(eventFolder + "/" + event.timestamp().toString() + ".jsonl");

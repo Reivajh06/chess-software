@@ -1,6 +1,6 @@
 import { saveSession, readSession, forgetSession } from "./preferences.js";
 import { ApiError, HttpStatus } from "./api.js";
-import { machineTypes, modeDefinition } from "./modes.js";
+import { modeDefinition } from "./modes.js";
 
 const colors = ["WHITE", "BLACK"];
 const rival = (color) => (color === "WHITE" ? "BLACK" : "WHITE");
@@ -17,6 +17,7 @@ export class SessionAccess {
   async open(sessionId, mode = "PVP", cpuDifficulty = "EASY") {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : mode === "PVCPU" ? cpuDifficulty : "NOT_CPU";
     const local = !sessionId && mode === "LOCAL";
+    const practice = !sessionId && mode === "PRACTICE";
     const created = sessionId ? null :
       await this.api.create(modeDefinition(mode).server ?? mode, difficulty);
     const id = sessionId ?? created.sessionId ?? created.id;
@@ -30,22 +31,18 @@ export class SessionAccess {
     if (!sessionId && (gamemode === "PVCPU" || gamemode === "PVAI")) {
       // El servidor sienta a la máquina al crear la partida, en el color contrario al del creador, y
       // calcula sus jugadas. En la dificultad máxima espera Alfi.
-      const creator = this.creatorSeat(created, gamemode);
+      const creator = this.creatorSeat(created);
       seat = { ...creator, state: seated(created.state ?? created.gameState) };
-      cpu = {
-        color: rival(creator.playerColor),
-        playerType: machineTypes[gamemode],
-      };
+      cpu = { color: rival(creator.playerColor) };
     } else if (!sessionId && gamemode === "AIVAI") {
       // Los dos asientos son máquinas: este equipo solo mira y pide cada jugada cuando le toca a una.
-      machines = colors.map((color) => ({ color, playerType: machineTypes[gamemode] }));
-      seat = { playerId: null, playerColor: null, state: seated(created.state ?? created.gameState) };
-    } else if (local) {
-      // Ambos jugadores comparten este equipo: ocupamos también el segundo asiento.
-      const creator = this.creatorSeat(created, "PVP");
+      machines = colors.map((color) => ({ color }));
+      seat = { playerColor: null, state: seated(created.state ?? created.gameState) };
+    } else if (local || practice) {
+      // Los dos colores se juegan en este equipo: ocupamos también el segundo asiento.
+      this.creatorSeat(created);
       const second = await this.join(id);
       seat = {
-        playerId: creator.playerId,
         playerColor: null,
         state: second.state ?? second.gameState ?? await this.api.state(id),
       };
@@ -53,12 +50,11 @@ export class SessionAccess {
       seat = await this.join(id);
       gamemode = seat.gamemode ?? gamemode;
     } else {
-      seat = this.creatorSeat(created, gamemode);
+      seat = this.creatorSeat(created);
     }
 
     const session = {
       sessionId: id,
-      playerId: seat.playerId,
       playerColor: seat.playerColor,
       gamemode,
       difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
@@ -66,17 +62,14 @@ export class SessionAccess {
       ...(machines ? { machines } : {}),
     };
 
-    this.api.playerId = session.playerId;
     const state = seat.state ?? seat.gameState ?? created?.state ?? created?.gameState ??
       await this.api.state(id);
     return { session, state };
   }
 
-  creatorSeat(created, gamemode) {
-    if (created.playerId && colors.includes(created.playerColor))
-      return { playerId: created.playerId, playerColor: created.playerColor };
-    if (gamemode === "PRACTICE" && (created.playerId ?? created.whiteId))
-      return { playerId: created.playerId ?? created.whiteId, playerColor: "WHITE" };
+  creatorSeat(created) {
+    if (colors.includes(created.playerColor))
+      return { playerColor: created.playerColor };
     throw new Error("El servidor no ha asignado un color al creador de la sala.");
   }
 
@@ -91,7 +84,7 @@ export class SessionAccess {
         throw new ApiError("La sala no existe.", error.status, error.code);
       throw error;
     }
-    if (!seat.playerId || !colors.includes(seat.playerColor))
+    if (!colors.includes(seat.playerColor))
       throw new Error("El servidor no ha asignado un color a este jugador.");
     return seat;
   }

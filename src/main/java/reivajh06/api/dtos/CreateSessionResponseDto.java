@@ -11,7 +11,7 @@ public record CreateSessionResponseDto(
 		UUID sessionId,
 		Gamemode gamemode,
 		Difficulty difficulty,
-		UUID playerId,
+		String playerId,
 		Color playerColor,
 		GameState state
 ) {

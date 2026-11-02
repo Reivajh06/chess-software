@@ -20,8 +20,8 @@ public class PostPromotePiece extends EndpointHandler<PromotePieceDto, Void> {
 
         if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-        GameDirector updater = new GameDirector(session);
-        updater.promotePiece(request.tile(), request.newType());
+        GameDirector director = new GameDirector(session);
+        director.promotePiece(request.tile(), request.newType());
 
         return null;
     }

@@ -2,6 +2,7 @@ package reivajh06.chess.gamelogic;
 
 import reivajh06.FenParser;
 import reivajh06.chess.model.Color;
+import reivajh06.database.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,10 +13,7 @@ public class GameSession {
 
     private final UUID id;
 
-    private UUID whiteId;
-    private UUID blackId;
-    private Map<Color, String> playerTypes;
-
+    private final Map<Color, Player> colorPlayers;
     private final Gamemode gamemode;
     private final Difficulty difficulty;
     private GameState gameState;
@@ -26,9 +24,7 @@ public class GameSession {
         this.gamemode = gamemode;
         this.difficulty = difficulty;
         this.gameState = GameState.startingState();
-        playerTypes = new HashMap<>();
-
-        if(gamemode.equals(Gamemode.PRACTICE)) whiteId = blackId = UUID.randomUUID();
+        colorPlayers = new HashMap<>();
     }
     public UUID id() {
         return id;
@@ -46,36 +42,29 @@ public class GameSession {
         return gameState;
     }
 
-    public UUID whiteId() {
-        return whiteId;
-    }
+    public Color assignColor(Player colorPlayer) {
+        Color assignedColor;
 
-    public UUID blackId() {
-        return blackId;
-    }
+        Random random = new Random();
 
-    public Color assignColor(UUID playerId) {
-        Color assignedColor = null;
+        assignedColor = Color.values()[random.nextInt(Color.values().length)];
 
-        if(whiteId == null) {
-            if(blackId == null) {
-                Random random = new Random();
-
-                assignedColor = Color.values()[random.nextInt(Color.values().length)];
-
-                if(assignedColor == Color.WHITE) whiteId = playerId;
-                else blackId = playerId;
-
-            } else {
-                whiteId = playerId;
-                assignedColor = Color.WHITE;
-            }
-        } else if(blackId == null) {
-            blackId = playerId;
-            assignedColor = Color.BLACK;
+        if(colorPlayers.get(assignedColor) == null) {
+            colorPlayers.put(assignedColor, colorPlayer);
+            return assignedColor;
         }
 
-        return assignedColor;
+        if(colorPlayers.get(Color.rivalColor(assignedColor)) == null) {
+            assignedColor = Color.rivalColor(assignedColor);
+            colorPlayers.put(assignedColor, colorPlayer);
+            return assignedColor;
+        }
+
+        return null;
+    }
+
+    public Player playerIdentifier(Color color) {
+        return colorPlayers.get(color);
     }
 
     public void gameState(GameState gameState) {
@@ -86,11 +75,9 @@ public class GameSession {
         return FenParser.gameStateToFen(gameState);
     }
 
-    public void registerPlayer(Color color, String playerType) {
-        playerTypes.put(color, playerType);
-    }
+	public boolean hasTurn(Player username) {
+		Color turnColor = gameState.turnColor();
 
-    public String playerType(Color color) {
-        return playerTypes.get(color);
-    }
+        return playerIdentifier(turnColor).equals(username);
+	}
 }

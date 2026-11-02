@@ -8,7 +8,7 @@ import reivajh06.chess.model.Color;
 import java.util.UUID;
 
 public record JoinDto(
-		UUID playerId,
+		String playerId,
 		Color playerColor,
 		Gamemode gamemode,
 		Difficulty difficulty,

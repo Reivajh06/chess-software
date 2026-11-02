@@ -56,7 +56,7 @@ public class Archchess {
 		return api;
 	}
 
-	public void publish(Event event) {
+	public synchronized void publish(Event event) {
 		eventPublisher.publish(event);
 	}
 

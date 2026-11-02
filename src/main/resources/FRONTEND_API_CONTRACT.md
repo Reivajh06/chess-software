@@ -21,7 +21,7 @@ This document describes the HTTP interface between the web frontend (`src/main/r
 - Request bodies are JSON. The frontend parses every response body as JSON regardless of its `Content-Type`.
 - Squares are lowercase algebraic strings (`"e2"`). The frontend also accepts Gson-serialized `Tile` records (`{ "file": "E", "rank": "R2" }`) wherever the server sends a square.
 - Colours are `WHITE` / `BLACK`. Game statuses are `ACTIVE`, `WHITE_WIN`, `BLACK_WIN` and `DRAW`.
-- `playerId` is the only player credential. The frontend sends it with `legal-moves`, `moves` and `promote` when it has one, and never receives another seat's ID.
+- The player is identified by the HTTP session cookie, which the browser sends by itself on every request. The `playerId` in the creation and join responses is that HTTP session's ID: the frontend ignores it, does not store it and never sends it. Two tabs of one browser share the same identity.
 - Every request times out after 10 s in the frontend (`ChessApi.request`).
 
 ## HTTP status codes
@@ -68,7 +68,7 @@ Any other non-`2xx` status is shown as "Error del servidor (N).". When an error 
   "sessionId": "6e26bb12-02ae-4e08-a99f-c0af94d67608",
   "gamemode": "PVCPU",
   "difficulty": "EASY",
-  "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb",
+  "playerId": "node01gq7x2k9d0b3a1",
   "playerColor": "WHITE",
   "state": {
     "status": "ACTIVE",
@@ -81,7 +81,7 @@ Any other non-`2xx` status is shown as "Error del servidor (N).". When an error 
 }
 ```
 
-- `playerId` and `playerColor` are the **creator's** seat and are required. Without a valid pair the frontend fails with "El servidor no ha asignado un color al creador de la sala.".
+- `playerColor` is the **creator's** seat and is required. Without a valid colour the frontend fails with "El servidor no ha asignado un color al creador de la sala.".
 - `state` may use `turn` or `turnColor`, and `moves` or `movesHistory`: the frontend accepts both shapes.
 - For `PRACTICE` and the machine modes the frontend treats `waitingForOpponent` as `false`, since nobody else has to join.
 
@@ -89,7 +89,7 @@ Any other non-`2xx` status is shown as "Error del servidor (N).". When an error 
 
 | Mode | Seats on creation (server) | What the frontend does next |
 | --- | --- | --- |
-| `PRACTICE` | Both seats share one ID; the creator gets `WHITE`. | Moves both colours with that ID. |
+| `PRACTICE` | As `PVP`. | Calls `/join` itself to fill the second seat with the same player. Moves both colours and ignores the assigned ones; the board starts with `WHITE` at the bottom. |
 | `PVP` | The creator gets a random colour; the other seat stays free. | Shows the invitation (section 5). |
 | `LOCAL` (sent as `PVP`) | As `PVP`. | Calls `/join` itself to fill the second seat. Both colours are played on this device. |
 | `PVCPU`, `PVAI` | The creator gets a colour; the machine takes the other one. | Never calls `/join`. The machine plays the colour opposite `playerColor`. |
@@ -135,7 +135,7 @@ The frontend polls this route every second while a game is open (backing off to 
 `POST /api/sessions/{sessionId}/legal-moves`
 
 ```json
-{ "from": "e2", "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb" }
+{ "from": "e2" }
 ```
 
 Outside practice, a piece whose colour does not have the turn gets no moves (`GameDirector.pieceMoves`). Response:
@@ -158,33 +158,31 @@ The frontend asks for legal moves one piece at a time. Besides the player's sele
 
 ## 4. Make a move
 
-`POST /api/sessions/{sessionId}/moves`. Each request plays **exactly one** move. `playerType` says who computes it.
+`POST /api/sessions/{sessionId}/moves`. Each request plays **exactly one** move. The frontend does not say who is moving: the server detects it from the colours assigned in the session.
 
-### Player move (`playerType: "PLAYER"`)
+### Player move
 
 ```json
 {
-  "playerType": "PLAYER",
   "from": "e2",
   "to": "e4",
-  "moveId": 1,
-  "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb"
+  "moveId": 1
 }
 ```
 
 - The server applies `moveset().get(moveId)` from `from` to `to` and answers `200`, with an empty body.
 - The frontend then reads the state (section 2). If the response carries a state DTO (`{ "state": … }` or a direct state), the frontend applies it without the extra read.
-- Every move the frontend sends with explicit squares is a `PLAYER` move: the human's moves and also Alfi's cheats (section 7).
+- Every move the frontend computes itself is sent with explicit squares: the human's moves and also Alfi's cheats (section 7).
 
-### Machine move (`playerType: "CPU"` or `"AI"`)
+### Machine move
 
 When `turnColor` belongs to a machine seat, the frontend waits 0.7–1.3 s and sends:
 
 ```json
-{ "playerType": "CPU" }
+{}
 ```
 
-There are no squares and no `playerId`: the server computes the machine's move for the current position, applies it (promotion included) and answers `200` with the move it played. `PVCPU` sends `CPU`; `PVAI` and `AIVAI` send `AI` (`machineTypes` in `modules/modes.js`).
+There are no squares: the server computes the machine's move for the current position, applies it (promotion included) and answers `200` with the move it played.
 
 ```json
 { "from": "e7", "to": "e8", "promote_to": "QUEEN" }
@@ -195,14 +193,14 @@ There are no squares and no `playerId`: the server computes the machine's move f
 - A reply without two valid squares is shown as "El motor ha devuelto una jugada no válida.".
 - After the reply the frontend reads the state and animates the move from the history.
 
-The move type comes from the body's `playerType`, not from the seat whose turn it is: Alfi's rewind and board flip send `PLAYER` moves on the machine's turn or with its pieces (section 7).
+Alfi's rewind and board flip send moves with squares on the machine's turn or with its pieces (section 7).
 
 ### Promotion
 
 `POST /api/sessions/{sessionId}/promote`
 
 ```json
-{ "tile": "a8", "newType": "QUEEN", "playerId": "0fbf132e-638b-434c-a55d-38d61160afcb" }
+{ "tile": "a8", "newType": "QUEEN" }
 ```
 
 `newType` is `QUEEN`, `ROOK`, `BISHOP` or `KNIGHT`. The server replaces the pawn on `tile` and answers `200` with an empty body.
@@ -216,14 +214,14 @@ When a player's pawn reaches rank 1 or 8, the frontend shows the piece picker. I
 `POST /api/sessions/{sessionId}/join` with `{}` as the body. The server assigns the seat:
 
 1. The creator is seated on creation (section 1) and never calls `/join`.
-2. The invited player calls `/join` and gets the free seat with a new ID.
+2. The invited player calls `/join` and gets the free seat.
 3. Any later `/join` gets `409 Conflict` ("La sala ya está completa.").
 
 Response (`200`), sent only to the caller that got the seat:
 
 ```json
 {
-  "playerId": "f3435c46-1a64-40c5-9b03-4b0bb3390020",
+  "playerId": "node01gq7x2k9d0b3a1",
   "playerColor": "BLACK",
   "gamemode": "PVP",
   "difficulty": "NOT_CPU",
@@ -231,9 +229,9 @@ Response (`200`), sent only to the caller that got the seat:
 }
 ```
 
-- `playerId` and `playerColor` are required.
+- `playerColor` is required.
 - The frontend keeps its seat in `sessionStorage`. A reload reads the state without joining again.
-- Machine modes never call `/join`. `LOCAL` calls it once, from the creator's own device.
+- Machine modes never call `/join`. `LOCAL` and `PRACTICE` call it once, from the creator's own device.
 
 While a state read says `waitingForOpponent: true`, the frontend locks the board, shows "Esperando rival" and has the mascot chat with `waiting` lines every 11 s. When the field flips to `false`, the mascot announces the rival and the board unlocks.
 
@@ -249,7 +247,7 @@ While a state read says `waitingForOpponent: true`, the frontend locks the board
 
 ### Invitation link
 
-The link is `http://<host>:<port>/?session=<sessionId>`. When the page was opened through `localhost`, `127.x` or `[::1]`, the frontend asks `/api/server` for `<host>` every time the invitation dialog opens and never stores it. A page opened through a LAN address or a domain uses its own origin.
+The link is `http://<host>:<port>/?session=<sessionId>`. If `port` is missing or `0`, the frontend uses the port the page was served from. When the page was opened through `localhost`, `127.x` or `[::1]`, the frontend asks `/api/server` for `<host>` every time the invitation dialog opens and never stores it. A page opened through a LAN address or a domain uses its own origin.
 
 ## 6. Modes in the frontend
 
@@ -258,9 +256,9 @@ The link is `http://<host>:<port>/?session=<sessionId>`. When the page was opene
 | `PRACTICE` | Available | The player, both colours | — |
 | `PVP` (invitation) | Available | One player per device | — |
 | `LOCAL` | Available (from the PvP dialog) | Both players on one device; the board turns to the side to move | — |
-| `PVCPU` | Available (difficulty dialog) | The player vs. the CPU | `{ "playerType": "CPU" }` |
-| `PVAI` | Disabled | The player vs. the AI | `{ "playerType": "AI" }` |
-| `AIVAI` | Disabled | Two machines; the page only watches | `{ "playerType": "AI" }` for each colour |
+| `PVCPU` | Available (difficulty dialog) | The player vs. the CPU | `{}` |
+| `PVAI` | Disabled | The player vs. the AI | `{}` |
+| `AIVAI` | Disabled | Two machines; the page only watches | `{}` for each colour |
 
 `PVAI` and `AIVAI` already follow the flow above; they are enabled with `available: true` in `modules/modes.js`.
 
@@ -270,13 +268,13 @@ The link is `http://<host>:<port>/?session=<sessionId>`. When the page was opene
 | --- | --- | --- |
 | Create | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD" }` |
 | Seat the CPU | — | Seated on creation. It plays the colour opposite `playerColor`. |
-| CPU move | `POST /moves` with `{ "playerType": "CPU" }` | Sent whenever `turnColor` is the CPU's colour and no other CPU action is in progress. |
+| CPU move | `POST /moves` with `{}` | Sent whenever `turnColor` is the CPU's colour and no other CPU action is in progress. |
 
 `HARD` is the Alfi easter egg. The rival is presented as "Stockfish" until Alfi reveals himself; from then on his regular moves are still the server's CPU moves.
 
 ### Alfi's cheats
 
-The cheats use the fact that `POST /moves` applies `moveset().get(moveId)` from `from` to `to` without checking the turn, the path or the move's condition. For every piece except the pawn, index 0 has the `DIRECT_CAPTURE` effect, so `moveId: 0` moves that piece to any empty square. `TurnColorUpdater` then gives the turn to the rival of whoever moved. All cheats are `PLAYER` moves.
+The cheats use the fact that `POST /moves` applies `moveset().get(moveId)` from `from` to `to` without checking the turn, the path or the move's condition. For every piece except the pawn, index 0 has the `DIRECT_CAPTURE` effect, so `moveId: 0` moves that piece to any empty square. `TurnColorUpdater` then gives the turn to the rival of whoever moved. All cheats are moves with explicit squares.
 
 | Cheat | How it works | When it is sent |
 | --- | --- | --- |

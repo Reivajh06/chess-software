@@ -2,58 +2,62 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { ChessApi, ApiError, HttpStatus } from "../../main/resources/web/modules/api.js";
 import { SessionAccess } from "../../main/resources/web/modules/session.js";
+import { serverAddress } from "../../main/resources/web/modules/network.js";
 import { GameStore, normalizeState, stateSignature } from "../../main/resources/web/modules/state.js";
 
-const playerId = "f3435c46-1a64-40c5-9b03-4b0bb3390020";
+const playerId = "node01gq7x2k9d0b3a1";
 const state = {
   status: "ACTIVE", turn: "WHITE", checkedColor: null, waitingForOpponent: true,
   fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", moves: [],
 };
 const created = {
   sessionId: "6e26bb12-02ae-4e08-a99f-c0af94d67608", gamemode: "PRACTICE",
-  difficulty: "PRACTICE", whiteId: playerId, blackId: playerId, state,
+  difficulty: "PRACTICE", playerId, playerColor: "BLACK", state,
 };
 
-test("accepts the backend's text/plain JSON creation response and shared practice ID", async (t) => {
+test("practice accepts the text/plain creation response and joins its own session for the second seat", async (t) => {
   const calls = [];
   t.mock.method(globalThis, "fetch", async (path, options) => {
     calls.push({ path, options });
-    return new Response(JSON.stringify(created), {
+    const body = calls.length === 1 ? created
+      : { playerId, playerColor: "WHITE", gamemode: "PRACTICE", difficulty: "PRACTICE",
+          state: { ...state, waitingForOpponent: false } };
+    return new Response(JSON.stringify(body), {
       status: 201, headers: { "Content-Type": "text/plain" },
     });
   });
   const api = new ChessApi();
   const { session, state: initial } = await new SessionAccess(api).open(null, "PRACTICE");
-  assert.equal(session.playerId, playerId);
-  assert.equal(api.playerId, playerId);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PRACTICE", difficulty: "PRACTICE" });
+  assert.equal(calls[1].path, `/api/sessions/${created.sessionId}/join`);
+  assert.equal(session.playerColor, null);
+  assert.equal("playerId" in session, false);
   const store = new GameStore();
   store.session = session;
   store.apply(initial);
   assert.equal(store.pieces.size, 32);
   assert.equal(store.interactive, true);
+  assert.equal(store.orientation, "WHITE");
 });
 
-test("selection and moves send only the acting player ID, without token headers or color", async (t) => {
+test("selection and moves identify the player only by the session cookie: no ID, token headers or color", async (t) => {
   const calls = [];
   t.mock.method(globalThis, "fetch", async (path, options) => {
     calls.push({ path, options });
     return new Response('{"moves":[]}', { status: 200 });
   });
   const api = new ChessApi();
-  api.playerId = playerId;
   await api.legal(created.sessionId, "e2");
   await api.move(created.sessionId, "e2", "e4", 1);
   assert.equal(calls[0].options.method, "POST");
   assert.ok(calls[0].path.endsWith("/legal-moves"));
-  assert.deepEqual(JSON.parse(calls[0].options.body), { playerId, from: "e2" });
-  assert.deepEqual(JSON.parse(calls[1].options.body), { playerType: "PLAYER", playerId, from: "e2", to: "e4", moveId: 1 });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { from: "e2" });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { from: "e2", to: "e4", moveId: 1 });
   assert.equal(calls[1].options.headers["X-Player-Token"], undefined);
 });
 
 test("PvCPU creates the session and asks the server for the machine's move", async (t) => {
-  const cpuId = "0fbf132e-638b-434c-a55d-38d61160afcb";
   const replies = [
     { ...created, gamemode: "PVCPU", difficulty: "EASY", playerId, playerColor: "WHITE" },
     { from: "E7", to: "e5", promote_to: null },
@@ -69,12 +73,12 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   // El servidor ya sienta a la CPU: no se llama a /join.
   assert.equal(calls.length, 1);
   assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVCPU", difficulty: "EASY" });
-  assert.deepEqual(session.cpu, { color: "BLACK", playerType: "CPU" });
+  assert.deepEqual(session.cpu, { color: "BLACK" });
   assert.equal(initial.waitingForOpponent, false);
 
-  const { move } = await api.machineMove(session.sessionId, session.cpu.playerType, session.cpu.playerId);
+  const { move } = await api.machineMove(session.sessionId);
   assert.ok(calls[1].path.endsWith("/moves"));
-  assert.deepEqual(JSON.parse(calls[1].options.body), { playerType: "CPU" });
+  assert.deepEqual(JSON.parse(calls[1].options.body), {});
   assert.deepEqual(move, { from: "e7", to: "e5", promotion: null });
   assert.equal(calls[2].options.method, "GET");
 });
@@ -128,9 +132,8 @@ test("empty move responses refresh the board, chronological history and captures
     });
   });
   const api = new ChessApi();
-  api.playerId = playerId;
   const store = new GameStore();
-  store.session = { ...created, playerId, playerColor: "WHITE" };
+  store.session = { ...created, playerColor: "WHITE" };
   store.apply(state);
   const moves = [["e2", "e4", 1], ["d7", "d5", 1], ["e4", "d5", 2]];
   for (const [index, [from, to, moveId]] of moves.entries()) {
@@ -244,7 +247,6 @@ test("PvP creation takes the creator's seat from the creation response without j
   };
   const { session, state: initial } = await new SessionAccess(api).open(null, "PVP");
   assert.equal(joins, 0);
-  assert.equal(session.playerId, playerId);
   assert.equal(session.playerColor, "BLACK");
   assert.equal(initial.waitingForOpponent, true);
 });
@@ -266,15 +268,23 @@ test("the invited player joins with an empty body and takes the seat the server 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].path, `/api/sessions/${created.sessionId}/join`);
   assert.deepEqual(JSON.parse(calls[0].options.body), {});
-  assert.equal(session.playerId, playerId);
   assert.equal(session.playerColor, "WHITE");
-  assert.equal(api.playerId, playerId);
+  assert.equal("playerId" in session, false);
 });
 
 test("joining a full room reports it", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response("", { status: 409 }));
   await assert.rejects(new SessionAccess(new ChessApi()).open(created.sessionId),
     error => error.status === 409 && /completa/.test(error.message));
+});
+
+test("the invitation address falls back to the page's port when the server reports an unusable one", async (t) => {
+  globalThis.location = { port: "5000" };
+  t.after(() => delete globalThis.location);
+  const reporting = (port) => ({ serverInfo: async () => ({ address: "192.168.1.69", port }) });
+  assert.deepEqual(await serverAddress(reporting(0)), { address: "192.168.1.69", port: "5000" });
+  assert.deepEqual(await serverAddress(reporting(undefined)), { address: "192.168.1.69", port: "5000" });
+  assert.deepEqual(await serverAddress(reporting(8080)), { address: "192.168.1.69", port: "8080" });
 });
 
 test("the invitation link carries only the session ID", () => {

@@ -8,6 +8,7 @@ import reivajh06.api.ApiException;
 import reivajh06.api.dtos.MovePieceDto;
 import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.gamelogic.GameSession;
+import reivajh06.database.Player;
 
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +22,8 @@ public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
 		GameDirector updater = new GameDirector(session);
+
+		if(!session.hasTurn(new Player(ctx.sessionAttribute("username"), ctx.ip()))) return null;
 
 		updater.movePieceAndUpdate(
 				moveRequest.moveId(),

@@ -11,7 +11,9 @@ import reivajh06.api.dtos.PieceMovesResponseDto;
 import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Tile;
+import reivajh06.database.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +27,8 @@ public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceM
 		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
+
+		if(!session.hasTurn(new Player(ctx.sessionAttribute("username"), ctx.ip()))) new PieceMovesResponseDto(new ArrayList<>());
 
 		GameDirector director = new GameDirector(session);
 

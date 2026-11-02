@@ -53,9 +53,6 @@ export const cpuLevels = [
   { id: "HARD", name: "Difícil", detail: "La máquina a pleno rendimiento" },
 ];
 
-// Tipo de jugador que se envía a /moves cuando mueve una máquina.
-export const machineTypes = { PVCPU: "CPU", PVAI: "AI", AIVAI: "AI" };
-
 export const menuOrder = ["PVP", "PRACTICE", "PVAI", "PVCPU", "AIVAI"];
 
 export function modeDefinition(id) {

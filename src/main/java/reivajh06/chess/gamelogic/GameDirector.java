@@ -93,6 +93,31 @@ public class GameDirector {
 
 		session.gameState().board().removePieceIn(location);
 		session.gameState().board().addPiece(location, promotedPiece);
+
+		updateStatusOnPromotion(promotedPiece.color());
+	}
+
+	private void updateStatusOnPromotion(Color promotedColor) {
+		GameStatus gameStatus = session.gameState().status();
+		Color rivalColor = Color.rivalColor(promotedColor);
+
+		if(GameConditions.isCheckMate(session.gameState(), rivalColor)) gameStatus = rivalColor == Color.BLACK ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN;
+
+		GameState updatedGameState = new GameStateBuilder()
+				.board(session.gameState().board())
+				.enPassantDestination(session.gameState().enPassantDestination())
+				.halfMoveClock(session.gameState().halfMoveClock())
+				.checkedColor(GameConditions.isKingChecked(session.gameState(), rivalColor) ? rivalColor : session.gameState().checkedColor())
+				.movesHistory(session.gameState().movesHistory())
+				.status(gameStatus)
+				.castlingRights(session.gameState().castlingRights())
+				.eatenPieces(session.gameState().eatenPieces())
+				.fullMoves(session.gameState().fullMoves())
+				.positions(session.gameState().positions())
+				.turnColor(session.gameState().turnColor())
+				.build();
+
+		session.gameState(updatedGameState);
 	}
 
 	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
