@@ -75,9 +75,9 @@ public class GameSession {
         return FenParser.gameStateToFen(gameState);
     }
 
-	public boolean hasTurn(Player username) {
+	public boolean hasTurn(Player player) {
 		Color turnColor = gameState.turnColor();
 
-        return playerIdentifier(turnColor).equals(username);
+        return playerIdentifier(turnColor) != null && playerIdentifier(turnColor).equals(player);
 	}
 }
