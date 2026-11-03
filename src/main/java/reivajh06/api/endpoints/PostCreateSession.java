@@ -20,7 +20,11 @@ public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, 
 	protected CreateSessionResponseDto run(Context ctx, Map<String, String> pathParamMap, CreateSessionRequestDto request) {
 		GameSession session = new GameSession(request.gamemode(), request.difficulty());
 		String id = ctx.req().getSession().getId();
-		Color creatorColor = session.assignColor(new Player(ctx.sessionAttribute("username"), ctx.ip()));
+		Player player = new Player(ctx.sessionAttribute("username"), ctx.ip());
+
+		if(ctx.sessionAttribute("username") == null) player = Player.guest(ctx.ip());
+
+		Color creatorColor = session.assignColor(player);
 
 		Sessions.registerSession(session);
 

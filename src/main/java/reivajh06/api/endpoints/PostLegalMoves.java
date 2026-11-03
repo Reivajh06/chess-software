@@ -28,7 +28,11 @@ public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceM
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		if(!session.hasTurn(new Player(ctx.sessionAttribute("username"), ctx.ip()))) return new PieceMovesResponseDto(new ArrayList<>());
+		Player player = new Player(ctx.sessionAttribute("username"), ctx.ip());
+
+		if(ctx.sessionAttribute("username") == null) player = Player.guest(ctx.ip());
+
+		if(!session.hasTurn(player)) return new PieceMovesResponseDto(new ArrayList<>());
 
 		GameDirector director = new GameDirector(session);
 
