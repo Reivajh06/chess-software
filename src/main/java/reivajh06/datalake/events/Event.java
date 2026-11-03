@@ -1,21 +1,21 @@
 package reivajh06.datalake.events;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public abstract class Event {
 
-	private final String timestamp;
+	private final LocalDateTime timestamp;
 	private final String id;
 	private final String username;
 
 	public Event(String username) {
-		this.timestamp = LocalDate.now().toString();
+		this.timestamp = LocalDateTime.now();
 		this.id = UUID.randomUUID().toString();
 		this.username = username;
 	}
 
-	public String timestamp() {
+	public LocalDateTime timestamp() {
 		return timestamp;
 	}
 

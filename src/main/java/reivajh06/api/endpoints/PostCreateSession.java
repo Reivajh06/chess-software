@@ -28,6 +28,8 @@ public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, 
 
 		Sessions.registerSession(session);
 
+		Archchess.instance().publish(new CreateSessionEvent(player.username(), session.id(), session.gamemode()));
+
 		return new CreateSessionResponseDto(
 				session.id(),
 				session.gamemode(),

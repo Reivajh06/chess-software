@@ -4,6 +4,7 @@ import com.google.gson.*;
 import reivajh06.chess.model.Tile;
 
 import java.lang.reflect.Type;
+import java.time.LocalDateTime;
 
 public class Json {
 
@@ -11,12 +12,14 @@ public class Json {
 			.setPrettyPrinting()
 			.serializeNulls()
 			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, _, _) -> new Tile(json.getAsString()))
+			.registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (ts, _, _) -> new JsonPrimitive(ts.toString()))
 			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, _, _) -> new JsonPrimitive(tile.name().toLowerCase()))
 			.create();
 
 	private static final Gson GSON = new GsonBuilder()
 			.serializeNulls()
 			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, _, _) -> new Tile(json.getAsString()))
+			.registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (ts, _, _) -> new JsonPrimitive(ts.toString()))
 			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, _, _) -> new JsonPrimitive(tile.name().toLowerCase()))
 			.create();
 
