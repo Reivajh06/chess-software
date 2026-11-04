@@ -57,7 +57,8 @@ public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
 				moveRequest.from(),
 				moveRequest.to(),
 				piece.type(),
-				FenParser.gameStateToFen(session.gameState())
+				FenParser.gameStateToFen(session.gameState()),
+				session.gameState().status()
 				));
 		return null;
 	}

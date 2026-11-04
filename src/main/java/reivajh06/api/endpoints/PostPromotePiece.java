@@ -3,6 +3,7 @@ package reivajh06.api.endpoints;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
+import reivajh06.FenParser;
 import reivajh06.Json;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
@@ -23,13 +24,17 @@ public class PostPromotePiece extends EndpointHandler<PromotePieceDto, Void> {
         if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
         GameDirector director = new GameDirector(session);
+        director.promotePiece(request.tile(), request.newType());
+
         Archchess.instance().publish(new PromotePieceEvent(
                 ctx.sessionAttribute("username") == null ? ctx.ip() : ctx.sessionAttribute("username"),
                 session.gameState().board().pieceAt(request.tile()).type(),
                 session.gameState().board().pieceAt(request.tile()).color(),
-                request.newType()
-                ));
-        director.promotePiece(request.tile(), request.newType());
+                request.newType(),
+                session.id(),
+                session.gameState().status(),
+                FenParser.gameStateToFen(session.gameState())
+        ));
 
         return null;
     }
