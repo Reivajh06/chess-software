@@ -80,6 +80,12 @@ public class MoveRules {
 		if(!ctx.gameState().castlingRights().hasRight(color, Castling.QUEENSIDE)) return false;
 		if(ctx.gameState().checkedColor() == color) return false;
 
+		Tile rookQueensideTile = new Tile(File.A, color == Color.BLACK ? Rank.R8 : Rank.R1);
+		Piece pieceOnQueenside = ctx.gameState().board().pieceAt(rookQueensideTile);
+
+		if(pieceOnQueenside == null) return false;
+		if(pieceOnQueenside.type() != PieceType.ROOK) return false;
+
 		for(File file = File.C; file != null && file.compareTo(ctx.from().file()) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
 
@@ -102,6 +108,12 @@ public class MoveRules {
 
 		if(!ctx.gameState().castlingRights().hasRight(color, Castling.KINGSIDE)) return false;
 		if(ctx.gameState().checkedColor() == color) return false;
+
+		Tile rookTile = new Tile(File.H, color == Color.BLACK ? Rank.R8 : Rank.R1);
+		Piece pieceAtRookTile = ctx.gameState().board().pieceAt(rookTile);
+
+		if(pieceAtRookTile == null) return false;
+		if(pieceAtRookTile.type() != PieceType.ROOK) return false;
 
 		for(File file = File.next(ctx.from().file()); file != null && file.compareTo(File.H) < 0; file = File.next(file)) {
 			Tile tile = new Tile(file, ctx.from().rank());
