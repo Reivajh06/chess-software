@@ -10,4 +10,12 @@ public class JoinSessionEvent extends Event {
 		this.sessionId = sessionId;
 		this.rivalUsername = rivalUsername;
 	}
+
+	public String sessionId() {
+		return sessionId;
+	}
+
+	public String rivalUsername() {
+		return rivalUsername;
+	}
 }

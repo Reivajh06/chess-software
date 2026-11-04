@@ -3,11 +3,13 @@ package reivajh06;
 import reivajh06.api.ChessAPI;
 import reivajh06.database.Database;
 import reivajh06.datalake.EventPublisher;
+import reivajh06.datalake.EventReader;
 import reivajh06.datalake.events.Event;
 import reivajh06.plugins.PluginsManager;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.List;
 
 public class Archchess {
 
@@ -27,6 +29,7 @@ public class Archchess {
 	private ChessAPI api;
 	private Database database;
 	private EventPublisher eventPublisher;
+	private EventReader eventReader;
 	private PluginsManager pluginsManager;
 
 	public File home() {
@@ -64,6 +67,10 @@ public class Archchess {
 		return pluginsManager;
 	}
 
+	public EventReader eventReader() {
+		return eventReader;
+	}
+
 	public synchronized void publish(Event event) {
 		eventPublisher.publish(event);
 	}
@@ -72,6 +79,7 @@ public class Archchess {
 		api = new ChessAPI(home, port);
 		database = new Database(databasePath);
 		eventPublisher = new EventPublisher(datalakePath);
+		eventReader = new EventReader(datalakePath);
 		pluginsManager = new PluginsManager(home);
 
 		Thread thread = new Thread(() -> {

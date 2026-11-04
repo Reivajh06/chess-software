@@ -5,17 +5,17 @@ import java.util.UUID;
 
 public abstract class Event {
 
-	private final LocalDateTime timestamp;
+	private final String timestamp;
 	private final String id;
 	private final String username;
 
 	public Event(String username) {
-		this.timestamp = LocalDateTime.now();
+		this.timestamp = LocalDateTime.now().toString();
 		this.id = UUID.randomUUID().toString();
 		this.username = username;
 	}
 
-	public LocalDateTime timestamp() {
+	public String timestamp() {
 		return timestamp;
 	}
 

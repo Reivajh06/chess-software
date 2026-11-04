@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.time.temporal.TemporalField;
 
 public class EventPublisher {
@@ -22,7 +23,7 @@ public class EventPublisher {
 			File eventFolder = new File(datalakePath + "/" + event.getClass().getSimpleName());
 			eventFolder.mkdirs();
 
-			File target = new File(eventFolder + "/" + event.timestamp().toLocalDate().toString() + ".jsonl");
+			File target = new File(eventFolder + "/" + LocalDateTime.parse(event.timestamp()).toLocalDate().toString() + ".jsonl");
 
 			Files.writeString(target.toPath(), Json.toJson(event) + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 

@@ -24,4 +24,28 @@ public class PromotePieceEvent extends Event {
         this.status = status;
         this.stateFen = stateFen;
     }
+
+    public PieceType promotedPiece() {
+        return promotedPiece;
+    }
+
+    public Color color() {
+        return color;
+    }
+
+    public PieceType promotedTo() {
+        return promotedTo;
+    }
+
+    public String sessionId() {
+        return sessionId;
+    }
+
+    public GameStatus status() {
+        return status;
+    }
+
+    public String stateFen() {
+        return stateFen;
+    }
 }

@@ -4,6 +4,7 @@ import com.google.gson.*;
 import reivajh06.chess.model.Tile;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Json {

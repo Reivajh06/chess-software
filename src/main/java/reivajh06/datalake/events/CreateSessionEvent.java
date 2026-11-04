@@ -14,4 +14,12 @@ public class CreateSessionEvent extends Event {
 		this.sessionId = sessionId.toString();
 		this.gamemode = gamemode;
 	}
+
+	public String sessionId() {
+		return sessionId;
+	}
+
+	public Gamemode gamemode() {
+		return gamemode;
+	}
 }

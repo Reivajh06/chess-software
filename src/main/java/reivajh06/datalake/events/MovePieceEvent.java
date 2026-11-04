@@ -24,4 +24,28 @@ public class MovePieceEvent extends Event {
         this.stateFen = stateFen;
         this.status = status;
     }
+
+    public String sessionId() {
+        return sessionId;
+    }
+
+    public Tile from() {
+        return from;
+    }
+
+    public Tile to() {
+        return to;
+    }
+
+    public PieceType pieceType() {
+        return pieceType;
+    }
+
+    public String stateFen() {
+        return stateFen;
+    }
+
+    public GameStatus status() {
+        return status;
+    }
 }
