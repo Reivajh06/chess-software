@@ -60,6 +60,7 @@ Any other non-`2xx` status is shown as "Error del servidor (N).". When an error 
 | --- | --- |
 | `gamemode` | `PRACTICE`, `PVP`, `PVCPU`, `PVAI`, `AIVAI`. The frontend's local two-player mode (`LOCAL`) is sent as `PVP`. |
 | `difficulty` | `PRACTICE` for practice, `EASY` / `MEDIUM` / `HARD` for PvCPU, `NOT_CPU` for everything else. |
+| `pluginNames` | Only for `PVCPU`, `PVAI` (one name) and `AIVAI` (white, then black; both may be the same). Names come from `GET /api/plugins`. |
 
 ### Response (`201 Created`)
 
@@ -256,17 +257,17 @@ The link is `http://<host>:<port>/?session=<sessionId>`. If `port` is missing or
 | `PRACTICE` | Available | The player, both colours | — |
 | `PVP` (invitation) | Available | One player per device | — |
 | `LOCAL` | Available (from the PvP dialog) | Both players on one device; the board turns to the side to move | — |
-| `PVCPU` | Available (difficulty dialog) | The player vs. the CPU | `{}` |
-| `PVAI` | Disabled | The player vs. the AI | `{}` |
-| `AIVAI` | Disabled | Two machines; the page only watches | `{}` for each colour |
+| `PVCPU` | Available (plugin dialog, then difficulty dialog) | The player vs. the CPU | `{}` |
+| `PVAI` | Available (plugin dialog) | The player vs. the AI | `{}` |
+| `AIVAI` | Available (plugin dialog, once per colour) | Two machines; the page only watches | `{}` for each colour |
 
-`PVAI` and `AIVAI` already follow the flow above; they are enabled with `available: true` in `modules/modes.js`.
+The plugin dialog reads `GET /api/plugins`, which answers `{ "plugins": ["stockfish.jar"] }`, every time it opens. If the list is empty it says that no plugins are installed and no session can be created in that mode. A rematch reuses the plugins of the finished session.
 
 ## 7. PvCPU and the Alfi mode
 
 | Step | Route | Notes |
 | --- | --- | --- |
-| Create | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD" }` |
+| Create | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD", "pluginNames": ["stockfish.jar"] }` |
 | Seat the CPU | — | Seated on creation. It plays the colour opposite `playerColor`. |
 | CPU move | `POST /moves` with `{}` | Sent whenever `turnColor` is the CPU's colour and no other CPU action is in progress. |
 

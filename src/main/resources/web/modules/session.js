@@ -14,12 +14,12 @@ export class SessionAccess {
     this.api = api;
   }
 
-  async open(sessionId, mode = "PVP", cpuDifficulty = "EASY") {
+  async open(sessionId, mode = "PVP", cpuDifficulty = "EASY", pluginNames) {
     const difficulty = mode === "PRACTICE" ? "PRACTICE" : mode === "PVCPU" ? cpuDifficulty : "NOT_CPU";
     const local = !sessionId && mode === "LOCAL";
     const practice = !sessionId && mode === "PRACTICE";
     const created = sessionId ? null :
-      await this.api.create(modeDefinition(mode).server ?? mode, difficulty);
+      await this.api.create(modeDefinition(mode).server ?? mode, difficulty, pluginNames);
     const id = sessionId ?? created.sessionId ?? created.id;
     if (!id)
       throw new Error("El servidor no ha proporcionado el ID de sesión.");
@@ -60,6 +60,7 @@ export class SessionAccess {
       difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
       ...(cpu ? { cpu, alfi: gamemode === "PVCPU" && difficulty === "HARD" ? "hidden" : null } : {}),
       ...(machines ? { machines } : {}),
+      ...(pluginNames ? { pluginNames } : {}),
     };
 
     const state = seat.state ?? seat.gameState ?? created?.state ?? created?.gameState ??

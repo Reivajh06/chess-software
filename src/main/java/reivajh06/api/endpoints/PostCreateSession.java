@@ -41,7 +41,7 @@ public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, 
 	}
 
 	@Override
-	protected CreateSessionRequestDto deserializeBody(Context ctx) {
-		return Json.fromJsonPretty(ctx.body(), CreateSessionRequestDto.class);
+	protected CreateSessionRequestDto deserializeBody(String body) {
+		return Json.fromJsonPretty(body, CreateSessionRequestDto.class);
 	}
 }

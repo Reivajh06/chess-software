@@ -31,7 +31,7 @@ public class GetServerAddress extends EndpointHandler<Void, ServerAddressDto> {
 	}
 
 	@Override
-	protected Void deserializeBody(Context ctx) {
+	protected Void deserializeBody(String body) {
 		return null;
 	}
 }

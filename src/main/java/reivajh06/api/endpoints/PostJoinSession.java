@@ -50,7 +50,7 @@ public class PostJoinSession extends EndpointHandler<Void, JoinDto> {
 	}
 
 	@Override
-	protected Void deserializeBody(Context ctx) {
+	protected Void deserializeBody(String body) {
 		return null;
 	}
 }

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { ChessApi, ApiError, HttpStatus } from "../../main/resources/web/modules/api.js";
 import { SessionAccess } from "../../main/resources/web/modules/session.js";
+import { pluginLabel } from "../../main/resources/web/modules/modes.js";
 import { serverAddress } from "../../main/resources/web/modules/network.js";
 import { GameStore, normalizeState, stateSignature } from "../../main/resources/web/modules/state.js";
 
@@ -81,6 +82,38 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   assert.deepEqual(JSON.parse(calls[1].options.body), {});
   assert.deepEqual(move, { from: "e7", to: "e5", promotion: null });
   assert.equal(calls[2].options.method, "GET");
+});
+
+test("the installed plugins are read from the server, and an empty list is a valid answer", async (t) => {
+  const calls = [];
+  const replies = [{ plugins: ["stockfish.jar", "alfi.jar"] }, { plugins: [] }];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    calls.push({ path, options });
+    return new Response(JSON.stringify(replies[calls.length - 1]), { status: 200 });
+  });
+  const api = new ChessApi();
+  assert.deepEqual(await api.plugins(), ["stockfish.jar", "alfi.jar"]);
+  assert.deepEqual(await api.plugins(), []);
+  assert.equal(calls[0].path, "/api/plugins");
+  assert.equal(calls[0].options.method, "GET");
+  assert.equal(pluginLabel("stockfish.jar"), "stockfish");
+});
+
+test("a plugin answer without a list is rejected", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("{}", { status: 200 }));
+  await assert.rejects(new ChessApi().plugins(), /Respuesta del servidor no válida/);
+});
+
+test("the chosen plugins are sent on creation and kept for the rematch", async (t) => {
+  const bodies = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    bodies.push(JSON.parse(options.body));
+    return new Response(JSON.stringify({ ...created, gamemode: "AIVAI", difficulty: "NOT_CPU" }), { status: 201 });
+  });
+  const pluginNames = ["stockfish.jar", "alfi.jar"];
+  const { session } = await new SessionAccess(new ChessApi()).open(null, "AIVAI", undefined, pluginNames);
+  assert.deepEqual(bodies[0], { gamemode: "AIVAI", difficulty: "NOT_CPU", pluginNames });
+  assert.deepEqual(session.pluginNames, pluginNames);
 });
 
 const events = [

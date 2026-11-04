@@ -28,7 +28,7 @@ public class PostLogin extends EndpointHandler<AccountRequestDto, Void> {
 	}
 
 	@Override
-	protected AccountRequestDto deserializeBody(Context ctx) {
-		return Json.fromJsonPretty(ctx.body(), AccountRequestDto.class);
+	protected AccountRequestDto deserializeBody(String body) {
+		return Json.fromJsonPretty(body, AccountRequestDto.class);
 	}
 }

@@ -47,7 +47,7 @@ public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceM
 	}
 
 	@Override
-	protected PieceMovesRequestDto deserializeBody(Context ctx) {
-		return Json.fromJsonPretty(ctx.body(), PieceMovesRequestDto.class);
+	protected PieceMovesRequestDto deserializeBody(String body) {
+		return Json.fromJsonPretty(body, PieceMovesRequestDto.class);
 	}
 }

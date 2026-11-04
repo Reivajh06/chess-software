@@ -39,6 +39,7 @@ public class ChessAPI {
 
 		config.routes.get("/api/sessions/{sessionId}", new GetReadCurrentState());
 		config.routes.get("/api/server", new GetServerAddress(port));
+		config.routes.get("/api/plugins", new GetAvailablePlugins());
 
 		config.routes.delete("/api/accounts/delete", new DeleteAccount());
 	}

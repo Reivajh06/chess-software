@@ -4,8 +4,10 @@ import reivajh06.api.ChessAPI;
 import reivajh06.database.Database;
 import reivajh06.datalake.EventPublisher;
 import reivajh06.datalake.events.Event;
+import reivajh06.plugins.PluginsManager;
 
 import java.io.File;
+import java.time.Duration;
 
 public class Archchess {
 
@@ -19,11 +21,13 @@ public class Archchess {
 
 	private File home;
 	private int port;
+	private String databasePath = DEFAULT_DB_PATH;
+	private String datalakePath = DEFAULT_DL_PATH;
+
 	private ChessAPI api;
 	private Database database;
 	private EventPublisher eventPublisher;
-	private String databasePath = DEFAULT_DB_PATH;
-	private String datalakePath = DEFAULT_DL_PATH;
+	private PluginsManager pluginsManager;
 
 	public File home() {
 		return home;
@@ -56,6 +60,10 @@ public class Archchess {
 		return api;
 	}
 
+	public PluginsManager getPluginsManager() {
+		return pluginsManager;
+	}
+
 	public synchronized void publish(Event event) {
 		eventPublisher.publish(event);
 	}
@@ -64,6 +72,18 @@ public class Archchess {
 		api = new ChessAPI(home, port);
 		database = new Database(databasePath);
 		eventPublisher = new EventPublisher(datalakePath);
+		pluginsManager = new PluginsManager(home);
+
+		Thread thread = new Thread(() -> {
+			pluginsManager.reloadPlugins();
+            try {
+                Thread.sleep(Duration.ofMinutes(3));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+		thread.setDaemon(true);
+		thread.start();
 
 		api.start();
 		database.init();

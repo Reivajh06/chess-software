@@ -31,7 +31,7 @@ public class GetReadCurrentState extends EndpointHandler<Void, ReadStateResponse
 	}
 
 	@Override
-	protected Void deserializeBody(Context ctx) {
+	protected Void deserializeBody(String body) {
 		return null;
 	}
 }

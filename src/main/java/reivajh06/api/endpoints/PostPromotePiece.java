@@ -35,7 +35,7 @@ public class PostPromotePiece extends EndpointHandler<PromotePieceDto, Void> {
     }
 
     @Override
-    protected PromotePieceDto deserializeBody(Context ctx) {
-        return Json.fromJsonPretty(ctx.body(), PromotePieceDto.class);
+    protected PromotePieceDto deserializeBody(String body) {
+        return Json.fromJsonPretty(body, PromotePieceDto.class);
     }
 }

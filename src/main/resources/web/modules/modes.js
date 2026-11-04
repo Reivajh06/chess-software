@@ -18,24 +18,26 @@ export const gameModes = {
     hint: "La IA aún está aprendiendo. Como Clippy, pero con ganas.",
     name: "Contra IA",
     badge: "PvAI",
-    detail: "Modelos locales de Ollama",
-    available: false,
-    reason: "El servidor todavía no expone modelos de Ollama ni ejecuta jugadas de IA.",
+    detail: "Elige un plugin instalado",
+    available: true,
+    pluginPrompts: ["¿Qué plugin será tu rival?"],
   },
   AIVAI: {
-    hint: "Dos IAs peleándose. Pronto. Ve preparando palomitas.",
+    hint: "Dos IAs peleándose. Ve preparando palomitas.",
     name: "IA contra IA",
     badge: "Espectador",
-    detail: "Observar una partida entre modelos",
-    available: false,
-    reason: "La creación de partidas entre modelos todavía no está disponible en el servidor.",
+    detail: "Elige dos plugins y observa",
+    available: true,
+    // Una pregunta por asiento; pluginNames sigue este orden.
+    pluginPrompts: ["¿Qué plugin juega con blancas?", "¿Qué plugin juega con negras?"],
   },
   PVCPU: {
     hint: "Contra la máquina. No se cansa, no se queja y no acepta sobornos.",
     name: "Contra CPU",
     badge: "PvCPU",
-    detail: "Elige la dificultad",
+    detail: "Elige plugin y dificultad",
     available: true,
+    pluginPrompts: ["¿Qué plugin moverá la CPU?"],
   },
   PRACTICE: {
     hint: "Juegas contra ti mismo. Por fin un rival a tu altura.",
@@ -54,6 +56,9 @@ export const cpuLevels = [
 ];
 
 export const menuOrder = ["PVP", "PRACTICE", "PVAI", "PVCPU", "AIVAI"];
+
+// El servidor identifica cada plugin por el nombre de su .jar.
+export const pluginLabel = (name) => name.replace(/\.jar$/i, "");
 
 export function modeDefinition(id) {
   return gameModes[id] ?? gameModes.PVP;

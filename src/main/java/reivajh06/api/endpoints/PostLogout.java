@@ -16,7 +16,7 @@ public class PostLogout extends EndpointHandler<Void, Void> {
 	}
 
 	@Override
-	protected Void deserializeBody(Context ctx) {
+	protected Void deserializeBody(String body) {
 		return null;
 	}
 }

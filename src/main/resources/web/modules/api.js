@@ -71,8 +71,13 @@ export class ChessApi {
       this.controllers.delete(controller);
     }
   }
-  create(mode, difficulty) {
-    return this.request("/sessions", { gamemode: mode, difficulty });
+  create(mode, difficulty, pluginNames) {
+    return this.request("/sessions", { gamemode: mode, difficulty, pluginNames });
+  }
+  async plugins() {
+    const { plugins } = await this.request("/plugins");
+    if (!Array.isArray(plugins)) throw new ApiError("Respuesta del servidor no válida.");
+    return plugins;
   }
   createAccount(username, password) {
     return this.request("/accounts", { username, password }, { allowEmpty: true });

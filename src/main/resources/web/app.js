@@ -12,6 +12,7 @@ import {
 } from "./modules/preferences.js";
 import { serverAddress } from "./modules/network.js";
 import { SessionAccess, SessionPolling } from "./modules/session.js";
+import { PluginDialog } from "./modules/plugins.js";
 import { GameAudio } from "./modules/audio.js";
 import { BackgroundMusic } from "./modules/music.js";
 import { applyTheme, populateThemes } from "./modules/themes.js";
@@ -80,10 +81,23 @@ let hoveredEntry = null;
 let cpuTimer = null;
 let cpuFailures = 0;
 
+// Plugins elegidos para la CPU mientras el jugador decide la dificultad.
+let cpuPlugins = null;
+
+// Con su propio cliente: las jugadas de una partida en curso cancelan las peticiones del cliente compartido.
+const pluginDialog = new PluginDialog(new ChessApi(), (mode, pluginNames) => {
+  if (mode === "PVCPU") {
+    cpuPlugins = pluginNames;
+    byId("cpu-dialog").showModal();
+  } else {
+    openSession(null, mode, undefined, pluginNames);
+  }
+});
+
 const title = new TitleScreen({
   onStart: (mode) => mode === "PVP"
       ? byId("pvp-dialog").showModal()
-      : mode === "PVCPU" ? byId("cpu-dialog").showModal() : openSession(null, mode),
+      : modeDefinition(mode).pluginPrompts ? pluginDialog.open(mode) : openSession(null, mode),
   onJoin: joinSession,
   onContinue: () => {
     showScreen("game");
@@ -1007,7 +1021,7 @@ function joinSession(value) {
   return openSession(id, "PVP");
 }
 
-async function openSession(id, mode, difficulty) {
+async function openSession(id, mode, difficulty, pluginNames) {
   if (sessionBusy || (!id && !modeDefinition(mode).available)) {
     return;
   }
@@ -1023,7 +1037,7 @@ async function openSession(id, mode, difficulty) {
   renderGame();
 
   try {
-    const { session, state } = await sessions.open(id, mode, difficulty);
+    const { session, state } = await sessions.open(id, mode, difficulty, pluginNames);
 
     if (generation === sessionVersion) {
       await activateSession(session, state);
@@ -1100,7 +1114,7 @@ byId("account-chip").addEventListener("click", () => {
 byId("result-rematch").addEventListener("click", () => {
   const mode = store.session?.gamemode ?? "PRACTICE";
   byId("result-dialog").close();
-  openSession(null, mode, store.session?.difficulty);
+  openSession(null, mode, store.session?.difficulty, store.session?.pluginNames);
 });
 
 for (const level of cpuLevels) {
@@ -1113,7 +1127,7 @@ for (const level of cpuLevels) {
   button.querySelector("small").textContent = level.detail;
   button.addEventListener("click", () => {
     byId("cpu-dialog").close();
-    openSession(null, "PVCPU", level.id);
+    openSession(null, "PVCPU", level.id, cpuPlugins);
   });
   byId("cpu-levels").append(button);
 }

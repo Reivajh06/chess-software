@@ -52,7 +52,7 @@ public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
 	}
 
 	@Override
-	protected MovePieceDto deserializeBody(Context ctx) {
-		return Json.fromJsonPretty(ctx.body(), MovePieceDto.class);
+	protected MovePieceDto deserializeBody(String body) {
+		return Json.fromJsonPretty(body, MovePieceDto.class);
 	}
 }
