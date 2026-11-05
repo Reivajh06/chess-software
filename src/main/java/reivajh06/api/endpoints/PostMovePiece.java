@@ -1,8 +1,8 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.services.FenParser;
 import reivajh06.services.Json;
 import reivajh06.Sessions;
@@ -19,11 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
+public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
 
 	@Override
-	protected Void run(Context ctx, Map<String, String> pathParamMap, MovePieceDto moveRequest) {
-		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
+	public Void run(EndpointContext ctx, MovePieceDto moveRequest) {
+		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
@@ -60,11 +60,12 @@ public class PostMovePiece extends EndpointHandler<MovePieceDto, Void> {
 				FenParser.gameStateToFen(session.gameState()),
 				session.gameState().status()
 				));
+
 		return null;
 	}
 
 	@Override
-	protected MovePieceDto deserializeBody(String body) {
+	public MovePieceDto deserializeBody(String body) {
 		return Json.fromJsonPretty(body, MovePieceDto.class);
 	}
 }

@@ -1,21 +1,20 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
-import reivajh06.services.Json;
 import reivajh06.api.ApiException;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;
 import reivajh06.datalake.events.CreateAccountEvent;
+import reivajh06.services.Json;
 
-import java.util.Map;
 import java.util.regex.Pattern;
 
-public class PostCreateAccount extends EndpointHandler<AccountRequestDto, Void> {
+public class PostCreateAccount implements EndpointOperator<AccountRequestDto, Void> {
 
 	@Override
-	protected Void run(Context ctx, Map<String, String> pathParamMap, AccountRequestDto request) {
+	public Void run(EndpointContext ctx, AccountRequestDto request) {
 		if(!isPlayerValid(request)) throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid username/password");
 
 		Player player = new Player(request.username(), request.password());
@@ -32,7 +31,7 @@ public class PostCreateAccount extends EndpointHandler<AccountRequestDto, Void> 
 	}
 
 	@Override
-	protected AccountRequestDto deserializeBody(String body) {
+	public AccountRequestDto deserializeBody(String body) {
 		return Json.fromJsonPretty(body, AccountRequestDto.class);
 	}
 

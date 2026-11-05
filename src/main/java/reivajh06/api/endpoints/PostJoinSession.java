@@ -1,28 +1,27 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.api.dtos.JoinDto;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Color;
 import reivajh06.database.Player;
 import reivajh06.datalake.events.JoinSessionEvent;
 
-import java.util.Map;
 import java.util.UUID;
 
-public class PostJoinSession extends EndpointHandler<Void, JoinDto> {
+public class PostJoinSession implements EndpointOperator<Void, JoinDto> {
 
 	@Override
-	protected JoinDto run(Context ctx, Map<String, String> pathParamMap, Void input) {
-		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
+	public JoinDto run(EndpointContext ctx, Void input) {
+		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		String id = ctx.req().getSession().getId();
+		String id = ctx.sessionId();
 		String username = ctx.sessionAttribute("username");
 		Player player = new Player(username, ctx.ip());
 
@@ -50,7 +49,7 @@ public class PostJoinSession extends EndpointHandler<Void, JoinDto> {
 	}
 
 	@Override
-	protected Void deserializeBody(String body) {
+	public Void deserializeBody(String body) {
 		return null;
 	}
 }

@@ -1,25 +1,24 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
-import reivajh06.services.FenParser;
-import reivajh06.services.Json;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.api.dtos.PromotePieceDto;
 import reivajh06.chess.gamelogic.GameDirector;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.datalake.events.PromotePieceEvent;
+import reivajh06.services.FenParser;
+import reivajh06.services.Json;
 
-import java.util.Map;
 import java.util.UUID;
 
-public class PostPromotePiece extends EndpointHandler<PromotePieceDto, Void> {
+public class PostPromotePiece implements EndpointOperator<PromotePieceDto, Void> {
 
     @Override
-    protected Void run(Context ctx, Map<String, String> pathParamMap, PromotePieceDto request) {
-        GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
+    public Void run(EndpointContext ctx, PromotePieceDto request) {
+        GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParams().get("sessionId")));
 
         if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
@@ -40,7 +39,7 @@ public class PostPromotePiece extends EndpointHandler<PromotePieceDto, Void> {
     }
 
     @Override
-    protected PromotePieceDto deserializeBody(String body) {
+    public PromotePieceDto deserializeBody(String body) {
         return Json.fromJsonPretty(body, PromotePieceDto.class);
     }
 }

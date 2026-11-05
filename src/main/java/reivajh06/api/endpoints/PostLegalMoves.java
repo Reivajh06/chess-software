@@ -1,7 +1,7 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.services.Json;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
@@ -18,13 +18,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceMovesResponseDto> {
+public class PostLegalMoves implements EndpointOperator<PieceMovesRequestDto, PieceMovesResponseDto> {
 
 	@Override
-	protected PieceMovesResponseDto run(Context ctx, Map<String, String> pathParamMap, PieceMovesRequestDto input) {
+	public PieceMovesResponseDto run(EndpointContext ctx, PieceMovesRequestDto input) {
 		Map<String, String> selectedPieceDetails = Json.fromJsonPretty(ctx.body(), Map.class);
 
-		GameSession session = Sessions.fetchSession(UUID.fromString(pathParamMap.get("sessionId")));
+		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
@@ -47,7 +47,7 @@ public class PostLegalMoves extends EndpointHandler<PieceMovesRequestDto, PieceM
 	}
 
 	@Override
-	protected PieceMovesRequestDto deserializeBody(String body) {
+	public PieceMovesRequestDto deserializeBody(String body) {
 		return Json.fromJsonPretty(body, PieceMovesRequestDto.class);
 	}
 }

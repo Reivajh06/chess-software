@@ -4,7 +4,11 @@ import java.util.Map;
 
 public interface EndpointContext {
 
-    Map<String, String> pathParamMap();
+    String ip();
+
+    String sessionId();
+
+    Map<String, String> pathParams();
 
     String body();
 
@@ -14,7 +18,7 @@ public interface EndpointContext {
 
     <V> V sessionAttribute(String name);
 
-    void status(int httpStatus);
+    void status(HttpStatus httpStatus);
 
     void response(String body);
 }

@@ -1,20 +1,33 @@
-package reivajh06.api.endpoints;
+package reivajh06.api;
 
 import io.javalin.http.Context;
-import reivajh06.api.EndpointContext;
 
 import java.util.Map;
 
 public class JavalinEndpointContext implements EndpointContext {
 
+    public static JavalinEndpointContext of(Context ctx) {
+        return new JavalinEndpointContext(ctx);
+    }
+
     private final Context ctx;
 
-    public JavalinEndpointContext(Context ctx) {
+    private JavalinEndpointContext(Context ctx) {
         this.ctx = ctx;
     }
 
     @Override
-    public Map<String, String> pathParamMap() {
+    public String ip() {
+        return ctx.ip();
+    }
+
+    @Override
+    public String sessionId() {
+        return ctx.req().getSession().getId();
+    }
+
+    @Override
+    public Map<String, String> pathParams() {
         return ctx.pathParamMap();
     }
 
@@ -39,8 +52,8 @@ public class JavalinEndpointContext implements EndpointContext {
     }
 
     @Override
-    public void status(int statusCode) {
-        ctx.status(statusCode);
+    public void status(HttpStatus httpStatus) {
+        ctx.status(httpStatus.code);
     }
 
     @Override

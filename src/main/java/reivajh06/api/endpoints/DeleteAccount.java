@@ -1,20 +1,18 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
-import reivajh06.services.Json;
 import reivajh06.api.ApiException;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;
 import reivajh06.datalake.events.DeleteAccountEvent;
+import reivajh06.services.Json;
 
-import java.util.Map;
-
-public class DeleteAccount extends EndpointHandler<AccountRequestDto, Void> {
+public class DeleteAccount implements EndpointOperator<AccountRequestDto, Void> {
 
 	@Override
-	protected Void run(Context ctx, Map<String, String> pathParamMap, AccountRequestDto input) {
+	public Void run(EndpointContext ctx, AccountRequestDto input) {
 		Player player = new Player(input.username(), input.password());
 
 		if(!Archchess.instance().database().playerExists(player)) {
@@ -22,14 +20,13 @@ public class DeleteAccount extends EndpointHandler<AccountRequestDto, Void> {
 		}
 
 		Archchess.instance().database().deletePlayer(player);
-		ctx.req().getSession().invalidate();
+		ctx.invalidateSession();
 		Archchess.instance().publish(new DeleteAccountEvent(player.username()));
-
 		return null;
 	}
 
 	@Override
-	protected AccountRequestDto deserializeBody(String body) {
+	public AccountRequestDto deserializeBody(String body) {
 		return Json.fromJsonPretty(body, AccountRequestDto.class);
 	}
 }

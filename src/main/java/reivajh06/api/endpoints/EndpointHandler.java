@@ -1,29 +1,34 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import reivajh06.services.Json;
 import reivajh06.api.ApiException;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
+import reivajh06.services.Json;
 
-import java.util.Map;
+public class EndpointHandler<I, O> {
 
-public abstract class EndpointHandler<I, O> implements Handler  {
+	public static <I, O> EndpointHandler<I, O> of(EndpointOperator<I, O> operator) {
+		return new EndpointHandler<>(operator);
+	}
 
-	public void handle(Context ctx) {
+	private final EndpointOperator<I, O> operator;
+
+	private EndpointHandler(EndpointOperator<I, O> operator) {
+		this.operator = operator;
+	}
+
+	public void handle(EndpointContext ctx) {
 		try {
-			I input = deserializeBody(ctx.body());
-			O output = run(ctx, ctx.pathParamMap(), input);
+			I input = operator.deserializeBody(ctx.body());
+			O output = operator.run(ctx, input);
 
 			if(output == null) return;
 
-			ctx.result(Json.toJsonPretty(output));
+			ctx.status(HttpStatus.OK);
+			ctx.response(Json.toJsonPretty(output));
 
 		} catch(ApiException e) {
 			ctx.status(e.status());
 		}
 	}
-
-	abstract O run(Context ctx, Map<String, String> pathParamMap, I input);
-
-	abstract I deserializeBody(String body);
 }

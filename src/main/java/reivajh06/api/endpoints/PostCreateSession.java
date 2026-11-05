@@ -1,24 +1,22 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
 import reivajh06.Archchess;
-import reivajh06.services.Json;
 import reivajh06.Sessions;
+import reivajh06.api.EndpointContext;
 import reivajh06.api.dtos.CreateSessionRequestDto;
 import reivajh06.api.dtos.CreateSessionResponseDto;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.model.Color;
 import reivajh06.database.Player;
 import reivajh06.datalake.events.CreateSessionEvent;
+import reivajh06.services.Json;
 
-import java.util.Map;
-
-public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, CreateSessionResponseDto> {
+public class PostCreateSession implements EndpointOperator<CreateSessionRequestDto, CreateSessionResponseDto> {
 
 	@Override
-	protected CreateSessionResponseDto run(Context ctx, Map<String, String> pathParamMap, CreateSessionRequestDto request) {
+	public CreateSessionResponseDto run(EndpointContext ctx, CreateSessionRequestDto request) {
 		GameSession session = new GameSession(request.gamemode(), request.difficulty());
-		String id = ctx.req().getSession().getId();
+		String id = ctx.sessionId();
 		Player player = new Player(ctx.sessionAttribute("username"), ctx.ip());
 
 		if(ctx.sessionAttribute("username") == null) player = Player.guest(ctx.ip());
@@ -40,7 +38,7 @@ public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, 
 	}
 
 	@Override
-	protected CreateSessionRequestDto deserializeBody(String body) {
+	public CreateSessionRequestDto deserializeBody(String body) {
 		return Json.fromJsonPretty(body, CreateSessionRequestDto.class);
 	}
 }

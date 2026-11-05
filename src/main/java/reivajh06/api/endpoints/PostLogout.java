@@ -1,22 +1,21 @@
 package reivajh06.api.endpoints;
 
-import io.javalin.http.Context;
 import reivajh06.Archchess;
+import reivajh06.api.EndpointContext;
+import reivajh06.api.HttpStatus;
 import reivajh06.datalake.events.LogoutEvent;
 
-import java.util.Map;
-
-public class PostLogout extends EndpointHandler<Void, Void> {
+public class PostLogout implements EndpointOperator<Void, Void> {
 
 	@Override
-	protected Void run(Context ctx, Map<String, String> pathParamMap, Void input) {
+	public Void run(EndpointContext ctx, Void input) {
 		Archchess.instance().publish(new LogoutEvent(ctx.sessionAttribute("username")));
-		ctx.req().getSession().invalidate();
+		ctx.invalidateSession();
 		return null;
 	}
 
 	@Override
-	protected Void deserializeBody(String body) {
+	public Void deserializeBody(String body) {
 		return null;
 	}
 }

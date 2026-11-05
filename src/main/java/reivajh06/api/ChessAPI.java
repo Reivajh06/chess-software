@@ -28,19 +28,19 @@ public class ChessAPI {
 	public void configureEndpoints(JavalinConfig config) {
 		config.staticFiles.add("/web", Location.CLASSPATH);
 
-		config.routes.post("/api/sessions", new PostCreateSession());
-		config.routes.post("/api/sessions/{sessionId}/legal-moves", new PostLegalMoves());
-		config.routes.post("/api/sessions/{sessionId}/moves", new PostMovePiece());
-		config.routes.post("/api/sessions/{sessionId}/join", new PostJoinSession());
-		config.routes.post("/api/accounts", new PostCreateAccount());
-		config.routes.post("/api/login", new PostLogin());
-		config.routes.post("/api/logout", new PostLogout());
-		config.routes.post("/api/sessions/{sessionId}/promote", new PostPromotePiece());
+		config.routes.post("/api/sessions", c -> EndpointHandler.of(new PostCreateSession()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/sessions/{sessionId}/legal-moves", c -> EndpointHandler.of(new PostLegalMoves()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/sessions/{sessionId}/moves", c -> EndpointHandler.of(new PostMovePiece()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/sessions/{sessionId}/join", c -> EndpointHandler.of(new PostJoinSession()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/accounts", c -> EndpointHandler.of(new PostCreateAccount()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/login", c -> EndpointHandler.of(new PostLogin()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/logout", c -> EndpointHandler.of(new PostLogout()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/sessions/{sessionId}/promote", c -> EndpointHandler.of(new PostPromotePiece()).handle(JavalinEndpointContext.of(c)));
 
-		config.routes.get("/api/sessions/{sessionId}", new GetReadCurrentState());
-		config.routes.get("/api/server", new GetServerAddress(port));
-		config.routes.get("/api/plugins", new GetAvailablePlugins());
+		config.routes.get("/api/sessions/{sessionId}", c -> EndpointHandler.of(new GetReadCurrentState()).handle(JavalinEndpointContext.of(c)));
+		config.routes.get("/api/server", c -> EndpointHandler.of(new GetServerAddress(port)).handle(JavalinEndpointContext.of(c)));
+		config.routes.get("/api/plugins", c -> EndpointHandler.of(new GetAvailablePlugins()).handle(JavalinEndpointContext.of(c)));
 
-		config.routes.delete("/api/accounts/delete", new DeleteAccount());
+		config.routes.delete("/api/accounts/delete", c -> EndpointHandler.of(new DeleteAccount()).handle(JavalinEndpointContext.of(c)));
 	}
 }
