@@ -2,7 +2,7 @@ package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import reivajh06.FenParser;
+import reivajh06.services.FenParser;
 import reivajh06.Sessions;
 import reivajh06.api.ApiException;
 import reivajh06.api.dtos.ReadStateResponseDto;

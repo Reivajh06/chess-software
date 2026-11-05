@@ -1,4 +1,4 @@
-package reivajh06;
+package reivajh06.services;
 
 import reivajh06.chess.gamelogic.CastlingRights;
 import reivajh06.chess.gamelogic.GameState;

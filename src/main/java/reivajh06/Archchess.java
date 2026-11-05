@@ -1,7 +1,8 @@
 package reivajh06;
 
 import reivajh06.api.ChessAPI;
-import reivajh06.database.Database;
+import reivajh06.database.SqliteDatabaseClient;
+import reivajh06.database.UserDatabaseClient;
 import reivajh06.datalake.EventPublisher;
 import reivajh06.datalake.EventReader;
 import reivajh06.datalake.events.Event;
@@ -9,7 +10,6 @@ import reivajh06.plugins.PluginsManager;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.List;
 
 public class Archchess {
 
@@ -27,7 +27,7 @@ public class Archchess {
 	private String datalakePath = DEFAULT_DL_PATH;
 
 	private ChessAPI api;
-	private Database database;
+	private UserDatabaseClient userDatabaseClient;
 	private EventPublisher eventPublisher;
 	private EventReader eventReader;
 	private PluginsManager pluginsManager;
@@ -77,27 +77,29 @@ public class Archchess {
 
 	public void launch() {
 		api = new ChessAPI(home, port);
-		database = new Database(databasePath);
+		userDatabaseClient = new SqliteDatabaseClient(databasePath);
 		eventPublisher = new EventPublisher(datalakePath);
 		eventReader = new EventReader(datalakePath);
 		pluginsManager = new PluginsManager(home);
 
 		Thread thread = new Thread(() -> {
-			pluginsManager.reloadPlugins();
-            try {
-                Thread.sleep(Duration.ofMinutes(3));
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+			while(true) {
+				pluginsManager.reloadPlugins();
+				try {
+					Thread.sleep(Duration.ofMinutes(3));
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			}
         });
 		thread.setDaemon(true);
 		thread.start();
 
 		api.start();
-		database.init();
+		userDatabaseClient.init();
 	}
 
-	public Database database() {
-		return database;
+	public UserDatabaseClient database() {
+		return userDatabaseClient;
 	}
 }

@@ -3,7 +3,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import reivajh06.FenParser;
+import reivajh06.services.FenParser;
 import reivajh06.chess.gamelogic.Difficulty;
 import reivajh06.chess.gamelogic.GameConditions;
 import reivajh06.chess.gamelogic.GameSession;

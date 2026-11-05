@@ -1,6 +1,6 @@
 package reivajh06.chess.gamelogic;
 
-import reivajh06.FenParser;
+import reivajh06.services.FenParser;
 import reivajh06.chess.model.*;
 import reivajh06.chess.model.movement.Move;
 import reivajh06.chess.model.movement.MoveEvent;

@@ -1,8 +1,8 @@
 package reivajh06.database.queries;
 
-public class CreatePlayerTableQuery extends Query<Void> {
+public class CreatePlayerTableSqliteQuery extends JavalinQuery<Void> {
 
-	public CreatePlayerTableQuery() {
+	public CreatePlayerTableSqliteQuery() {
 		super(
 				"""
 				CREATE TABLE IF NOT EXISTS PLAYERS(

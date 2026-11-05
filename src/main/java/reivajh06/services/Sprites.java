@@ -1,4 +1,4 @@
-package reivajh06;
+package reivajh06.services;
 
 import java.util.HashMap;
 import java.util.Map;

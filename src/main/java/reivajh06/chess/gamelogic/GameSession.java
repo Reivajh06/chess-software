@@ -1,6 +1,6 @@
 package reivajh06.chess.gamelogic;
 
-import reivajh06.FenParser;
+import reivajh06.services.FenParser;
 import reivajh06.chess.model.Color;
 import reivajh06.database.Player;
 

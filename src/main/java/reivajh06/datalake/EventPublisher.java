@@ -1,6 +1,6 @@
 package reivajh06.datalake;
 
-import reivajh06.Json;
+import reivajh06.services.Json;
 import reivajh06.datalake.events.Event;
 
 import java.io.File;
@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalField;
 
 public class EventPublisher {
 

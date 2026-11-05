@@ -1,6 +1,6 @@
 package reivajh06.chess.gamelogic.evaluators;
 
-import reivajh06.FenParser;
+import reivajh06.services.FenParser;
 import reivajh06.chess.gamelogic.GameState;
 import reivajh06.chess.gamelogic.GameStateBuilder;
 import reivajh06.chess.model.Piece;

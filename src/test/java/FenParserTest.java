@@ -1,6 +1,6 @@
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import reivajh06.FenParser;
+import reivajh06.services.FenParser;
 import reivajh06.chess.gamelogic.Difficulty;
 import reivajh06.chess.gamelogic.GameSession;
 import reivajh06.chess.gamelogic.Gamemode;

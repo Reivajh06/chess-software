@@ -1,6 +1,6 @@
 package reivajh06.datalake;
 
-import reivajh06.Json;
+import reivajh06.services.Json;
 import reivajh06.datalake.events.Event;
 
 import java.io.File;

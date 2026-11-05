@@ -3,7 +3,7 @@ package reivajh06.api.endpoints;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
-import reivajh06.Json;
+import reivajh06.services.Json;
 import reivajh06.api.ApiException;
 import reivajh06.api.dtos.AccountRequestDto;
 import reivajh06.database.Player;

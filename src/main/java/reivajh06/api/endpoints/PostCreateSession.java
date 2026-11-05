@@ -1,11 +1,9 @@
 package reivajh06.api.endpoints;
 
 import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import reivajh06.Archchess;
-import reivajh06.Json;
+import reivajh06.services.Json;
 import reivajh06.Sessions;
-import reivajh06.api.ApiException;
 import reivajh06.api.dtos.CreateSessionRequestDto;
 import reivajh06.api.dtos.CreateSessionResponseDto;
 import reivajh06.chess.gamelogic.GameSession;
@@ -14,7 +12,6 @@ import reivajh06.database.Player;
 import reivajh06.datalake.events.CreateSessionEvent;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class PostCreateSession extends EndpointHandler<CreateSessionRequestDto, CreateSessionResponseDto> {
 

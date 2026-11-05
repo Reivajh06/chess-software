@@ -1,7 +1,7 @@
 package reivajh06.chess.model;
 
 import org.jetbrains.annotations.NotNull;
-import reivajh06.Sprites;
+import reivajh06.services.Sprites;
 import reivajh06.chess.model.movement.Move;
 
 import java.util.List;

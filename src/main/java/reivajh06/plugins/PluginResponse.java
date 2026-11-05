@@ -1,6 +1,6 @@
 package reivajh06.plugins;
 
-import reivajh06.Json;
+import reivajh06.services.Json;
 import reivajh06.chess.model.PieceType;
 import reivajh06.chess.model.Tile;
 
