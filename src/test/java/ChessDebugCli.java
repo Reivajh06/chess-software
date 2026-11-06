@@ -1,14 +1,14 @@
-import reivajh06.services.FenParser;
-import reivajh06.chess.gamelogic.Difficulty;
-import reivajh06.chess.gamelogic.GameSession;
-import reivajh06.chess.gamelogic.GameState;
-import reivajh06.chess.gamelogic.Gamemode;
-import reivajh06.chess.model.Color;
-import reivajh06.chess.model.PieceType;
-import reivajh06.chess.model.Tile;
-import reivajh06.chess.gamelogic.GameDirector;
-import reivajh06.chess.model.movement.MoveEffect;
-import reivajh06.chess.model.movement.MoveEvent;
+import reivajh06.architecture.domain.services.FenParser;
+import reivajh06.architecture.domain.model.game.Difficulty;
+import reivajh06.architecture.domain.model.game.GameSession;
+import reivajh06.architecture.domain.model.game.GameState;
+import reivajh06.architecture.domain.model.game.Gamemode;
+import reivajh06.architecture.domain.model.Color;
+import reivajh06.architecture.domain.model.PieceType;
+import reivajh06.architecture.domain.model.Tile;
+import reivajh06.architecture.domain.logic.GameDirector;
+import reivajh06.architecture.domain.model.movement.MoveEffect;
+import reivajh06.architecture.domain.model.movement.MoveEvent;
 
 import java.util.Iterator;
 import java.util.List;

@@ -1,5 +1,7 @@
 package reivajh06;
 
+import reivajh06.infrastructure.Archchess;
+
 import java.io.File;
 
 public class Launcher {
