@@ -1,8 +1,12 @@
 package reivajh06.api;
 
+import reivajh06.database.Player;
+
 import java.util.Map;
 
 public interface EndpointContext {
+
+    Player sessionPlayer();
 
     String ip();
 

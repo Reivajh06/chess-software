@@ -22,10 +22,7 @@ public class PostJoinSession implements EndpointOperator<Void, JoinDto> {
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
 		String id = ctx.sessionId();
-		String username = ctx.sessionAttribute("username");
-		Player player = new Player(username, ctx.ip());
-
-		if(username == null) player = Player.guest(ctx.ip());
+		Player player = ctx.sessionPlayer();
 
 		Color assignedColor = session.assignColor(player);
 

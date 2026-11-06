@@ -17,9 +17,7 @@ public class PostCreateSession implements EndpointOperator<CreateSessionRequestD
 	public CreateSessionResponseDto run(EndpointContext ctx, CreateSessionRequestDto request) {
 		GameSession session = new GameSession(request.gamemode(), request.difficulty());
 		String id = ctx.sessionId();
-		Player player = new Player(ctx.sessionAttribute("username"), ctx.ip());
-
-		if(ctx.sessionAttribute("username") == null) player = Player.guest(ctx.ip());
+		Player player = ctx.sessionPlayer();
 
 		Color creatorColor = session.assignColor(player);
 

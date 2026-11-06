@@ -17,7 +17,7 @@ public class PostCreateAccount implements EndpointOperator<AccountRequestDto, Vo
 	public Void run(EndpointContext ctx, AccountRequestDto request) {
 		if(!isPlayerValid(request)) throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid username/password");
 
-		Player player = new Player(request.username(), request.password());
+		Player player = new Player(ctx.sessionPlayer().username(), request.password());
 
 		if(Archchess.instance().database().playerExists(player)) {
 			throw new ApiException(HttpStatus.CONFLICT, "Account already exists");

@@ -28,9 +28,7 @@ public class PostLegalMoves implements EndpointOperator<PieceMovesRequestDto, Pi
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		Player player = new Player(ctx.sessionAttribute("username"), ctx.ip());
-
-		if(ctx.sessionAttribute("username") == null) player = Player.guest(ctx.ip());
+		Player player = ctx.sessionPlayer();
 
 		if(!session.hasTurn(player)) return new PieceMovesResponseDto(new ArrayList<>());
 

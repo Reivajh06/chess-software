@@ -26,7 +26,7 @@ public class PostPromotePiece implements EndpointOperator<PromotePieceDto, Void>
         director.promotePiece(request.tile(), request.newType());
 
         Archchess.instance().publish(new PromotePieceEvent(
-                ctx.sessionAttribute("username") == null ? ctx.ip() : ctx.sessionAttribute("username"),
+                ctx.sessionAttribute("username") == null ? ctx.sessionPlayer().username() : ctx.sessionAttribute("username"),
                 session.gameState().board().pieceAt(request.tile()).type(),
                 session.gameState().board().pieceAt(request.tile()).color(),
                 request.newType(),

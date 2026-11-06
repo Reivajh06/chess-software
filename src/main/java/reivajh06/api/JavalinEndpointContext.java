@@ -1,6 +1,7 @@
 package reivajh06.api;
 
 import io.javalin.http.Context;
+import reivajh06.database.Player;
 
 import java.util.Map;
 
@@ -14,6 +15,13 @@ public class JavalinEndpointContext implements EndpointContext {
 
     private JavalinEndpointContext(Context ctx) {
         this.ctx = ctx;
+    }
+
+    @Override
+    public Player sessionPlayer() {
+        return ctx.sessionAttribute("username") == null ?
+                Player.guest(ctx.req().getSession().getId())
+                : new Player(ctx.sessionAttribute("username"), "");
     }
 
     @Override

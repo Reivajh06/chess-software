@@ -30,13 +30,10 @@ public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
 		Piece piece = session.gameState().board().pieceAt(moveRequest.from());
 		GameDirector updater = new GameDirector(session);
 
-		Player player = new Player(ctx.sessionAttribute("username"), ctx.ip());
-
-		if(player.username() == null) player = Player.guest(ctx.ip());
+		Player player = ctx.sessionPlayer();
 
 		if(!session.hasTurn(player)) {
-			ctx.status(HttpStatus.FORBIDDEN);
-			return null;
+			throw new ApiException(HttpStatus.FORBIDDEN, "Player tried to move on invalid turn");
 		}
 
 		List<Tile> allowed = updater.pieceMoves(moveRequest.from()).get(moveRequest.moveId());
