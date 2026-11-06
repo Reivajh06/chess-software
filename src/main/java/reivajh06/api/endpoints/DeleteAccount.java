@@ -13,7 +13,7 @@ public class DeleteAccount implements EndpointOperator<AccountRequestDto, Void> 
 
 	@Override
 	public Void run(EndpointContext ctx, AccountRequestDto input) {
-		Player player = ctx.sessionPlayer();
+		Player player = new Player(ctx.sessionPlayer().username(), input.password());
 
 		if(!Archchess.instance().database().playerExists(player)) {
 			throw new ApiException(HttpStatus.NOT_FOUND, "Player does not exists");

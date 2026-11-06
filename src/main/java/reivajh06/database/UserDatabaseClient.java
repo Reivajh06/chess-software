@@ -12,6 +12,8 @@ public interface UserDatabaseClient {
 
     boolean playerExists(Player player);
 
+    boolean usernameExists(String username);
+
     void registerPlayer(Player player);
 
     void deletePlayer(Player player);

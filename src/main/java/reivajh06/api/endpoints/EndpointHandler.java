@@ -1,9 +1,12 @@
 package reivajh06.api.endpoints;
 
+import com.google.gson.JsonParseException;
 import reivajh06.api.ApiException;
 import reivajh06.api.EndpointContext;
 import reivajh06.api.HttpStatus;
 import reivajh06.services.Json;
+
+import java.util.Map;
 
 public class EndpointHandler<I, O> {
 
@@ -29,6 +32,17 @@ public class EndpointHandler<I, O> {
 
 		} catch(ApiException e) {
 			ctx.status(e.status());
+			ctx.response(Json.toJson(Map.of(
+					"error", e.status().name(),
+					"message",  e.getMessage()
+			)));
+
+		} catch(Exception e) {
+			ctx.status(HttpStatus.BAD_REQUEST);
+			ctx.response(Json.toJson(Map.of(
+					"error", HttpStatus.BAD_REQUEST.name(),
+					"message",  "Unexpected exception occurred while processing request"
+			)));
 		}
 	}
 }

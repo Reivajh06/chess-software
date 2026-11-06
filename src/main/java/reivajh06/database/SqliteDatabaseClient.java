@@ -64,6 +64,11 @@ public class SqliteDatabaseClient implements UserDatabaseClient {
 	}
 
 	@Override
+	public boolean usernameExists(String username) {
+		return !execute(new GetPlayerSqliteQuery(username)).isEmpty();
+	}
+
+	@Override
 	public void registerPlayer(Player player) {
 		execute(new RegisterPlayerSqliteQuery(player));
 	}

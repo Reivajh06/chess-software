@@ -13,4 +13,13 @@ public class GetPlayerSqliteQuery extends JavalinQuery<Player> {
 		params.add(username);
 		params.add(hashPassword);
 	}
+
+	public GetPlayerSqliteQuery(String username) {
+		super(
+				"SELECT USERNAME, HASH_PASSWORD FROM PLAYERS WHERE USERNAME = ?",
+				r -> new Player(r.getString("USERNAME"), r.getString("HASH_PASSWORD"))
+		);
+
+		params.add(username);
+	}
 }

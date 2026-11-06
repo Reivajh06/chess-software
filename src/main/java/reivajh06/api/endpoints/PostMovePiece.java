@@ -23,6 +23,10 @@ public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, MovePieceDto moveRequest) {
+		if(moveRequest.from() == null || moveRequest.to() == null) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "Either source or destination tile is missing");
+		}
+
 		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
