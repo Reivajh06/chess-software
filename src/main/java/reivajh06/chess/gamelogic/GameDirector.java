@@ -74,19 +74,20 @@ public class GameDirector {
 		else board.whiteKingTile(newLocation);
 	}
 
-	public void promotePiece(Tile location, PieceType newType) {
+	public boolean promotePiece(Tile location, PieceType newType) {
 		Piece piece = session.gameState().board().pieceAt(location);
 		Piece promotedPiece;
 
-		if(piece == null || piece.type() != PieceType.PAWN) return;
+		if(piece == null || piece.type() != PieceType.PAWN) return false;
+		if(newType == PieceType.KING) return false;
 
 		if(piece.color() == Color.BLACK) {
-			if(location.rank() != Board.WHITE_KING_START_RANK) return;
+			if(location.rank() != Board.WHITE_KING_START_RANK) return false;
 
 			promotedPiece = PieceFactory.createPieceByFENCode(String.valueOf(newType.firstLetter).toLowerCase().charAt(0));
 
 		} else {
-			if(location.rank() != Board.BLACK_KING_START_RANK) return;
+			if(location.rank() != Board.BLACK_KING_START_RANK) return false;
 
 			promotedPiece = PieceFactory.createPieceByFENCode(String.valueOf(newType.firstLetter).charAt(0));
 		}
@@ -95,6 +96,7 @@ public class GameDirector {
 		session.gameState().board().addPiece(location, promotedPiece);
 
 		updateStatusOnPromotion(promotedPiece.color());
+		return true;
 	}
 
 	private void updateStatusOnPromotion(Color promotedColor) {

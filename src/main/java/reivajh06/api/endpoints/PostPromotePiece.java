@@ -23,7 +23,10 @@ public class PostPromotePiece implements EndpointOperator<PromotePieceDto, Void>
         if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
         GameDirector director = new GameDirector(session);
-        director.promotePiece(request.tile(), request.newType());
+
+        if(!director.promotePiece(request.tile(), request.newType())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Cannot promote piece to %s".formatted(request.newType()));
+        }
 
         Archchess.instance().publish(new PromotePieceEvent(
                 ctx.sessionAttribute("username") == null ? ctx.sessionPlayer().username() : ctx.sessionAttribute("username"),
