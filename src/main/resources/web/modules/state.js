@@ -3,359 +3,356 @@ import { Selection, boardInteractive, normalizeLegalMoves } from "./selection.js
 
 export { square, normalizeLegalMoves };
 
-export const types = ["KING", "QUEEN", "ROOK", "BISHOP", "KNIGHT", "PAWN"];
+const types = ["KING", "QUEEN", "ROOK", "BISHOP", "KNIGHT", "PAWN"];
 
 export const pieceValues = { PAWN: 1, KNIGHT: 3, BISHOP: 3, ROOK: 5, QUEEN: 9, KING: 0 };
 
 export const labels = {
-  KING: "rey",
-  QUEEN: "dama",
-  ROOK: "torre",
-  BISHOP: "alfil",
-  KNIGHT: "caballo",
-  PAWN: "peón",
+	KING: "rey",
+	QUEEN: "dama",
+	ROOK: "torre",
+	BISHOP: "alfil",
+	KNIGHT: "caballo",
+	PAWN: "peón",
 };
 
 export const initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-export function unwrap(payload) {
-  if (!payload || typeof payload !== "object") return payload;
-  if (payload.state != null) return unwrap(payload.state);
-  if (payload.gameState != null) return unwrap(payload.gameState);
+function unwrap(payload) {
+	if(!payload || typeof payload !== "object") return payload;
+	if(payload.state != null) return unwrap(payload.state);
+	if(payload.gameState != null) return unwrap(payload.gameState);
 
-  if (
-      payload.session != null &&
-      typeof payload.session === "object" &&
-      (payload.session.gameState != null || payload.session.state != null)
-  ) {
-    return unwrap(payload.session);
-  }
+	if(
+			payload.session != null &&
+			typeof payload.session === "object" &&
+			(payload.session.gameState != null || payload.session.state != null)
+	) {
+		return unwrap(payload.session);
+	}
 
-  return payload;
+	return payload;
 }
 
 export function piece(value) {
-  const color = String(value?.color ?? "").toUpperCase();
-  const type = String(value?.type ?? "").toUpperCase();
+	const color = String(value?.color ?? "").toUpperCase();
+	const type = String(value?.type ?? "").toUpperCase();
 
-  return ["WHITE", "BLACK"].includes(color) && types.includes(type)
-      ? { color, type }
-      : null;
+	return ["WHITE", "BLACK"].includes(color) && types.includes(type)
+			? { color, type }
+			: null;
 }
 
 export function parseFen(fen) {
-  const rows = String(fen).split(" ")[0].split("/");
+	const rows = String(fen).split(" ")[0].split("/");
 
-  if (rows.length !== 8) {
-    throw new Error("Posición FEN no válida.");
-  }
+	if(rows.length !== 8) {
+		throw new Error("Posición FEN no válida.");
+	}
 
-  const pieces = new Map();
+	const pieces = new Map();
 
-  const names = {
-    k: "KING",
-    q: "QUEEN",
-    r: "ROOK",
-    b: "BISHOP",
-    n: "KNIGHT",
-    p: "PAWN",
-  };
+	const names = {
+		k: "KING",
+		q: "QUEEN",
+		r: "ROOK",
+		b: "BISHOP",
+		n: "KNIGHT",
+		p: "PAWN",
+	};
 
-  rows.forEach((row, index) => {
-    let column = 0;
+	rows.forEach((row, index) => {
+		let column = 0;
 
-    for (const char of row) {
-      if (/^[1-8]$/.test(char)) {
-        column += Number(char);
-      } else {
-        if (!names[char.toLowerCase()] || column >= 8) {
-          throw new Error("Posición FEN no válida.");
-        }
+		for(const char of row) {
+			if(/^[1-8]$/.test(char)) {
+				column += Number(char);
+			} else {
+				if(!names[char.toLowerCase()] || column >= 8) {
+					throw new Error("Posición FEN no válida.");
+				}
 
-        pieces.set(`${"abcdefgh"[column++]}${8 - index}`, {
-          type: names[char.toLowerCase()],
-          color: char === char.toUpperCase() ? "WHITE" : "BLACK",
-        });
-      }
-    }
+				pieces.set(`${"abcdefgh"[column++]}${8 - index}`, {
+					type: names[char.toLowerCase()],
+					color: char === char.toUpperCase() ? "WHITE" : "BLACK",
+				});
+			}
+		}
 
-    if (column !== 8) {
-      throw new Error("Posición FEN no válida.");
-    }
-  });
+		if(column !== 8) {
+			throw new Error("Posición FEN no válida.");
+		}
+	});
 
-  return pieces;
+	return pieces;
 }
 
-export function normalizePieces(raw) {
-  if (typeof raw === "string") {
-    return parseFen(raw);
-  }
+function normalizePieces(raw) {
+	if(typeof raw === "string") {
+		return parseFen(raw);
+	}
 
-  const result = new Map();
+	const result = new Map();
 
-  if (Array.isArray(raw)) {
-    for (const entry of raw) {
-      const tile = square(entry.square ?? entry.tile ?? entry.position);
-      const item = piece(entry.piece ?? entry);
+	if(Array.isArray(raw)) {
+		for(const entry of raw) {
+			const tile = square(entry.square ?? entry.tile ?? entry.position);
+			const item = piece(entry.piece ?? entry);
 
-      if (tile && item) {
-        result.set(tile, item);
-      }
-    }
-  } else if (raw && typeof raw === "object") {
-    for (const [key, value] of Object.entries(raw.pieces ?? raw.tiles ?? raw)) {
-      const tile = square(key);
-      const item = piece(value?.piece ?? value);
+			if(tile && item) {
+				result.set(tile, item);
+			}
+		}
+	} else if(raw && typeof raw === "object") {
+		for(const [key, value] of Object.entries(raw.pieces ?? raw.tiles ?? raw)) {
+			const tile = square(key);
+			const item = piece(value?.piece ?? value);
 
-      if (tile && item) {
-        result.set(tile, item);
-      }
-    }
-  }
+			if(tile && item) {
+				result.set(tile, item);
+			}
+		}
+	}
 
-  return result;
+	return result;
 }
 
 export function normalizeState(payload) {
-  const raw = unwrap(payload);
+	const raw = unwrap(payload);
 
-  if (
-      !raw ||
-      typeof raw !== "object" ||
-      (
-          raw.pieces == null &&
-          raw.board == null &&
-          raw.fen == null &&
-          raw.gameStateFen == null
-      )
-  ) {
-    throw new Error("El servidor no ha proporcionado el tablero.");
-  }
+	if(
+			!raw ||
+			typeof raw !== "object" ||
+			(
+					raw.pieces == null &&
+					raw.board == null &&
+					raw.fen == null &&
+					raw.gameStateFen == null
+			)
+	) {
+		throw new Error("El servidor no ha proporcionado el tablero.");
+	}
 
-  let events = raw.movesHistory ?? null;
+	let events = raw.movesHistory ?? null;
 
-  if (typeof events === "string") {
-    try {
-      events = JSON.parse(events);
-    } catch {
-      throw new Error("El historial de movimientos no es válido.");
-    }
-  }
+	if(typeof events === "string") {
+		try {
+			events = JSON.parse(events);
+		} catch {
+			throw new Error("El historial de movimientos no es válido.");
+		}
+	}
 
-  if (raw.movesHistory != null && !Array.isArray(events)) {
-    throw new Error("El historial de movimientos no es válido.");
-  }
+	if(raw.movesHistory != null && !Array.isArray(events)) {
+		throw new Error("El historial de movimientos no es válido.");
+	}
 
-  const history = events
-      ? [...events].reverse()
-      : (raw.moves ?? raw.moveHistory ?? []);
+	const history = events
+			? [...events].reverse()
+			: (raw.moves ?? raw.moveHistory ?? []);
 
-  if (!Array.isArray(history)) {
-    throw new Error("El historial de movimientos no es válido.");
-  }
+	if(!Array.isArray(history)) {
+		throw new Error("El historial de movimientos no es válido.");
+	}
 
-  const moves = history.map((entry, index) => {
-    const event = typeof entry === "string"
-        ? { notation: entry }
-        : entry ?? {};
+	const moves = history.map((entry, index) => {
+		const event = typeof entry === "string"
+				? { notation: entry }
+				: entry ?? {};
 
-    const movedPiece = event.pieceMoved ?? event.piece;
+		const movedPiece = event.pieceMoved ?? event.piece;
 
-    const type = typeof movedPiece === "string"
-        ? movedPiece
-        : movedPiece?.type ?? event.pieceType ?? "PAWN";
+		const type = typeof movedPiece === "string"
+				? movedPiece
+				: movedPiece?.type ?? event.pieceType ?? "PAWN";
 
-    const from = square(event.from);
-    const to = square(event.to);
+		const from = square(event.from);
+		const to = square(event.to);
 
-    const color = String(
-        event.color ??
-        movedPiece?.color ??
-        (index % 2 ? "BLACK" : "WHITE")
-    ).toUpperCase();
+		const color = String(
+				event.color ??
+				movedPiece?.color ??
+				(index % 2 ? "BLACK" : "WHITE")
+		).toUpperCase();
 
-    const capturedPiece = piece(event.pieceCaptured ?? event.capturedPiece);
-    const capture = Boolean(event.capture ?? event.pieceCaptured ?? capturedPiece);
+		const capturedPiece = piece(event.pieceCaptured ?? event.capturedPiece);
+		const capture = Boolean(event.capture ?? event.pieceCaptured ?? capturedPiece);
 
-    return {
-      ply: index + 1,
-      color,
-      type: String(type).toUpperCase(),
-      from,
-      to,
-      capture,
-      capturedPiece,
-      notation: event.notation ?? `${from ?? ""}${capture ? "×" : "–"}${to ?? ""}`,
-      fen: event.gameStateFen ?? event.fen ?? null,
-      position: event.position ?? event.state ?? null,
-    };
-  });
+		return {
+			ply: index + 1,
+			color,
+			type: String(type).toUpperCase(),
+			from,
+			to,
+			capture,
+			capturedPiece,
+			notation: event.notation ?? `${from ?? ""}${capture ? "×" : "–"}${to ?? ""}`,
+			fen: event.gameStateFen ?? event.fen ?? null,
+			position: event.position ?? event.state ?? null,
+		};
+	});
 
-  const captures = {};
+	const captures = {};
 
-  for (const color of ["WHITE", "BLACK"]) {
-    const items = raw.eatenPieces?.[color];
-    captures[color] = Array.isArray(items)
-        ? items.map(piece).filter(Boolean)
-        : [];
-  }
+	for(const color of ["WHITE", "BLACK"]) {
+		const items = raw.eatenPieces?.[color];
+		captures[color] = Array.isArray(items)
+				? items.map(piece).filter(Boolean)
+				: [];
+	}
 
-  const fen = raw.fen ?? raw.gameStateFen ?? moves.at(-1)?.fen ?? null;
-  const pieces = normalizePieces(fen ?? raw.pieces ?? raw.board);
+	const fen = raw.fen ?? raw.gameStateFen ?? moves.at(-1)?.fen ?? null;
+	const pieces = normalizePieces(fen ?? raw.pieces ?? raw.board);
 
-  const turn = String(
-      raw.turnColor ??
-      raw.turn ??
-      raw.colorTurn ??
-      (typeof fen === "string" && fen.split(/\s+/)[1] === "b" ? "BLACK" : "WHITE")
-  ).toUpperCase();
+	const turn = String(
+			raw.turnColor ??
+			raw.turn ??
+			raw.colorTurn ??
+			(typeof fen === "string" && fen.split(/\s+/)[1] === "b" ? "BLACK" : "WHITE")
+	).toUpperCase();
 
-  return {
-    ...raw,
-    fen,
-    pieces,
-    moves,
-    eatenPieces: captures,
-    turn,
-    status: String(raw.status ?? "ACTIVE").toUpperCase(),
-    checkedColor: raw.checkedColor ?? null,
-    waitingForOpponent: raw.waitingForOpponent ?? false,
-  };
+	return {
+		...raw,
+		fen,
+		pieces,
+		moves,
+		eatenPieces: captures,
+		turn,
+		status: String(raw.status ?? "ACTIVE").toUpperCase(),
+		checkedColor: raw.checkedColor ?? null,
+		waitingForOpponent: raw.waitingForOpponent ?? false,
+	};
 }
 
 export function stateSignature(state) {
-  return JSON.stringify({
-    turn: state.turn,
-    status: state.status,
-    checkedColor: state.checkedColor,
-    waitingForOpponent: state.waitingForOpponent,
-    pieces: [...state.pieces].sort(([a], [b]) => a.localeCompare(b)),
-    moves: state.moves.map((move) => [
-      move.color,
-      move.type,
-      move.from,
-      move.to,
-      move.capture,
-      move.capturedPiece?.color,
-      move.capturedPiece?.type,
-      move.fen,
-      move.notation,
-    ]),
-    eatenPieces: state.eatenPieces,
-  });
+	return JSON.stringify({
+		turn: state.turn,
+		status: state.status,
+		checkedColor: state.checkedColor,
+		waitingForOpponent: state.waitingForOpponent,
+		pieces: [...state.pieces].sort(([a], [b]) => a.localeCompare(b)),
+		moves: state.moves.map((move) => [
+			move.color,
+			move.type,
+			move.from,
+			move.to,
+			move.capture,
+			move.capturedPiece?.color,
+			move.capturedPiece?.type,
+			move.fen,
+			move.notation,
+		]),
+		eatenPieces: state.eatenPieces,
+	});
 }
 
 export class GameStore {
-  constructor() {
-    this.reset();
-  }
+	constructor() {
+		this.reset();
+	}
 
-  reset() {
-    this.session = null;
-    this.state = null;
-    this.snapshots = new Map();
-    this.reviewPly = null;
-    this.selection ??= new Selection();
-    this.selection.reset();
-    this.flipped = false;
-    // Multijugador local: bando que tiene el tablero de frente y si está girando hacia el otro.
-    this.localSide = "WHITE";
-    this.turning = false;
-    // Contra la CPU: mientras ella piensa (o Alfi hace su entrada) el jugador espera.
-    this.cpuBusy = false;
-  }
+	reset() {
+		this.session = null;
+		this.state = null;
+		this.snapshots = new Map();
+		this.reviewPly = null;
+		this.selection ??= new Selection();
+		this.selection.reset();
+		this.flipped = false;
+		this.localSide = "WHITE";
+		this.turning = false;
+		this.cpuBusy = false;
+	}
 
-  apply(payload) {
-    return this.applyNormalized(normalizeState(payload));
-  }
+	apply(payload) {
+		return this.applyNormalized(normalizeState(payload));
+	}
 
-  applyNormalized(next) {
-    this.snapshots = new Map();
+	applyNormalized(next) {
+		this.snapshots = new Map();
 
-    if (next.initialFen) {
-      this.snapshots.set(0, parseFen(next.initialFen));
-    } else if (!next.moves.length) {
-      this.snapshots.set(0, new Map(next.pieces));
-    } else {
-      this.snapshots.set(0, parseFen(initialFen));
-    }
+		if(next.initialFen) {
+			this.snapshots.set(0, parseFen(next.initialFen));
+		} else if(!next.moves.length) {
+			this.snapshots.set(0, new Map(next.pieces));
+		} else {
+			this.snapshots.set(0, parseFen(initialFen));
+		}
 
-    for (const move of next.moves) {
-      try {
-        if (move.fen) {
-          this.snapshots.set(move.ply, parseFen(move.fen));
-        } else if (move.position) {
-          this.snapshots.set(
-              move.ply,
-              normalizePieces(
-                  move.position.pieces ??
-                  move.position.board ??
-                  move.position.fen ??
-                  move.position
-              )
-          );
-        }
-      } catch {
-        this.snapshots.delete(move.ply);
-      }
-    }
+		for(const move of next.moves) {
+			try {
+				if(move.fen) {
+					this.snapshots.set(move.ply, parseFen(move.fen));
+				} else if(move.position) {
+					this.snapshots.set(
+							move.ply,
+							normalizePieces(
+									move.position.pieces ??
+									move.position.board ??
+									move.position.fen ??
+									move.position
+							)
+					);
+				}
+			} catch {
+				this.snapshots.delete(move.ply);
+			}
+		}
 
-    this.snapshots.set(next.moves.length, new Map(next.pieces));
+		this.snapshots.set(next.moves.length, new Map(next.pieces));
 
-    if (this.practice) {
-      next.waitingForOpponent = false;
-    }
+		if(this.practice) {
+			next.waitingForOpponent = false;
+		}
 
-    if (this.reviewPly !== null && !this.snapshots.has(this.reviewPly)) {
-      this.reviewPly = null;
-    }
+		if(this.reviewPly !== null && !this.snapshots.has(this.reviewPly)) {
+			this.reviewPly = null;
+		}
 
-    this.state = next;
-    this.selection.reset();
+		this.state = next;
+		this.selection.reset();
 
-    return next;
-  }
+		return next;
+	}
 
-  get selected() {
-    return this.selection.selected;
-  }
+	get selected() {
+		return this.selection.selected;
+	}
 
-  get targets() {
-    return this.selection.targets;
-  }
+	get targets() {
+		return this.selection.targets;
+	}
 
-  get pieces() {
-    return this.reviewPly === null
-        ? (this.state?.pieces ?? parseFen(initialFen))
-        : this.snapshots.get(this.reviewPly);
-  }
+	get pieces() {
+		return this.reviewPly === null
+				? (this.state?.pieces ?? parseFen(initialFen))
+				: this.snapshots.get(this.reviewPly);
+	}
 
-  get orientation() {
-    const black = (this.local ? this.localSide : this.session?.playerColor) === "BLACK";
-    return black !== this.flipped ? "BLACK" : "WHITE";
-  }
+	get orientation() {
+		const black = (this.local ? this.localSide : this.session?.playerColor) === "BLACK";
+		return black !== this.flipped ? "BLACK" : "WHITE";
+	}
 
-  get practice() {
-    return this.session?.gamemode === "PRACTICE";
-  }
+	get practice() {
+		return this.session?.gamemode === "PRACTICE";
+	}
 
-  get local() {
-    return this.session?.gamemode === "LOCAL";
-  }
+	get local() {
+		return this.session?.gamemode === "LOCAL";
+	}
 
-  // Color que puede seleccionarse ahora mismo; null cuando no hay restricción en el cliente.
-  get movableColor() {
-    if (this.session?.cpu) return this.session.playerColor;
-    return this.local ? this.state?.turn ?? null : null;
-  }
+	get movableColor() {
+		if(this.session?.cpu) return this.session.playerColor;
+		return this.local ? this.state?.turn ?? null : null;
+	}
 
-  get cpuTurn() {
-    const cpu = this.session?.cpu;
-    return !!cpu && (this.cpuBusy || this.state?.turn === cpu.color);
-  }
+	get cpuTurn() {
+		const cpu = this.session?.cpu;
+		return !!cpu && (this.cpuBusy || this.state?.turn === cpu.color);
+	}
 
-  get interactive() {
-    return this.reviewPly === null && !this.turning && !this.cpuTurn && boardInteractive(this.session, this.state);
-  }
+	get interactive() {
+		return this.reviewPly === null && !this.turning && !this.cpuTurn && boardInteractive(this.session, this.state);
+	}
 }

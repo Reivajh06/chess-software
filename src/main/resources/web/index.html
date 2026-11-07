@@ -19,9 +19,9 @@
       <div class="header-tools">
         <span id="connection" role="status" data-state="idle">Sin sesión</span>
         <button id="account-open" type="button">Iniciar sesión</button>
-        <button id="account-chip" class="account-chip" type="button" title="Tu cuenta" hidden>
+        <button id="account-chip" class="account-chip" type="button" title="Tu perfil" hidden>
           <span id="account-chip-mark" class="account-chip-mark" aria-hidden="true"></span>
-          <span class="account-chip-text"><strong id="account-chip-name"></strong><small>Tu cuenta</small></span>
+          <span class="account-chip-text"><strong id="account-chip-name"></strong><small>Tu perfil</small></span>
         </button>
         <button id="account-logout" type="button" title="Cerrar sesión" hidden>Salir</button>
         <button id="music-toggle" class="icon-button tool-button" type="button" aria-pressed="false" aria-label="Activar música" title="Música"><span class="pixel-icon" data-icon="music"></span></button>
@@ -111,6 +111,52 @@
           </ul>
           <p class="account-note">Sin cuenta puedes jugar igual a PvP por invitación, local, CPU, IA y práctica.</p>
         </section>
+      </div>
+    </main>
+
+    <main id="profile-screen" class="profile-screen" data-state="loading" aria-labelledby="profile-name" tabindex="-1">
+      <div class="profile-layout">
+        <section class="profile-banner pixel-frame">
+          <div class="profile-identity">
+            <span id="profile-mark" class="profile-mark" aria-hidden="true"></span>
+            <div class="profile-heading">
+              <span class="profile-eyebrow">Perfil de jugador</span>
+              <h1 id="profile-name"></h1>
+              <p id="profile-since"></p>
+            </div>
+          </div>
+          <dl class="profile-stats">
+            <div class="profile-stat"><span class="pixel-glyph" data-glyph="board"></span><dt>Partidas</dt><dd id="stat-games">0</dd></div>
+            <div class="profile-stat tone-win"><span class="pixel-glyph" data-glyph="trophy"></span><dt>Victorias</dt><dd id="stat-wins">0</dd></div>
+            <div class="profile-stat tone-loss"><span class="pixel-glyph" data-glyph="cross"></span><dt>Derrotas</dt><dd id="stat-losses">0</dd></div>
+            <div class="profile-stat tone-draw"><span class="pixel-glyph" data-glyph="equal"></span><dt>Tablas</dt><dd id="stat-draws">0</dd></div>
+          </dl>
+        </section>
+
+        <section class="profile-history pixel-frame" aria-labelledby="profile-history-title">
+          <div class="profile-history-heading">
+            <h2 id="profile-history-title"><span class="pixel-glyph" data-glyph="scroll"></span>Historial de partidas</h2>
+            <div id="profile-filters" class="profile-filters" role="group" aria-label="Filtrar por modo"></div>
+          </div>
+
+          <p class="profile-status" data-for="loading" role="status">Cargando tus partidas...</p>
+          <div class="profile-status" data-for="expired" role="alert">
+            <p>Tu sesión ha caducado. Vuelve a iniciar sesión para ver tu historial.</p>
+            <button id="profile-signin" class="primary" type="button">Iniciar sesión</button>
+          </div>
+          <div class="profile-status" data-for="error" role="alert">
+            <p id="profile-error-text"></p>
+            <button id="profile-retry" type="button">Reintentar</button>
+          </div>
+          <p class="profile-status" data-for="empty">Aún no has jugado ninguna partida. Cuando juegues, aparecerán aquí.</p>
+
+          <ul id="profile-games" class="profile-games" data-for="ready"></ul>
+          <p id="profile-games-empty" class="profile-status profile-games-empty" hidden>No hay partidas de este modo.</p>
+        </section>
+
+        <div class="profile-footer">
+          <button id="profile-delete" class="profile-delete" type="button">Borrar cuenta</button>
+        </div>
       </div>
     </main>
 
@@ -287,6 +333,46 @@
         <label class="switch-row"><span>Mostrar a Alfi, la mascota</span><input id="mascot-enabled" class="switch" type="checkbox" /></label>
         <p class="settings-note">Alfi comenta la partida: avisa de jaques y capturas, celebra los buenos golpes y se ríe un poco de los errores.</p>
       </section>
+    </dialog>
+
+    <dialog id="replay-dialog" class="pixel-frame replay-dialog" aria-labelledby="replay-title">
+      <div class="dialog-heading replay-heading">
+        <img id="replay-mode-icon" class="replay-mode-icon" src="./assets/ui/mode-pvp.png" alt="" />
+        <div class="replay-heading-text">
+          <span id="replay-mode" class="replay-mode"></span>
+          <h2 id="replay-title"></h2>
+        </div>
+        <span id="replay-result" class="result-badge"></span>
+        <button type="button" data-close="replay-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <div class="replay-body">
+        <div class="replay-stage">
+          <div class="replay-player" data-side="top"><span id="replay-top-piece" class="replay-player-piece"></span><strong id="replay-top-name"></strong></div>
+          <div class="board-frame pixel-frame replay-board-frame">
+            <div id="replay-board" class="board" role="group" aria-label="Repetición de la partida"></div>
+          </div>
+          <div class="replay-player" data-side="bottom"><span id="replay-bottom-piece" class="replay-player-piece"></span><strong id="replay-bottom-name"></strong></div>
+        </div>
+        <div class="replay-side">
+          <p id="replay-move" class="replay-move" aria-live="polite"></p>
+          <div class="replay-progress">
+            <input id="replay-progress" type="range" min="0" max="0" value="0" aria-label="Jugada" />
+            <span id="replay-counter" class="replay-counter"></span>
+          </div>
+          <div class="replay-controls">
+            <button id="replay-first" type="button" aria-label="Volver al inicio" title="Inicio">⏮</button>
+            <button id="replay-prev" type="button" aria-label="Jugada anterior" title="Anterior">◀</button>
+            <button id="replay-play" class="primary replay-play" type="button" aria-label="Reproducir" title="Reproducir">▶</button>
+            <button id="replay-next" type="button" aria-label="Jugada siguiente" title="Siguiente">▶</button>
+            <button id="replay-last" type="button" aria-label="Ir al final" title="Final">⏭</button>
+          </div>
+          <div class="replay-speed">
+            <span>Velocidad</span>
+            <div id="replay-speeds" class="replay-speeds" role="group" aria-label="Velocidad de reproducción"></div>
+          </div>
+          <ol id="replay-moves" class="replay-moves"></ol>
+        </div>
+      </div>
     </dialog>
 
     <dialog id="account-dialog" class="pixel-frame" aria-labelledby="account-dialog-title">

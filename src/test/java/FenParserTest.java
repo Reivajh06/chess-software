@@ -1,13 +1,13 @@
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import reivajh06.architecture.domain.services.FenParser;
-import reivajh06.architecture.domain.model.game.Difficulty;
-import reivajh06.architecture.domain.model.game.GameSession;
-import reivajh06.architecture.domain.model.game.Gamemode;
-import reivajh06.architecture.domain.model.Board;
-import reivajh06.architecture.domain.model.Color;
-import reivajh06.architecture.domain.model.PieceType;
-import reivajh06.architecture.domain.model.Tile;
+import reivajh06.archchess.architecture.domain.services.FenParser;
+import reivajh06.archchess.architecture.domain.model.game.Difficulty;
+import reivajh06.archchess.architecture.domain.model.game.GameSession;
+import reivajh06.archchess.architecture.domain.model.game.Gamemode;
+import reivajh06.archchess.architecture.domain.model.Board;
+import reivajh06.archchess.architecture.domain.model.Color;
+import reivajh06.archchess.architecture.domain.model.PieceType;
+import reivajh06.archchess.architecture.domain.model.Tile;
 
 import static org.junit.jupiter.api.Assertions.*;
 

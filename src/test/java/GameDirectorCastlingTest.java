@@ -3,11 +3,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import reivajh06.architecture.domain.model.game.GameSession;
-import reivajh06.architecture.domain.logic.GameDirector;
-import reivajh06.architecture.domain.model.Castling;
-import reivajh06.architecture.domain.model.Color;
-import reivajh06.architecture.domain.model.Tile;
+import reivajh06.archchess.architecture.domain.model.game.GameSession;
+import reivajh06.archchess.architecture.domain.logic.GameDirector;
+import reivajh06.archchess.architecture.domain.model.Castling;
+import reivajh06.archchess.architecture.domain.model.Color;
+import reivajh06.archchess.architecture.domain.model.Tile;
 
 import java.util.Collection;
 import java.util.List;
