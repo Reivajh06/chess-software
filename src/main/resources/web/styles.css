@@ -307,6 +307,9 @@ body[data-screen="title"] #game-screen,
 body[data-screen="game"] #title-screen,
 body[data-screen="account"] #title-screen,
 body[data-screen="account"] #game-screen,
+body[data-screen="profile"] #title-screen,
+body[data-screen="profile"] #game-screen,
+body:not([data-screen="profile"]) #profile-screen,
 body:not([data-screen="account"]) #account-screen,
 body:not([data-screen="title"]) #account-open {
   display: none;
@@ -2654,4 +2657,713 @@ body[data-alfi="on"] .alfi-crowd {
 /* Final en derrota: pantalla a oscuras, solo Alfi y su risa. */
 .alfi-stage.is-dark {
   background: #000;
+}
+
+.profile-screen {
+	display: flex;
+	justify-content: center;
+	min-width: 0;
+	padding: 28px 24px;
+	overflow: auto;
+	font-size: 20px;
+	line-height: 1.4;
+	outline: none;
+}
+
+.profile-layout {
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	width: min(1180px, 100%);
+	min-width: 0;
+}
+
+.profile-banner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 28px;
+	padding: 20px;
+}
+
+.profile-identity {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	min-width: 0;
+	flex: 1 1 320px;
+}
+
+.profile-mark {
+	display: grid;
+	place-items: center;
+	flex: 0 0 96px;
+	height: 96px;
+	background: conic-gradient(var(--surface-hover) 25%, var(--surface) 0 50%, var(--surface-hover) 0 75%, var(--surface) 0) 0 0 / 32px 32px;
+	box-shadow: 0 0 0 var(--pixel) var(--accent), 7px 7px 0 var(--bg);
+}
+
+.profile-mark > .piece-sprite {
+	width: 82px;
+	height: 82px;
+}
+
+.profile-heading {
+	min-width: 0;
+}
+
+.profile-eyebrow,
+.replay-mode {
+	font: 400 14px/1.6 Silkscreen, monospace;
+	text-transform: uppercase;
+	color: var(--accent);
+}
+
+.profile-heading h1 {
+	margin: 6px 0;
+	font-size: clamp(34px, 4vw, 48px);
+	line-height: 1.1;
+	overflow-wrap: anywhere;
+}
+
+.profile-heading p {
+	font-size: 20px;
+	color: var(--muted);
+}
+
+.profile-stats {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(108px, 1fr));
+	gap: 12px;
+	margin: 0;
+}
+
+.profile-stat {
+	display: grid;
+	justify-items: center;
+	gap: 8px;
+	padding: 16px 10px;
+	background: var(--surface);
+	box-shadow: inset 0 -4px var(--bg), 0 0 0 var(--pixel) var(--line);
+}
+
+.profile-stat dt {
+	font: 400 14px/1.4 Silkscreen, monospace;
+	color: var(--muted);
+}
+
+.profile-stat dd {
+	margin: 0;
+	font-size: 38px;
+	line-height: 1;
+}
+
+.pixel-glyph {
+	display: inline-flex;
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	vertical-align: middle;
+	fill: currentColor;
+}
+
+.pixel-glyph > svg {
+	width: 100%;
+	height: 100%;
+}
+
+.tone-win {
+	color: #9cdda4;
+}
+
+.tone-loss {
+	color: var(--danger);
+}
+
+.tone-draw {
+	color: #a9cfff;
+}
+
+.tone-neutral {
+	color: var(--muted);
+}
+
+.profile-history {
+	padding: 20px;
+}
+
+.profile-history-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	margin-bottom: 28px;
+}
+
+.profile-history h2 {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	font-size: 32px;
+	line-height: 1.2;
+}
+
+.profile-history h2 .pixel-glyph {
+	width: 28px;
+	height: 28px;
+	color: var(--accent);
+}
+
+.profile-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.profile-filters .profile-filter {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 48px;
+	padding: 8px 12px;
+	font-size: 18px;
+}
+
+.profile-filter .mode-icon-image {
+	width: 32px;
+	height: 32px;
+}
+
+.profile-filters .profile-filter[aria-pressed="true"],
+.replay-speeds button[aria-pressed="true"] {
+	color: var(--bg);
+	background: var(--accent);
+	box-shadow: 0 0 0 var(--pixel) var(--accent);
+}
+
+.profile-status {
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	gap: 18px;
+	padding: 40px 12px;
+	font-size: 20px;
+	color: var(--muted);
+	text-align: center;
+}
+
+.profile-screen[data-state="loading"] [data-for="loading"],
+.profile-screen[data-state="expired"] [data-for="expired"],
+.profile-screen[data-state="error"] [data-for="error"],
+.profile-screen[data-state="empty"] [data-for="empty"],
+.profile-screen[data-state="ready"] .profile-games-empty {
+	display: flex;
+}
+
+.profile-games {
+	display: none;
+	gap: 18px;
+	margin: 0;
+	padding: 3px;
+	list-style: none;
+}
+
+.profile-screen[data-state="ready"] .profile-games {
+	display: grid;
+}
+
+.profile-games > li {
+	min-width: 0;
+}
+
+.profile-games button.profile-game {
+	display: grid;
+	grid-template-columns: 76px minmax(0, 1fr) 44px auto auto;
+	align-items: center;
+	gap: 20px;
+	width: 100%;
+	min-height: 140px;
+	margin: 0;
+	padding: 22px;
+	text-align: left;
+	box-shadow: 0 0 0 var(--pixel) var(--line), inset 5px 0 var(--line), inset 0 -4px var(--bg);
+}
+
+.profile-games button.profile-game:hover {
+	box-shadow: 0 0 0 var(--pixel) var(--accent), inset 5px 0 var(--accent), inset 0 -4px var(--bg);
+}
+
+.mode-icon-image,
+.replay-mode-icon {
+	width: 76px;
+	height: 76px;
+	object-fit: contain;
+	image-rendering: pixelated;
+}
+
+.profile-game-details {
+	display: grid;
+	gap: 10px;
+	min-width: 0;
+}
+
+.profile-game-rival {
+	font-size: 26px;
+	line-height: 1.15;
+	overflow-wrap: anywhere;
+}
+
+.profile-game-meta {
+	font-size: 18px;
+	line-height: 1.5;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+
+.profile-game-side > .piece-sprite {
+	width: 44px;
+	height: 44px;
+}
+
+.result-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	max-width: 100%;
+	padding: 8px 12px;
+	font-size: 18px;
+	line-height: 1.3;
+	background: color-mix(in srgb, currentColor 9%, var(--bg));
+	box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 40%, var(--line));
+}
+
+.result-badge .pixel-glyph {
+	width: 18px;
+	height: 18px;
+}
+
+.profile-game-play {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 18px;
+	color: var(--accent);
+}
+
+.profile-footer {
+	display: flex;
+	justify-content: flex-end;
+	padding: 0 4px 28px;
+}
+
+.profile-footer .profile-delete {
+	font-size: 18px;
+	color: var(--danger);
+}
+
+dialog.replay-dialog {
+	width: min(1200px, calc(100% - 40px));
+	max-width: none;
+	max-height: calc(100dvh - 32px);
+	margin: auto;
+	padding: 20px;
+	overflow: auto;
+	font-size: 20px;
+	line-height: 1.4;
+}
+
+.replay-heading {
+	display: grid;
+	grid-template-columns: 64px minmax(0, 1fr) auto auto;
+	align-items: center;
+	gap: 18px;
+	margin-bottom: 24px;
+}
+
+.replay-mode-icon {
+	width: 64px;
+	height: 64px;
+}
+
+.replay-heading-text {
+	min-width: 0;
+}
+
+.replay-heading h2 {
+	margin-top: 4px;
+	font-size: 30px;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+
+.replay-heading button {
+	min-width: 44px;
+	min-height: 44px;
+}
+
+.replay-body {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr);
+	align-items: start;
+	gap: 28px;
+}
+
+.replay-stage,
+.replay-side {
+	min-width: 0;
+}
+
+.replay-stage {
+	display: grid;
+	gap: 12px;
+}
+
+.replay-board-frame {
+	width: 100%;
+}
+
+.replay-player {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+	padding: 0 8px;
+	font-size: 24px;
+}
+
+.replay-player strong {
+	overflow-wrap: anywhere;
+	min-width: 0;
+}
+
+.replay-player-piece,
+.replay-player-piece > .piece-sprite {
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
+}
+
+.replay-side {
+	display: grid;
+	gap: 20px;
+	padding: 18px;
+	background: var(--bg);
+	box-shadow: 0 0 0 var(--pixel) var(--line);
+}
+
+.replay-move {
+	min-height: 3em;
+	font-size: 22px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.replay-progress {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+#replay-progress {
+	flex: 1;
+	min-width: 0;
+	width: 100%;
+	min-height: 44px;
+	margin: 0;
+	cursor: pointer;
+}
+
+.replay-counter {
+	flex-shrink: 0;
+	font-size: 18px;
+	font-variant-numeric: tabular-nums;
+	color: var(--muted);
+}
+
+.replay-controls {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.replay-controls button {
+	display: grid;
+	place-items: center;
+	min-width: 0;
+	min-height: 52px;
+	padding: 8px 0;
+	font-size: 24px;
+}
+
+.replay-speed {
+	display: grid;
+	gap: 10px;
+	font-size: 18px;
+	color: var(--muted);
+}
+
+.replay-speeds {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.replay-speeds button {
+	min-width: 0;
+	min-height: 44px;
+	padding: 8px 0;
+	font-size: 18px;
+}
+
+.replay-moves {
+	display: grid;
+	gap: 10px;
+	max-height: 290px;
+	margin: 0;
+	padding: 4px;
+	overflow: auto;
+	overscroll-behavior: contain;
+	list-style: none;
+}
+
+.replay-moves:empty::after {
+	content: "Todav?a no hay jugadas.";
+	padding: 16px 4px;
+	color: var(--muted);
+}
+
+.replay-moves button {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	min-height: 52px;
+	margin: 0;
+	padding: 8px 10px;
+	font-size: 18px;
+	text-align: left;
+	overflow-wrap: anywhere;
+}
+
+.replay-moves button[aria-current="true"] {
+	color: var(--accent);
+	background: var(--surface-hover);
+	box-shadow: inset 4px 0 var(--accent), 0 0 0 var(--pixel) var(--line);
+}
+
+.replay-moves-number {
+	flex: 0 0 36px;
+	color: var(--muted);
+}
+
+.replay-moves .piece-sprite {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+}
+
+@media (max-width: 1100px) {
+	.profile-stats {
+		width: 100%;
+	}
+}
+
+@media (max-width: 899px) {
+	.replay-body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.replay-stage {
+		width: min(540px, 100%);
+		justify-self: center;
+	}
+
+	.replay-heading {
+		grid-template-columns: 56px minmax(0, 1fr) auto;
+	}
+
+	.replay-mode-icon {
+		width: 56px;
+		height: 56px;
+	}
+
+	.replay-heading .result-badge {
+		grid-column: 1 / 3;
+		justify-self: start;
+	}
+
+	.replay-heading button {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	.profile-games button.profile-game {
+		grid-template-columns: 56px minmax(0, 1fr) auto;
+		gap: 16px;
+	}
+
+	.profile-game > .mode-icon-image {
+		grid-row: 1 / 3;
+		width: 56px;
+		height: 56px;
+	}
+
+	.profile-game-side {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	.profile-game .result-badge {
+		grid-column: 2;
+		justify-self: start;
+	}
+
+	.profile-game-play {
+		grid-column: 3;
+		grid-row: 2;
+	}
+
+	.profile-game-play > span {
+		display: none;
+	}
+}
+
+@media (max-width: 600px) {
+	.profile-screen {
+		padding: 18px 12px;
+	}
+
+	.profile-layout {
+		gap: 22px;
+	}
+
+	.profile-banner,
+	.profile-history {
+		border-width: 12px;
+		padding: 14px 8px;
+	}
+
+	.profile-banner {
+		gap: 24px;
+	}
+
+	.profile-identity {
+		gap: 16px;
+	}
+
+	.profile-mark {
+		flex-basis: 64px;
+		height: 72px;
+	}
+
+	.profile-mark > .piece-sprite {
+		width: 60px;
+		height: 60px;
+	}
+
+	.profile-heading h1 {
+		font-size: 34px;
+	}
+
+	.profile-heading p {
+		font-size: 18px;
+	}
+
+	.profile-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.profile-history-heading {
+		gap: 22px;
+	}
+
+	.profile-history h2 {
+		font-size: 30px;
+	}
+
+	.profile-filters {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		width: 100%;
+	}
+
+	.profile-filters .profile-filter {
+		padding: 8px;
+	}
+
+	.profile-games button.profile-game {
+		grid-template-columns: 40px minmax(0, 1fr) 32px;
+		min-height: 174px;
+		padding: 18px 12px;
+		gap: 14px 10px;
+	}
+
+	.profile-game > .mode-icon-image {
+		grid-row: 1;
+		width: 40px;
+		height: 48px;
+	}
+
+	.profile-game-details {
+		grid-column: 2 / 4;
+	}
+
+	.profile-game-rival {
+		font-size: 25px;
+	}
+
+	.profile-game-side {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.profile-game-side > .piece-sprite {
+		width: 36px;
+		height: 36px;
+	}
+
+	.profile-game .result-badge {
+		padding: 8px;
+		gap: 6px;
+	}
+
+	dialog.replay-dialog {
+		width: calc(100% - 16px);
+		max-height: calc(100dvh - 16px);
+		border-width: 12px;
+		padding: 12px 8px;
+	}
+
+	.replay-heading {
+		gap: 12px;
+	}
+
+	.replay-heading h2 {
+		font-size: 26px;
+	}
+
+	.replay-board-frame {
+		border-width: 12px;
+	}
+
+	.replay-side {
+		padding: 12px;
+	}
+
+	.replay-player {
+		font-size: 24px;
+	}
+
+	.replay-controls,
+	.replay-speeds {
+		gap: 6px;
+	}
+
+	.replay-move {
+		font-size: 20px;
+	}
 }

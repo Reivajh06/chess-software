@@ -41,5 +41,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-### Música propia (local, no se sube) ###
-src/main/resources/web/assets/music/alfi.mp3
