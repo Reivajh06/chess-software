@@ -1,15 +1,14 @@
 package reivajh06.infrastructure.adapters.web.endpoints;
 
+import reivajh06.architecture.domain.model.Color;
+import reivajh06.architecture.domain.model.Player;
+import reivajh06.architecture.domain.model.game.GameSession;
 import reivajh06.infrastructure.Archchess;
-import reivajh06.infrastructure.adapters.Sessions;
+import reivajh06.infrastructure.adapters.Json;
+import reivajh06.infrastructure.adapters.datalake.events.CreateSessionEvent;
 import reivajh06.infrastructure.adapters.web.EndpointContext;
 import reivajh06.infrastructure.adapters.web.dtos.CreateSessionRequestDto;
 import reivajh06.infrastructure.adapters.web.dtos.CreateSessionResponseDto;
-import reivajh06.architecture.domain.model.game.GameSession;
-import reivajh06.architecture.domain.model.Color;
-import reivajh06.architecture.domain.model.Player;
-import reivajh06.infrastructure.adapters.datalake.events.CreateSessionEvent;
-import reivajh06.infrastructure.adapters.Json;
 
 public class PostCreateSession implements EndpointOperator<CreateSessionRequestDto, CreateSessionResponseDto> {
 
@@ -21,7 +20,7 @@ public class PostCreateSession implements EndpointOperator<CreateSessionRequestD
 
 		Color creatorColor = session.assignColor(player);
 
-		Sessions.registerSession(session);
+		Archchess.instance().registerSession(session);
 
 		Archchess.instance().publish(new CreateSessionEvent(player.username(), session.id(), session.gamemode()));
 

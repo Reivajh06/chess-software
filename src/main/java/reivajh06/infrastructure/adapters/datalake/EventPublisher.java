@@ -1,6 +1,5 @@
 package reivajh06.infrastructure.adapters.datalake;
 
-import reivajh06.infrastructure.adapters.datalake.PublisherException;
 import reivajh06.infrastructure.adapters.Json;
 import reivajh06.infrastructure.adapters.datalake.events.Event;
 

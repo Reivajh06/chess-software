@@ -1,30 +1,31 @@
 package reivajh06.infrastructure;
 
-import reivajh06.infrastructure.adapters.web.ChessAPI;
-import reivajh06.infrastructure.adapters.sqlite.SqliteDatabaseClient;
+import reivajh06.architecture.domain.model.game.GameSession;
 import reivajh06.architecture.ports.database.UserDatabaseClient;
+import reivajh06.infrastructure.adapters.Sessions;
 import reivajh06.infrastructure.adapters.datalake.EventPublisher;
 import reivajh06.infrastructure.adapters.datalake.EventReader;
 import reivajh06.infrastructure.adapters.datalake.events.Event;
 import reivajh06.infrastructure.adapters.plugins.PluginsManager;
+import reivajh06.infrastructure.adapters.sqlite.SqliteDatabaseClient;
+import reivajh06.infrastructure.adapters.web.ChessAPI;
 
 import java.io.File;
-import java.time.Duration;
+import java.util.UUID;
 
 public class Archchess {
 
 	private static final Archchess INSTANCE = new Archchess();
-	private static final String DEFAULT_DB_PATH = "temp/archchess.db";
-	private static final String DEFAULT_DL_PATH = "temp/datalake";
 
 	public static Archchess instance() {
 		return INSTANCE;
 	}
 
-	private File home;
-	private int port;
-	private String databasePath = DEFAULT_DB_PATH;
-	private String datalakePath = DEFAULT_DL_PATH;
+	private final File home;
+	private final int port;
+	private final String databasePath;
+	private final String datalakePath;
+	private final String pluginsPath;
 
 	private ChessAPI api;
 	private UserDatabaseClient userDatabaseClient;
@@ -32,71 +33,46 @@ public class Archchess {
 	private EventReader eventReader;
 	private PluginsManager pluginsManager;
 
-	public File home() {
-		return home;
+	private Archchess() {
+		Configuration configuration = Configuration.loadConfigFile();
+
+		home = new File(configuration.homePath());
+		datalakePath = configuration.datalakePath();
+		databasePath = configuration.databasePath();
+		port = configuration.apiPort();
+		pluginsPath = configuration.pluginsPath();
 	}
 
-	public String databasePath() {
-		return databasePath;
-	}
+	public void launch() {
+		new File(databasePath).getAbsoluteFile().getParentFile().mkdirs();
+		new File(datalakePath).mkdirs();
+		new File(pluginsPath).mkdirs();
 
-	public Archchess databasePath(String databasePath) {
-		this.databasePath = databasePath;
-		return this;
-	}
+		api = new ChessAPI(home, port);
+		userDatabaseClient = new SqliteDatabaseClient(databasePath);
+		eventPublisher = new EventPublisher(datalakePath);
+		eventReader = new EventReader(datalakePath);
+		pluginsManager = new PluginsManager(pluginsPath);
+		pluginsManager.configurePluginsReload();
 
-	public Archchess home(File home) {
-		this.home = home;
-		return this;
-	}
-
-	public int port() {
-		return port;
-	}
-
-	public Archchess port(int port) {
-		this.port = port;
-		return this;
-	}
-
-	public ChessAPI api() {
-		return api;
+		api.start();
+		userDatabaseClient.init();
 	}
 
 	public PluginsManager getPluginsManager() {
 		return pluginsManager;
 	}
 
-	public EventReader eventReader() {
-		return eventReader;
-	}
-
 	public synchronized void publish(Event event) {
 		eventPublisher.publish(event);
 	}
 
-	public void launch() {
-		api = new ChessAPI(home, port);
-		userDatabaseClient = new SqliteDatabaseClient(databasePath);
-		eventPublisher = new EventPublisher(datalakePath);
-		eventReader = new EventReader(datalakePath);
-		pluginsManager = new PluginsManager(home);
+	public void registerSession(GameSession session) {
+		Sessions.registerSession(session);
+	}
 
-		Thread thread = new Thread(() -> {
-			while(true) {
-				pluginsManager.reloadPlugins();
-				try {
-					Thread.sleep(Duration.ofMinutes(3));
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-        });
-		thread.setDaemon(true);
-		thread.start();
-
-		api.start();
-		userDatabaseClient.init();
+	public GameSession session(UUID sessionId) {
+		return Sessions.fetchSession(sessionId);
 	}
 
 	public UserDatabaseClient database() {

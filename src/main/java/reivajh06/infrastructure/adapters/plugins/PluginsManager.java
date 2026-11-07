@@ -1,6 +1,7 @@
 package reivajh06.infrastructure.adapters.plugins;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -12,16 +13,31 @@ public class PluginsManager {
     public File pluginsFolder;
     public Map<String, PluginExecutor> plugins;
 
-    public PluginsManager(File home) {
+    public PluginsManager(String pluginsPath) {
         plugins = new HashMap<>();
-        pluginsFolder = new File(home, "plugins");
-        pluginsFolder.mkdir();
+        this.pluginsFolder = new File(pluginsPath);
+        this.pluginsFolder.mkdir();
     }
 
     public void reloadPlugins() {
         File[] content = pluginsFolder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
 
         plugins = Arrays.stream(content).collect(Collectors.toMap(File::getName, f -> pluginExecutor(f.getName())));
+    }
+
+    public void configurePluginsReload() {
+        Thread thread = new Thread(() -> {
+            while(true) {
+                reloadPlugins();
+                try {
+                    Thread.sleep(Duration.ofMinutes(3));
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
     }
 
     public PluginExecutor pluginExecutor(String pluginName) {

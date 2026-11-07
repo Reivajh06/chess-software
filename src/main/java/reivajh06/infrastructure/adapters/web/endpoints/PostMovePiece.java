@@ -1,19 +1,18 @@
 package reivajh06.infrastructure.adapters.web.endpoints;
 
+import reivajh06.architecture.domain.logic.GameDirector;
+import reivajh06.architecture.domain.model.Piece;
+import reivajh06.architecture.domain.model.Player;
+import reivajh06.architecture.domain.model.Tile;
+import reivajh06.architecture.domain.model.game.GameSession;
+import reivajh06.architecture.domain.services.FenParser;
 import reivajh06.infrastructure.Archchess;
+import reivajh06.infrastructure.adapters.Json;
+import reivajh06.infrastructure.adapters.datalake.events.MovePieceEvent;
+import reivajh06.infrastructure.adapters.web.ApiException;
 import reivajh06.infrastructure.adapters.web.EndpointContext;
 import reivajh06.infrastructure.adapters.web.HttpStatus;
-import reivajh06.architecture.domain.services.FenParser;
-import reivajh06.infrastructure.adapters.Json;
-import reivajh06.infrastructure.adapters.Sessions;
-import reivajh06.infrastructure.adapters.web.ApiException;
 import reivajh06.infrastructure.adapters.web.dtos.MovePieceDto;
-import reivajh06.architecture.domain.logic.GameDirector;
-import reivajh06.architecture.domain.model.game.GameSession;
-import reivajh06.architecture.domain.model.Piece;
-import reivajh06.architecture.domain.model.Tile;
-import reivajh06.architecture.domain.model.Player;
-import reivajh06.infrastructure.adapters.datalake.events.MovePieceEvent;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +25,7 @@ public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
 			throw new ApiException(HttpStatus.FORBIDDEN, "Either source or destination tile is missing");
 		}
 
-		GameSession session = Sessions.fetchSession(UUID.fromString(ctx.pathParams().get("sessionId")));
+		GameSession session = Archchess.instance().session(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 

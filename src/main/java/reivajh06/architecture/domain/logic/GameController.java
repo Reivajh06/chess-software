@@ -6,7 +6,10 @@ import reivajh06.architecture.domain.model.game.GameState;
 import reivajh06.architecture.domain.model.movement.Move;
 import reivajh06.architecture.domain.model.movement.MoveEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GameController {
@@ -57,13 +60,6 @@ public class GameController {
 	public static List<Tile> piecesTilesByColor(GameState gameState, Color color) {
 		return gameState.board().asStream()
 				.filter(t -> gameState.board().pieceAt(t) != null && gameState.board().pieceAt(t).color() == color)
-				.toList();
-	}
-
-	public static List<Tile> tilesByRank(GameState gameState, Rank rank) {
-		return gameState.board().asStream()
-				.filter(t -> t.rank().equals(rank))
-				.sorted(Comparator.comparing(Tile::file))
 				.toList();
 	}
 

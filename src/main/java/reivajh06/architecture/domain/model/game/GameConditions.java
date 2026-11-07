@@ -15,7 +15,7 @@ public class GameConditions {
 
     private static final int AUTOMATIC_DRAW_THRESHOLD = 75;
 
-    public static boolean moveUnchecksKing(GameState gameState, Move move, Tile from, Tile to) {
+    public static synchronized boolean moveUnchecksKing(GameState gameState, Move move, Tile from, Tile to) {
         Piece pieceMoved = gameState.board().pieceAt(from);
         Piece pieceCaptured = null;
 
