@@ -12,7 +12,7 @@ import {
 	loopbackHost,
 } from "./modules/preferences.js";
 import { serverAddress } from "./modules/network.js";
-import { SessionAccess, SessionPolling } from "./modules/session.js";
+import { SessionAccess, SessionPolling, abandonedSession } from "./modules/session.js";
 import { PluginDialog } from "./modules/plugins.js";
 import { GameAudio } from "./modules/audio.js";
 import { BackgroundMusic } from "./modules/music.js";
@@ -126,10 +126,6 @@ const title = new TitleScreen({
 			? byId("pvp-dialog").showModal()
 			: modeDefinition(mode).pluginPrompts ? pluginDialog.open(mode) : openSession(null, mode),
 	onJoin: joinSession,
-	onContinue: () => {
-		showScreen("game");
-		if(alfi.active && !alfi.asleep) setTimeout(() => alfi.seat.talk("bossReturn", 2), 500);
-	},
 	onError: () => titleMascot.talk("error", 2),
 	onHover: (id, hint) => {
 		if(id === hoveredEntry) return;
@@ -959,7 +955,44 @@ function refresh() {
 	return liveSession.refresh();
 }
 
-function resetSession() {
+// Leaving the game screen ends the game: a person cannot come back to it. A game in progress asks first.
+let leaveAction = null;
+
+function dropGame() {
+	resetSession();
+	renderGame();
+}
+
+function leaveGame(then) {
+	const session = store.session;
+	if(!session) return then();
+
+	const inProgress = !session.watching && store.state?.status === "ACTIVE" && (store.state.moves?.length ?? 0) > 0;
+	if(!inProgress) {
+		dropGame();
+		return then();
+	}
+	leaveAction = then;
+	byId("leave-dialog").showModal();
+}
+
+byId("leave-confirm").addEventListener("click", () => {
+	const then = leaveAction;
+	leaveAction = null;
+	byId("leave-dialog").close();
+	dropGame();
+	then?.();
+});
+
+byId("leave-stay").addEventListener("click", () => {
+	leaveAction = null;
+	byId("leave-dialog").close();
+});
+
+// Drops the game of this page. Leaving a game is final (there is no "continue"): the server is told, unless the
+// game is about to be joined again ({@code next}) or was only being watched, and the saved seat is forgotten.
+function resetSession(next = null) {
+	const dropped = store.session;
 	sessionVersion++;
 	thinkingLog.reset();
 	// New game, new colours for plugins and guests; a registered player keeps the colour of the account.
@@ -969,6 +1002,9 @@ function resetSession() {
 	commentator.reset();
 
 	api.cancel();
+	const abandoned = abandonedSession(dropped, next);
+	if(abandoned) api.abandon(abandoned);
+	if(dropped && dropped.sessionId !== next) sessions.forget(dropped.sessionId);
 	liveSession.stop();
 	clearMoveWarning();
 	clearTimeout(waitingTimer);
@@ -998,7 +1034,6 @@ function showScreen(screen) {
 	alfi.apply(screen === "game" && store.session?.alfi === "revealed");
 
 	if(screen === "title") {
-		title.canContinue = !!store.session;
 		title.render();
 		title.showMenu();
 		hoveredEntry = null;
@@ -1056,7 +1091,7 @@ async function openSession(id, mode, difficulty, pluginNames) {
 	title.setBusy(true, id ? "join" : mode);
 	titleMascot.talk("loading", 1);
 	title.setError();
-	resetSession();
+	resetSession(id);
 
 	const generation = sessionVersion;
 
@@ -1085,9 +1120,7 @@ async function openSession(id, mode, difficulty, pluginNames) {
 }
 
 byId("menu-button").addEventListener("click", () => {
-	if(!sessionBusy) {
-		showScreen("title");
-	}
+	if(!sessionBusy) leaveGame(() => showScreen("title"));
 });
 
 const account = new AccountScreen(api, {
@@ -1114,8 +1147,10 @@ renderAccount(loadAccount());
 verifySavedAccount(api).then(() => renderAccount(loadAccount()));
 
 byId("account-open").addEventListener("click", () => {
-	showScreen("account");
-	account.open();
+	leaveGame(() => {
+		showScreen("account");
+		account.open();
+	});
 });
 
 async function endAccountSession() {
@@ -1127,6 +1162,8 @@ async function endAccountSession() {
 	button.disabled = false;
 	saveAccount(null);
 	renderAccount(null);
+	// Logging out changes who the player is, so the game in progress cannot go on.
+	if(store.session) dropGame();
 	if(!sessionBusy) showScreen("title");
 }
 
@@ -1146,9 +1183,11 @@ const profile = new ProfileScreen(api, preferences, {
 byId("account-chip").addEventListener("click", () => {
 	const current = loadAccount();
 	if(!current) return;
-	showScreen("profile");
-	profile.open(current);
-	byId("profile-screen").focus();
+	leaveGame(() => {
+		showScreen("profile");
+		profile.open(current);
+		byId("profile-screen").focus();
+	});
 });
 
 byId("result-rematch").addEventListener("click", () => {
@@ -1181,7 +1220,7 @@ for(const [id, mode] of [["pvp-invite", "PVP"], ["pvp-local", "LOCAL"]]) {
 
 byId("result-new").addEventListener("click", () => {
 	byId("result-dialog").close();
-	showScreen("title");
+	leaveGame(() => showScreen("title"));
 });
 
 for(const button of document.querySelectorAll("[data-close]")) {
@@ -1254,9 +1293,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 byId("leave").addEventListener("click", () => {
-	if(!sessionBusy) {
-		showScreen("title");
-	}
+	if(!sessionBusy) leaveGame(() => showScreen("title"));
 });
 
 byId("retry").addEventListener("click", () => {

@@ -15,6 +15,7 @@ This document describes the HTTP interface between the web frontend (`src/main/r
 | `POST` | `/api/sessions/{sessionId}/moves` | `PostMovePiece` | Play one move (player or machine). |
 | `POST` | `/api/sessions/{sessionId}/promote` | `PostPromotePiece` | Promote a pawn. |
 | `GET` | `/api/server` | `GetServerAddress` | LAN address of the server, for invitations. |
+| `DELETE` | `/api/sessions/{sessionId}` | `DeleteSession` | A player abandons the game; remove it when no player is left. |
 
 ### Conventions
 
@@ -24,6 +25,14 @@ This document describes the HTTP interface between the web frontend (`src/main/r
 - Identity colours exist only in the browser: plugins and guests get a random colour for each game; a registered player gets a random colour when the account is created and keeps it in localStorage under `archchess.account-tones`. Nothing about these colours is sent to the server.
 - The player is identified by the HTTP session cookie, which the browser sends by itself on every request. The `playerId` in the creation and join responses is that HTTP session's ID: the frontend ignores it, does not store it and never sends it. Two tabs of one browser share the same identity.
 - Every request times out after 10 s in the frontend (`ChessApi.request`).
+
+## Leaving a game
+
+The page sends `DELETE /api/sessions/{sessionId}`, without a body and ignoring the answer, when a player drops a game: going to the main menu, the account or profile screens, rematch, starting or joining another game, a finished game left for the menu, logging out. A watcher never sends it.
+
+There is no "continue game": leaving ends the game, and a game in progress (`ACTIVE` with at least one move) asks for confirmation first.
+
+Server contract: the request means "the player of this HTTP session left". The server removes the session and what it keeps for it (for example machine turns) once no human player remains (machines do not count), so a game with one person is removed at once. Answer `2xx`, or `404` when it is already gone. Limitation: closing the tab cannot be told apart from a reload, so a game abandoned that way stays on the server; an idle timeout on the server is recommended.
 
 ## HTTP status codes
 

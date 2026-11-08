@@ -454,6 +454,18 @@
       <p id="invite-status" class="settings-note" role="status"></p>
     </dialog>
 
+    <dialog id="leave-dialog" class="pixel-frame invite-dialog" aria-labelledby="leave-title">
+      <div class="dialog-heading">
+        <h2 id="leave-title">¿Abandonar la partida?</h2>
+        <button type="button" data-close="leave-dialog" aria-label="Seguir jugando">×</button>
+      </div>
+      <p class="settings-note">Si sales, la partida se cierra y no podrás volver a ella.</p>
+      <div class="leave-actions">
+        <button id="leave-stay" type="button">Seguir jugando</button>
+        <button id="leave-confirm" class="primary" type="button">Abandonar</button>
+      </div>
+    </dialog>
+
     <dialog id="move-choice-dialog" class="pixel-frame" aria-labelledby="move-choice-title">
       <div class="dialog-heading">
         <h2 id="move-choice-title">Elige el tipo de jugada</h2>

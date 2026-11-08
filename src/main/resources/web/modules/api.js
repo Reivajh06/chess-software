@@ -103,6 +103,12 @@ export class ChessApi {
 	state(id) {
 		return this.request(`/sessions/${encodeURIComponent(id)}`);
 	}
+	// The player leaves the game for good: the server removes the session (and what it keeps for it) once no
+	// player is left. Best effort and never cancelled by api.cancel(), which runs when the next game starts.
+	abandon(id) {
+		return fetch(`/api/sessions/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true, cache: "no-store" })
+			.then(() => undefined, () => undefined);
+	}
 	legal(id, from) {
 		return this.request(`/sessions/${encodeURIComponent(id)}/legal-moves`, { from });
 	}

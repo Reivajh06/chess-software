@@ -44,5 +44,6 @@ public class ChessAPI {
 		config.routes.get("/api/sessions/{sessionId}/request-move", c -> EndpointHandler.of(new GetRequestMove()).handle(JavalinEndpointContext.of(c)));
 
 		config.routes.delete("/api/accounts/delete", c -> EndpointHandler.of(new DeleteAccount()).handle(JavalinEndpointContext.of(c)));
+		config.routes.delete("/api/sessions/{sessionId}", c -> EndpointHandler.of(new DeleteSession()).handle(JavalinEndpointContext.of(c)));
 	}
 }

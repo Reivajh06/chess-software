@@ -20,13 +20,11 @@ const statusLabel = (status) => {
 };
 
 export class TitleScreen {
-	constructor({ onStart, onJoin, onContinue, onHover, onError }) {
+	constructor({ onStart, onJoin, onHover, onError }) {
 		this.onStart = onStart;
 		this.onError = onError;
 		this.onHover = onHover;
 		this.onJoin = onJoin;
-		this.onContinue = onContinue;
-		this.canContinue = false;
 		this.busy = false;
 
 		byId("title-menu").addEventListener("keydown", (event) => this.navigate(event));
@@ -39,14 +37,6 @@ export class TitleScreen {
 
 	entries() {
 		const entries = [];
-		if(this.canContinue) {
-			entries.push({
-				id: "continue",
-				label: "Continuar partida",
-				hint: "Tu partida te espera. Las piezas no se han movido. Creo.",
-				action: () => this.onContinue(),
-			});
-		}
 		for(const id of menuOrder) {
 			const mode = gameModes[id];
 			entries.push({

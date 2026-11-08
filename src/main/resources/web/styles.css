@@ -3610,3 +3610,11 @@ dialog.replay-dialog {
 .player-identity strong {
   color: var(--tone);
 }
+
+.leave-actions {
+  display: flex;
+  gap: 8px;
+}
+.leave-actions button {
+  flex: 1 1 0;
+}

@@ -10,6 +10,16 @@ const pluginDifficulty = (mode, chosen) =>
 	mode in defaultDifficulty ? (chosen ?? defaultDifficulty[mode]) : "NOT_PLUGIN";
 const seated = (state) => (state ? { ...state, waitingForOpponent: false } : undefined);
 
+/**
+ * The session the server must be told about when the page drops {@code current} to go to {@code next} (or to the
+ * menu): a game one plays in. A watcher never owned the game, and joining the session one already holds is no exit.
+ * @returns the session id, or null when there is nothing to abandon
+ */
+export function abandonedSession(current, next = null) {
+	if(!current?.sessionId || current.watching) return null;
+	return current.sessionId === next ? null : current.sessionId;
+}
+
 export class SessionAccess {
 	constructor(api) {
 		this.api = api;
