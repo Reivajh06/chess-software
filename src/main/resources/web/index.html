@@ -233,6 +233,7 @@
         <nav class="match-actions" aria-label="Acciones">
           <button id="flip" type="button" data-alfi-breaks><span aria-hidden="true">⇅</span> Girar tablero</button>
           <button id="invite" type="button" hidden><span aria-hidden="true">✉</span> Copiar invitación</button>
+          <button id="watch-invite" type="button" hidden><span aria-hidden="true">◉</span> Invitar a ver</button>
           <button id="leave" type="button"><span aria-hidden="true">◄</span> Menú principal</button>
         </nav>
 
@@ -283,11 +284,21 @@
         </div>
       </section>
 
-      <aside class="side-panel pixel-frame" aria-label="Historial de jugadas">
-        <div class="section-title">
-          <h2>Jugadas</h2>
-          <span id="move-count" class="badge">0</span>
+      <aside id="side-panel" class="side-panel pixel-frame" data-open="moves" aria-label="Historial de jugadas">
+        <div class="side-tabs" role="tablist" aria-label="Jugadas y razonamiento">
+          <button id="moves-tab" class="side-tab" type="button" role="tab" aria-selected="true" aria-controls="moves-body">
+            <span>Jugadas</span>
+            <span id="move-count" class="badge">0</span>
+          </button>
+          <button id="thinking-tab" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="thinking-body" tabindex="-1" hidden>
+            <span>Pensando</span>
+            <span id="thinking-live" class="live-dot" role="status" aria-label="Una máquina está pensando" hidden></span>
+          </button>
         </div>
+        <div id="thinking-body" class="side-body" role="tabpanel" aria-labelledby="thinking-tab">
+          <ol id="thinking-log" class="thinking-log"></ol>
+        </div>
+          <div id="moves-body" class="side-body" role="tabpanel" aria-labelledby="moves-tab">
         <div id="move-history" class="move-history" role="list" aria-label="Jugadas en orden cronológico"></div>
         <div class="alfi-dancers" data-count="3" data-first="WHITE" aria-hidden="true"></div>
         <nav class="history-controls" aria-label="Revisar movimientos">
@@ -296,6 +307,7 @@
           ><button id="history-next" type="button" aria-label="Movimiento siguiente" title="Siguiente (→)">›</button
           ><button id="history-live" type="button" aria-label="Posición actual" title="Volver a la partida">›|</button>
         </nav>
+          </div>
       </aside>
     </main>
 
@@ -433,7 +445,7 @@
         <h2 id="invite-title">Invitar a un rival</h2>
         <button type="button" data-close="invite-dialog" aria-label="Cerrar invitación">×</button>
       </div>
-      <p class="settings-note invite-intro">Envía este enlace a tu rival. La partida empieza en cuanto lo abra.</p>
+      <p id="invite-intro" class="settings-note invite-intro">Envía este enlace a tu rival. La partida empieza en cuanto lo abra.</p>
       <div class="invite-field">
         <label for="invite-link">Enlace de invitación</label>
         <input id="invite-link" readonly spellcheck="false" />

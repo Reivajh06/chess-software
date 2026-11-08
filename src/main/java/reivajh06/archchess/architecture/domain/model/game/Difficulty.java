@@ -6,5 +6,6 @@ public enum Difficulty {
 	EASY,
 	MEDIUM,
 	HARD,
-	NOT_CPU
+	MAX,
+	NOT_PLUGIN
 }

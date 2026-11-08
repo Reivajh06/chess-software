@@ -36,6 +36,11 @@ export const gameModes = {
 		available: true,
 		pluginPrompts: ["¿Qué plugin moverá la CPU?"],
 	},
+	SPECTATE: {
+		name: "Espectador",
+		badge: "Espectador",
+		available: true,
+	},
 	PRACTICE: {
 		hint: "Juegas contra ti mismo. Por fin un rival a tu altura.",
 		name: "Práctica",

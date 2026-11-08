@@ -5,5 +5,5 @@ import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 
 import java.util.List;
 
-public record CreateSessionRequestDto(Gamemode gamemode, Difficulty difficulty, List<String> pluginNames) {
+public record CreateSessionRequest(Gamemode gamemode, Difficulty difficulty, List<String> pluginNames) {
 }

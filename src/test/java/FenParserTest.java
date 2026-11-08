@@ -18,7 +18,7 @@ class FenParserTest {
     @Test
     @DisplayName("A new game serializes to standard six-field FEN")
     void startingFen() {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         assertEquals(START, session.toFEN());
     }
 
@@ -62,7 +62,7 @@ class FenParserTest {
     @Test
     @DisplayName("Imported full FEN preserves explicit historical castling flags and clocks")
     void sixFieldsRemainExact() {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         String fen = "r3k2r/8/8/8/8/8/8/R3K2R w Qk - 17 34";
         ChessTestSupport.loadFen(session, fen);
         assertEquals(fen, session.toFEN());

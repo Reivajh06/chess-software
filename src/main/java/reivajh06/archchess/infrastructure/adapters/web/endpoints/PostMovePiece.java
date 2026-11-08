@@ -5,22 +5,21 @@ import reivajh06.archchess.architecture.domain.model.Piece;
 import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.Tile;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
-import reivajh06.archchess.architecture.domain.services.FenParser;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.Json;
 import reivajh06.archchess.infrastructure.adapters.datalake.events.MovePieceEvent;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.MovePieceDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.MovePiece;
 
 import java.util.List;
 import java.util.UUID;
 
-public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
+public class PostMovePiece implements EndpointOperator<MovePiece, Void> {
 
 	@Override
-	public Void run(EndpointContext ctx, MovePieceDto moveRequest) {
+	public Void run(EndpointContext ctx, MovePiece moveRequest) {
 		if(moveRequest.from() == null || moveRequest.to() == null) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "Either source or destination tile is missing");
 		}
@@ -57,7 +56,7 @@ public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
 				moveRequest.from(),
 				moveRequest.to(),
 				piece.type(),
-				FenParser.gameStateToFen(session.gameState()),
+				session.toFEN(),
 				session.gameState().status()
 				));
 
@@ -65,7 +64,7 @@ public class PostMovePiece implements EndpointOperator<MovePieceDto, Void> {
 	}
 
 	@Override
-	public MovePieceDto deserializeBody(String body) {
-		return Json.fromJsonPretty(body, MovePieceDto.class);
+	public MovePiece deserializeBody(String body) {
+		return Json.fromJsonPretty(body, MovePiece.class);
 	}
 }

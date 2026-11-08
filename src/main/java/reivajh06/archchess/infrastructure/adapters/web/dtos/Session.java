@@ -5,13 +5,13 @@ import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 
 import java.util.List;
 
-public record SessionDto(
+public record Session(
 		String sessionId,
 		Gamemode gamemode,
 		String createdAt,
 		String creator,
 		String rival,
 		GameStatus status,
-		List<HistoricalMoveDto> moves
+		List<HistoricalMove> moves
 ) {
 }

@@ -8,8 +8,6 @@ public interface EndpointContext {
 
     Player sessionPlayer();
 
-    String ip();
-
     String sessionId();
 
     Map<String, String> pathParams();

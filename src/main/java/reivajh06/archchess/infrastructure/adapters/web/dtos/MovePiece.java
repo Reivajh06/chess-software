@@ -4,5 +4,11 @@ import reivajh06.archchess.architecture.domain.model.Tile;
 
 import java.util.UUID;
 
-public record PieceMovesRequestDto(Tile from, UUID playerId) {
+public record MovePiece(
+		String playerType,
+		Tile from,
+		Tile to,
+		Integer moveId,
+		UUID playerId
+) {
 }

@@ -77,11 +77,16 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   assert.deepEqual(session.cpu, { color: "BLACK" });
   assert.equal(initial.waitingForOpponent, false);
 
-  const { move } = await api.machineMove(session.sessionId);
-  assert.ok(calls[1].path.endsWith("/moves"));
-  assert.deepEqual(JSON.parse(calls[1].options.body), {});
+  const { move, state: after } = await api.machineMove(session.sessionId);
+  // One call: the server asks the plugin, applies the move and answers with it.
+  assert.ok(calls[1].path.endsWith("/request-move"));
+  assert.equal(calls[1].options.method, "GET");
+  assert.equal(calls[1].options.body, undefined);
   assert.deepEqual(move, { from: "e7", to: "e5", promotion: null });
+  // Then the frontend reads the state.
+  assert.equal(calls.length, 3);
   assert.equal(calls[2].options.method, "GET");
+  assert.equal(after.fen, state.fen);
 });
 
 test("the installed plugins are read from the server, and an empty list is a valid answer", async (t) => {
@@ -108,11 +113,11 @@ test("the chosen plugins are sent on creation and kept for the rematch", async (
   const bodies = [];
   t.mock.method(globalThis, "fetch", async (path, options) => {
     bodies.push(JSON.parse(options.body));
-    return new Response(JSON.stringify({ ...created, gamemode: "AIVAI", difficulty: "NOT_CPU" }), { status: 201 });
+    return new Response(JSON.stringify({ ...created, gamemode: "AIVAI", difficulty: "MAX" }), { status: 201 });
   });
   const pluginNames = ["stockfish.jar", "alfi.jar"];
   const { session } = await new SessionAccess(new ChessApi()).open(null, "AIVAI", undefined, pluginNames);
-  assert.deepEqual(bodies[0], { gamemode: "AIVAI", difficulty: "NOT_CPU", pluginNames });
+  assert.deepEqual(bodies[0], { gamemode: "AIVAI", difficulty: "MAX", pluginNames });
   assert.deepEqual(session.pluginNames, pluginNames);
 });
 
@@ -252,7 +257,7 @@ test("deleting an account sends DELETE with the credentials and accepts an empty
 
 test("does not accept a 501 response even if it contains valid session JSON", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(created), { status: 501 }));
-  await assert.rejects(new ChessApi().create("PVP", "NOT_CPU"),
+  await assert.rejects(new ChessApi().create("PVP", "NOT_PLUGIN"),
     error => error instanceof ApiError && error.status === 501);
 });
 
@@ -274,7 +279,7 @@ test("rejects malformed successful responses with the correct diagnostic", async
 test("PvP creation takes the creator's seat from the creation response without joining", async () => {
   let joins = 0;
   const api = {
-    create: async () => ({ sessionId: created.sessionId, gamemode: "PVP", difficulty: "NOT_CPU",
+    create: async () => ({ sessionId: created.sessionId, gamemode: "PVP", difficulty: "NOT_PLUGIN",
       playerId, playerColor: "BLACK", state }),
     join: async () => { joins++; return {}; },
   };
@@ -294,7 +299,7 @@ test("the invited player joins with an empty body and takes the seat the server 
   t.mock.method(globalThis, "fetch", async (path, options) => {
     calls.push({ path, options });
     return new Response(JSON.stringify({ playerId, playerColor: "WHITE", gamemode: "PVP",
-      difficulty: "NOT_CPU", state: { ...state, waitingForOpponent: false } }), { status: 200 });
+      difficulty: "NOT_PLUGIN", state: { ...state, waitingForOpponent: false } }), { status: 200 });
   });
   const api = new ChessApi();
   const { session } = await new SessionAccess(api).open(created.sessionId);
@@ -324,4 +329,63 @@ test("the invitation link carries only the session ID", () => {
   const sessions = new SessionAccess(new ChessApi());
   assert.equal(sessions.invitation(created.sessionId, "http://192.168.1.69:5000"),
     `http://192.168.1.69:5000/?session=${created.sessionId}`);
+});
+
+test("the details a plugin reports come back with the machine's move, however they are wrapped", async (t) => {
+  const replies = [
+    { from: "e2", to: "e4", details: { depth: "25", nodes: 1200, empty: "  ", nested: { no: "object" } } },
+    { ...state },
+    { from: "e7", to: "e5", details: { details: { reason: "Centro." } } },
+    { ...state },
+    { from: "g1", to: "f3" },
+    { ...state },
+  ];
+  let call = 0;
+  t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(replies[call++]), { status: 200 }));
+  const api = new ChessApi();
+  assert.deepEqual((await api.machineMove("s")).details, { depth: "25", nodes: "1200" });
+  assert.deepEqual((await api.machineMove("s")).details, { reason: "Centro." });
+  assert.deepEqual((await api.machineMove("s")).details, {});
+});
+
+test("the server may name the plugin that played, as a field or inside the details", async (t) => {
+  const replies = [
+    { from: "e2", to: "e4", pluginName: " Stockfish " }, { ...state },
+    { from: "e7", to: "e5", details: { plugin: "Ollama (qwen3:14b)", reason: "x" } }, { ...state },
+    { from: "g1", to: "f3" }, { ...state },
+  ];
+  let call = 0;
+  t.mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(replies[call++]), { status: 200 }));
+  const api = new ChessApi();
+  assert.equal((await api.machineMove("s")).plugin, "Stockfish");
+  const second = await api.machineMove("s");
+  assert.equal(second.plugin, "Ollama (qwen3:14b)");
+  assert.deepEqual(second.details, { reason: "x" });
+  assert.equal((await api.machineMove("s")).plugin, null);
+});
+
+test("a saved account the server no longer knows is forgotten when the page starts", async (t) => {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => store.set(key, String(value)),
+    removeItem: (key) => store.delete(key),
+  };
+  t.after(() => { delete globalThis.localStorage; });
+  const { loadAccount, saveAccount, verifySavedAccount } = await import("../../main/resources/web/modules/account.js");
+
+  assert.equal(await verifySavedAccount({ history: async () => ({}) }), false); // nothing saved
+
+  saveAccount({ username: "ana" });
+  assert.equal(await verifySavedAccount({ history: async () => ({ sessions: [] }) }), true);
+  assert.equal(loadAccount()?.username, "ana");
+
+  // The server restarted: it answers 403 "Player not registered" for a guest.
+  assert.equal(await verifySavedAccount({ history: async () => { throw new ApiError("no", HttpStatus.FORBIDDEN); } }), false);
+  assert.equal(loadAccount(), null);
+
+  // An unreachable server proves nothing: the account stays.
+  saveAccount({ username: "ana" });
+  assert.equal(await verifySavedAccount({ history: async () => { throw new ApiError("offline"); } }), true);
+  assert.equal(loadAccount()?.username, "ana");
 });

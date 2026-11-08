@@ -35,7 +35,7 @@ class GameSimulationTest {
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     private static GameSession newGame() {
-        return new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        return new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
     }
 
     private static GameSession at(String fen) {

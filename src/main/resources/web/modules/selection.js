@@ -13,7 +13,8 @@ const IGNORE = Object.freeze({ type: "ignore" });
 export function boardInteractive(session, state) {
 	if(!session || !state) return false;
 	if(state.status !== "ACTIVE" || state.waitingForOpponent) return false;
-	return session.gamemode !== "AIVAI";
+	// Only the players move: nobody does in a game between machines or in one that is only being watched.
+	return session.gamemode !== "AIVAI" && !session.watching;
 }
 
 export function normalizeLegalMoves(payload) {

@@ -8,14 +8,14 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.JoinSessionEv
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.JoinDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.Join;
 
 import java.util.UUID;
 
-public class PostJoinSession implements EndpointOperator<Void, JoinDto> {
+public class PostJoinSession implements EndpointOperator<Void, Join> {
 
 	@Override
-	public JoinDto run(EndpointContext ctx, Void input) {
+	public Join run(EndpointContext ctx, Void input) {
 		GameSession session = Archchess.instance().session(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
@@ -35,7 +35,7 @@ public class PostJoinSession implements EndpointOperator<Void, JoinDto> {
 						: session.playerIdentifier(Color.BLACK).username()
 				));
 
-		return new JoinDto(
+		return new Join(
 				id,
 				assignedColor,
 				session.gamemode(),

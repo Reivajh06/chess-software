@@ -5,4 +5,8 @@ public record Player(String username, String password) {
 	public static Player guest(String sessionId) {
 		return new Player("guest#" + sessionId, "");
 	}
+
+	public static Player plugin(String pluginName, String sessionId) {
+		return new Player(pluginName + "#" + sessionId, "");
+	}
 }

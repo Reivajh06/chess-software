@@ -5,14 +5,11 @@ import reivajh06.archchess.architecture.domain.model.game.Difficulty;
 import reivajh06.archchess.architecture.domain.model.game.GameState;
 import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 
-import java.util.UUID;
-
-public record CreateSessionResponseDto(
-		UUID sessionId,
-		Gamemode gamemode,
-		Difficulty difficulty,
+public record Join(
 		String playerId,
 		Color playerColor,
+		Gamemode gamemode,
+		Difficulty difficulty,
 		GameState state
 ) {
 }

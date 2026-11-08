@@ -1,4 +1,4 @@
 package reivajh06.archchess.infrastructure.adapters.web.dtos;
 
-public record ServerAddressDto(String address, int port) {
+public record ServerAddress(String address, int port) {
 }

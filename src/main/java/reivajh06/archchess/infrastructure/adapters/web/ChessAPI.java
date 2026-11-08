@@ -41,6 +41,7 @@ public class ChessAPI {
 		config.routes.get("/api/server", c -> EndpointHandler.of(new GetServerAddress(port)).handle(JavalinEndpointContext.of(c)));
 		config.routes.get("/api/plugins", c -> EndpointHandler.of(new GetAvailablePlugins()).handle(JavalinEndpointContext.of(c)));
 		config.routes.get("/api/history", c -> EndpointHandler.of(new GetSessionsHistory()).handle(JavalinEndpointContext.of(c)));
+		config.routes.get("/api/sessions/{sessionId}/request-move", c -> EndpointHandler.of(new GetRequestMove()).handle(JavalinEndpointContext.of(c)));
 
 		config.routes.delete("/api/accounts/delete", c -> EndpointHandler.of(new DeleteAccount()).handle(JavalinEndpointContext.of(c)));
 	}

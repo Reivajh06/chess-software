@@ -7,14 +7,14 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.CreateAccount
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.AccountRequestDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.AccountRequest;
 
 import java.util.regex.Pattern;
 
-public class PostCreateAccount implements EndpointOperator<AccountRequestDto, Void> {
+public class PostCreateAccount implements EndpointOperator<AccountRequest, Void> {
 
 	@Override
-	public Void run(EndpointContext ctx, AccountRequestDto request) {
+	public Void run(EndpointContext ctx, AccountRequest request) {
 		if(!isPlayerValid(request)) throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid username/password");
 
 		Player player = new Player(request.username(), request.password());
@@ -31,11 +31,11 @@ public class PostCreateAccount implements EndpointOperator<AccountRequestDto, Vo
 	}
 
 	@Override
-	public AccountRequestDto deserializeBody(String body) {
-		return Json.fromJsonPretty(body, AccountRequestDto.class);
+	public AccountRequest deserializeBody(String body) {
+		return Json.fromJsonPretty(body, AccountRequest.class);
 	}
 
-	private boolean isPlayerValid(AccountRequestDto request) {
+	private boolean isPlayerValid(AccountRequest request) {
 		if(request.username().contains(request.password())) return false;
 
 		Pattern usernamePattern = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");

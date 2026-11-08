@@ -8,6 +8,7 @@ import {
 	loadPreferences,
 	savePreferences,
 	parseInvitation,
+	parseWatchInvitation,
 	loopbackHost,
 } from "./modules/preferences.js";
 import { serverAddress } from "./modules/network.js";
@@ -24,8 +25,10 @@ import { rivalKind } from "./modules/alfi-reactions.js";
 import { profileLine } from "./modules/alfi-profile.js";
 import { Mascot } from "./modules/mascot.js";
 import { Commentator } from "./modules/commentary.js";
-import { AccountDialog, AccountScreen, loadAccount, saveAccount } from "./modules/account.js";
+import { AccountDialog, AccountScreen, loadAccount, saveAccount, verifySavedAccount } from "./modules/account.js";
 import { ProfileScreen } from "./modules/profile.js";
+import { ThinkingLog, machineName } from "./modules/thinking.js";
+import { accountIdentity, accountTone, newGame, reserveTone } from "./modules/identity.js";
 import {
 	TitleScreen,
 	renderMatch,
@@ -65,6 +68,33 @@ const waitingChatDelay = 11000;
 
 const announcedResults = new Set();
 const sessions = new SessionAccess(api);
+const thinkingLog = new ThinkingLog(byId("thinking-log"), byId("thinking-live"));
+
+// The right column has two tabs, "Jugadas" and "Pensando" (only in games with machines); the last choice is remembered.
+const sideKey = "archchess.side-open";
+const sideTabs = { moves: byId("moves-tab"), thinking: byId("thinking-tab") };
+function openSideSection(name, focus = false) {
+	byId("side-panel").dataset.open = name;
+	for(const [key, tab] of Object.entries(sideTabs)) {
+		tab.setAttribute("aria-selected", String(key === name));
+		tab.tabIndex = key === name ? 0 : -1;
+	}
+	if(focus) sideTabs[name].focus();
+	try { localStorage.setItem(sideKey, name); } catch {}
+}
+sideTabs.moves.addEventListener("click", () => openSideSection("moves"));
+sideTabs.thinking.addEventListener("click", () => openSideSection("thinking"));
+for(const tab of Object.values(sideTabs)) {
+	tab.addEventListener("keydown", (event) => {
+		if(sideTabs.thinking.hidden || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+		event.preventDefault();
+		event.stopPropagation(); // the arrows also move through the game's history
+		openSideSection(event.key === "ArrowRight" || event.key === "End" ? "thinking" : "moves", true);
+	});
+}
+let savedSide = "moves";
+try { savedSide = localStorage.getItem(sideKey) === "thinking" ? "thinking" : "moves"; } catch {}
+openSideSection(savedSide);
 
 const titleMascot = new Mascot(byId("title-mascot"), audio, preferences);
 const gameMascot = new Mascot(byId("game-mascot"), audio, preferences);
@@ -420,7 +450,14 @@ async function playCpu(generation, machine) {
 			? await legalOptions(api, store.session.sessionId, store.state.pieces, machine.color)
 			: null;
 		if(generation !== sessionVersion) return;
+		thinkingLog.start(machineName(store.session), machine.color);
 		const move = await submitMachineMove();
+		// Against a person the raw thinking stays hidden: it would reveal the machine's plans.
+		if(generation === sessionVersion) {
+			thinkingLog.end(move, machineDetails, { thinking: !store.session.cpu, pluginName: machinePlugin });
+			// Between machines the page learns who plays each colour when the server names the plugin.
+			if(machinePlugin) store.session.machineNames = { ...store.session.machineNames, [machine.color]: machinePlugin };
+		}
 		cpuFailures = move ? 0 : cpuFailures + 1;
 		if(move && options && generation === sessionVersion) {
 			const second = secondMove(options, move, store.state.pieces);
@@ -596,6 +633,7 @@ function renderResultStats(winner) {
 	byId("stat-captures").textContent = `${captures("WHITE")} · ${captures("BLACK")}`;
 	byId("stat-material").textContent = !lead ? "=" : `${lead > 0 ? "B" : "N"} +${Math.abs(lead)}`;
 	byId("result-rematch").textContent = store.session?.gamemode === "PVP" ? "Nueva sala" : "Revancha";
+	byId("result-rematch").hidden = !!store.session?.watching; // a watcher does not start games
 	const confetti = document.querySelector(".confetti");
 	confetti.replaceChildren(
 		...(winner ? Array.from({ length: 18 }, (_, index) => {
@@ -857,17 +895,27 @@ function submitMove({ from, to, moveId, promotion = null }) {
 	));
 }
 
+let machineDetails = {};
+let machinePlugin = null;
+// A machine turn that fails (a plugin that chose a blocked piece, say) is retried by itself: the player only
+// hears about it when it keeps failing.
+const silentMachineFailures = 4;
+
 async function submitMachineMove() {
 	let played = null;
+	machineDetails = {};
+	machinePlugin = null;
 	await sendMove(async () => {
-		const { move, state } = await api.machineMove(store.session.sessionId);
+		const { move, details, plugin, state } = await api.machineMove(store.session.sessionId);
 		played = move;
+		machineDetails = details;
+		machinePlugin = plugin;
 		return state;
-	});
+	}, { quietFailure: () => cpuFailures < silentMachineFailures });
 	return played;
 }
 
-async function sendMove(request) {
+async function sendMove(request, { quietFailure = () => false } = {}) {
 	clearMoveWarning();
 	liveSession.stop();
 	api.cancel();
@@ -885,7 +933,8 @@ async function sendMove(request) {
 	} catch (error) {
 		if(
 				sessionVersion === generation &&
-				error.name !== "AbortError"
+				error.name !== "AbortError" &&
+				!quietFailure()
 		) {
 			setNotice(error.message, true);
 		}
@@ -912,6 +961,11 @@ function refresh() {
 
 function resetSession() {
 	sessionVersion++;
+	thinkingLog.reset();
+	// New game, new colours for plugins and guests; a registered player keeps the colour of the account.
+	newGame();
+	const signedIn = loadAccount();
+	if(signedIn) reserveTone(accountIdentity(signedIn.username), accountTone(signedIn.username));
 	commentator.reset();
 
 	api.cancel();
@@ -979,6 +1033,10 @@ async function activateSession(session, state) {
 }
 
 function joinSession(value) {
+	// A link to watch (?watch=) follows the game without taking a seat.
+	const watchId = parseWatchInvitation(value);
+	if(watchId) return openSession(watchId, "SPECTATE");
+
 	const id = parseInvitation(value);
 
 	if(!id) {
@@ -1048,9 +1106,12 @@ function renderAccount(current) {
 	if(!current) return;
 	byId("account-chip-mark").textContent = current.username[0].toUpperCase();
 	byId("account-chip-name").textContent = current.username;
+	byId("account-chip-mark").style.setProperty("--tone", accountTone(current.username));
 }
 
 renderAccount(loadAccount());
+// After a server restart the saved account may no longer be logged in there: check before showing it.
+verifySavedAccount(api).then(() => renderAccount(loadAccount()));
 
 byId("account-open").addEventListener("click", () => {
 	showScreen("account");
@@ -1219,13 +1280,31 @@ async function inviteOrigin() {
 	}
 }
 
-byId("invite").addEventListener("click", openInvite);
+byId("invite").addEventListener("click", () => openInvite("play"));
+byId("watch-invite").addEventListener("click", () => openInvite("watch"));
 
-async function openInvite() {
+const inviteTexts = {
+	play: {
+		title: "Invitar a un rival",
+		intro: "Envía este enlace a tu rival. La partida empieza en cuanto lo abra.",
+		copied: "Invitación copiada.",
+	},
+	watch: {
+		title: "Invitar a ver la partida",
+		intro: "Envía este enlace para que otra persona vea la partida en directo. Puede mirar, pero no mover.",
+		copied: "Enlace para ver copiado.",
+	},
+};
+let inviteKind = "play";
+
+async function openInvite(kind = "play") {
 	if(!store.session) {
 		return;
 	}
 
+	inviteKind = kind;
+	byId("invite-title").textContent = inviteTexts[kind].title;
+	byId("invite-intro").textContent = inviteTexts[kind].intro;
 	const sessionId = store.session.sessionId;
 	byId("invite-link").value = "";
 	byId("invite-link").placeholder = "Preparando el enlace…";
@@ -1235,7 +1314,7 @@ async function openInvite() {
 
 	const origin = await inviteOrigin();
 	if(store.session?.sessionId !== sessionId) return;
-	byId("invite-link").value = origin ? sessions.invitation(sessionId, origin) : "";
+	byId("invite-link").value = origin ? sessions.invitation(sessionId, origin, kind) : "";
 	byId("invite-link").placeholder = "";
 	byId("invite-copy").disabled = !origin;
 	byId("invite-status").textContent = origin
@@ -1258,7 +1337,7 @@ byId("invite-copy").addEventListener("click", async () => {
 	}
 
 	byId("invite-status").textContent = copied
-			? "Invitación copiada."
+			? inviteTexts[inviteKind].copied
 			: "No se pudo copiar. Selecciona el enlace y cópialo a mano.";
 });
 
@@ -1472,3 +1551,7 @@ if(invitation) {
 		title.showJoin(location.href);
 	}
 }
+
+// A link to watch (?watch=<id>): follow that game without taking a seat.
+const watchedGame = invitation ? null : parseWatchInvitation(location.href);
+if(watchedGame) openSession(watchedGame, "SPECTATE");

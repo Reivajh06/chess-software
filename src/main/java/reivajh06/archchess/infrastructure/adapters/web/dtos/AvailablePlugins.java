@@ -2,7 +2,7 @@ package reivajh06.archchess.infrastructure.adapters.web.dtos;
 
 import java.util.List;
 
-public record PieceMovesResponseDto(
-		List<MoveDto> moves
+public record AvailablePlugins(
+        List<String> plugins
 ) {
 }

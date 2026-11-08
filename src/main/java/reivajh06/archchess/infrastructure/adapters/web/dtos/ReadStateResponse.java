@@ -9,7 +9,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
-public record ReadStateResponseDto(
+public record ReadStateResponse(
 		GameStatus status,
 		boolean waitingForOpponent,
 		Color turnColor,

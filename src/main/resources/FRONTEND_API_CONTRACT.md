@@ -21,6 +21,7 @@ This document describes the HTTP interface between the web frontend (`src/main/r
 - Request bodies are JSON. The frontend parses every response body as JSON regardless of its `Content-Type`.
 - Squares are lowercase algebraic strings (`"e2"`). The frontend also accepts Gson-serialized `Tile` records (`{ "file": "E", "rank": "R2" }`) wherever the server sends a square.
 - Colours are `WHITE` / `BLACK`. Game statuses are `ACTIVE`, `WHITE_WIN`, `BLACK_WIN` and `DRAW`.
+- Identity colours exist only in the browser: plugins and guests get a random colour for each game; a registered player gets a random colour when the account is created and keeps it in localStorage under `archchess.account-tones`. Nothing about these colours is sent to the server.
 - The player is identified by the HTTP session cookie, which the browser sends by itself on every request. The `playerId` in the creation and join responses is that HTTP session's ID: the frontend ignores it, does not store it and never sends it. Two tabs of one browser share the same identity.
 - Every request times out after 10 s in the frontend (`ChessApi.request`).
 
@@ -45,8 +46,12 @@ Any other non-`2xx` status is shown as "Error del servidor (N).". When an error 
 | `404` | `/join` | "La sala no existe." |
 | `409` | `/join` | "La sala ya está completa." |
 | any | `/moves` (`PLAYER`), `/promote` | The message is shown, the selection is cleared and the state is read again. |
-| any | `/moves` (`CPU`/`AI`) | The message is shown, the state is read again and the machine move is retried after a growing wait (1 s, 2 s, 4 s… up to 15 s). |
+| any | `/request-move` | The page retries after a growing wait (1 s, 2 s, 4 s… up to 15 s). Failed attempts are not announced or logged in the panel; a notice appears only after 4 consecutive failures. |
 | any | `/server` | The invitation link is left empty and the copy button stays disabled. |
+
+## Saved account check
+
+The page saves the account in localStorage. At startup, if an account is saved, it calls `GET /api/history`. A `403` means the server no longer knows the login (for example after a restart), so the page forgets the saved account. Any other error, including no connection, keeps it.
 
 ## 1. Create a session
 
@@ -59,7 +64,7 @@ Any other non-`2xx` status is shown as "Error del servidor (N).". When an error 
 | Field | Values |
 | --- | --- |
 | `gamemode` | `PRACTICE`, `PVP`, `PVCPU`, `PVAI`, `AIVAI`. The frontend's local two-player mode (`LOCAL`) is sent as `PVP`. |
-| `difficulty` | `PRACTICE` for practice, `EASY` / `MEDIUM` / `HARD` for PvCPU, `NOT_CPU` for everything else. |
+| `difficulty` | `PRACTICE` for practice; a plugin difficulty (`EASY` / `MEDIUM` / `HARD` / `MAX`) for the modes with a plugin: the chosen one for PvCPU (default `EASY`), `MAX` for `PVAI` and `AIVAI`; `NOT_PLUGIN` for everything else. |
 | `pluginNames` | Only for `PVCPU`, `PVAI` (one name) and `AIVAI` (white, then black; both may be the same). Names come from `GET /api/plugins`. |
 
 ### Response (`201 Created`)
@@ -177,22 +182,28 @@ The frontend asks for legal moves one piece at a time. Besides the player's sele
 
 ### Machine move
 
-When `turnColor` belongs to a machine seat, the frontend waits 0.7–1.3 s and sends:
+When `turnColor` belongs to a machine seat (a plugin), the frontend waits 0.7–1.3 s and sends `GET /api/sessions/{sessionId}/request-move` (no body).
+
+The server asks the plugin for a move on the current position, resolves its `moveId` from the legal moves, applies it (promotion included) and answers `200` with the move it played. This request waits up to 120 s, because AI plugins can be slow.
 
 ```json
-{}
+{
+  "from": "e7", "to": "e8", "promote_to": "QUEEN",
+  "pluginName": "Stockfish",
+  "details": { "depth": "25", "nodes": "1174167", "time": "1000" }
+}
 ```
 
-There are no squares: the server computes the machine's move for the current position, applies it (promotion included) and answers `200` with the move it played.
-
-```json
-{ "from": "e7", "to": "e8", "promote_to": "QUEEN" }
-```
-
-- `promote_to` (also accepted as `promotion` or `promoteTo`) is `null` or missing when there is no promotion.
+- `promote_to` (also accepted as `promoteTo` or `promotion`) is `null` or missing when there is no promotion.
 - Squares are read case-insensitively.
+- `pluginName` is optional and names the plugin that played; the frontend also accepts `plugin` or `details.plugin`.
+- `details` is an optional flat map of string values reported by the plugin about its calculation. It may be wrapped once more as `details.details`. The frontend shows these details under each turn in the "Pensando" tab; empty or missing details show only the move.
 - A reply without two valid squares is shown as "El motor ha devuelto una jugada no válida.".
 - After the reply the frontend reads the state and animates the move from the history.
+
+Plugins must not reveal strategy in details (no expected line and no evaluation), because the player can read them. Common keys are `depth`, `nodes`, `nps`, `time` for engines and `reason`, `thinking` for AI models. `thinking` is shown only in machine-vs-machine games and hidden in games against a person.
+
+A failed machine request is retried by the page with growing waits (1 s, 2 s, 4 s… up to 15 s). Failed attempts are not announced or logged in the panel; a notice appears only after 4 consecutive failures.
 
 Alfi's rewind and board flip send moves with squares on the machine's turn or with its pieces (section 7).
 
@@ -206,7 +217,7 @@ Alfi's rewind and board flip send moves with squares on the machine's turn or wi
 
 `newType` is `QUEEN`, `ROOK`, `BISHOP` or `KNIGHT`. The server replaces the pawn on `tile` and answers `200` with an empty body.
 
-When a player's pawn reaches rank 1 or 8, the frontend shows the piece picker. It then posts the move, then `/promote` with the move's `to` square, then reads the state. Machine moves do not call `/promote`: the server promotes as part of the machine move.
+When a player's pawn reaches rank 1 or 8, the frontend shows the piece picker. It then posts the move, then `/promote` with the move's `to` square, then reads the state. Machine moves do not call `/promote`: the server promotes as part of `request-move`.
 
 ## 5. PvP: join, server address and invitation
 
@@ -225,7 +236,7 @@ Response (`200`), sent only to the caller that got the seat:
   "playerId": "node01gq7x2k9d0b3a1",
   "playerColor": "BLACK",
   "gamemode": "PVP",
-  "difficulty": "NOT_CPU",
+  "difficulty": "NOT_PLUGIN",
   "state": { "status": "ACTIVE", "turnColor": "WHITE", "waitingForOpponent": false, "fen": "…", "moves": [] }
 }
 ```
@@ -249,6 +260,14 @@ While a state read says `waitingForOpponent: true`, the frontend locks the board
 ### Invitation link
 
 The link is `http://<host>:<port>/?session=<sessionId>`. If `port` is missing or `0`, the frontend uses the port the page was served from. When the page was opened through `localhost`, `127.x` or `[::1]`, the frontend asks `/api/server` for `<host>` every time the invitation dialog opens and never stores it. A page opened through a LAN address or a domain uses its own origin.
+
+## Spectating
+
+The "Invitar a ver" button in the match actions copies `/?watch=<sessionId>`, built like the PvP invitation with the address from `GET /api/server` (section 5).
+
+The watching page never calls `/join`: it reads `GET /api/sessions/{id}` and polls every second. Its frontend session has `gamemode: "SPECTATE"` and `watching: true`. The board is not interactive, the page never requests machine moves, and there is no "Pensando" tab or rematch button.
+
+Machine moves are requested by the creator's page, so a machine game stops advancing if that page is closed. Watchers do not see the machines' details. The `request-move` endpoint is not restricted to the players.
 
 ## 6. Modes in the frontend
 

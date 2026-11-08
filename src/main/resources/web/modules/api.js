@@ -30,10 +30,10 @@ export class ChessApi {
 		for(const controller of this.controllers) controller.abort();
 		this.controllers.clear();
 	}
-	async request(path, body, { allowEmpty = false, method = body === undefined ? "GET" : "POST" } = {}) {
+	async request(path, body, { allowEmpty = false, method = body === undefined ? "GET" : "POST", timeout = 10000 } = {}) {
 		const controller = new AbortController();
 		this.controllers.add(controller);
-		const timer = setTimeout(() => controller.abort("timeout"), 10000);
+		const timer = setTimeout(() => controller.abort("timeout"), timeout);
 		try {
 			const headers = { Accept: "application/json" };
 			if(body !== undefined) headers["Content-Type"] = "application/json";
@@ -130,11 +130,32 @@ export class ChessApi {
 				state.pieces != null || state.gameStateFen != null)) return response;
 		return this.state(id);
 	}
+	// The server asks the plugin for its move, applies it (promotion included) and answers with the move it
+	// played. It can take a while for AI plugins, hence the long timeout.
 	async machineMove(id) {
-		const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {});
+		const response = await this.request(`/sessions/${encodeURIComponent(id)}/request-move`, undefined, { timeout: 120000 });
 		const move = playedMove(response);
-		return { move, state: await this.state(id) };
+		const details = normalizeDetails(response.details);
+		// The plugin that played, when the server says so: as a field of the response or inside the details.
+		const named = [response.plugin, response.pluginName, details.plugin].find((name) => typeof name === "string" && name.trim());
+		delete details.plugin;
+		return { move, details, plugin: named?.trim() ?? null, state: await this.state(id) };
 	}
+}
+
+// What a plugin reports about how it chose its move: a map of text values (depth, reason...). Whatever the
+// plugin sends is shown as it comes; the response may also wrap the map once more ({ details: { details: {...} } }).
+export function normalizeDetails(raw) {
+	const source = raw && typeof raw.details === "object" && raw.details !== null && !Array.isArray(raw.details)
+		? raw.details
+		: raw;
+	if(!source || typeof source !== "object" || Array.isArray(source)) return {};
+	const details = {};
+	for(const [key, value] of Object.entries(source)) {
+		if(typeof value === "string" && value.trim()) details[key] = value.trim();
+		else if(typeof value === "number" && Number.isFinite(value)) details[key] = String(value);
+	}
+	return details;
 }
 
 function playedMove(response) {

@@ -1,6 +1,6 @@
 package reivajh06.archchess.infrastructure.adapters.web.dtos;
 
-public record AccountRequestDto(
+public record AccountRequest(
 		String username,
 		String password
 ) {

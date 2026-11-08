@@ -3,6 +3,9 @@ import { shownColor } from "./colors.js";
 import { gameModes, menuOrder, modeDefinition } from "./modes.js";
 import { labels, pieceValues } from "./state.js";
 import { themes } from "./themes.js";
+import { loadAccount } from "./account.js";
+import { accountIdentity, pluginIdentity, toneFor } from "./identity.js";
+import { displayName, subName } from "./thinking.js";
 
 const byId = (id) => document.getElementById(id);
 const statusLabels = {
@@ -152,6 +155,7 @@ const modeIcons = {
 	PVCPU: "mode-pvcpu",
 	PRACTICE: "mode-practice",
 	LOCAL: "mode-pvp",
+	SPECTATE: "mode-aivai",
 };
 
 const rendered = new Map();
@@ -209,7 +213,8 @@ export function renderAppearance(preferences) {
 export function renderMatch(store, preferences) {
 	const session = store.session;
 	const state = store.state;
-	const spectator = session?.gamemode === "AIVAI";
+	const watching = !!session?.watching; // somebody else's game, followed from an invitation to watch
+	const spectator = session?.gamemode === "AIVAI" || watching;
 	const mode = modeDefinition(session?.gamemode);
 	const shared = store.practice || store.local;
 	const color = shared ? store.orientation : (session?.playerColor ?? "WHITE");
@@ -236,6 +241,7 @@ export function renderMatch(store, preferences) {
 	byId("session-details").hidden = !session;
 	setText("session-id", session?.sessionId ?? "");
 	byId("invite").hidden = !session || session.gamemode !== "PVP";
+	byId("watch-invite").hidden = !session || store.practice || store.local;
 	setText("arena-mode", session ? mode.badge : "—");
 	setText("arena-name", session ? mode.name : "Sin partida");
 	setText("arena-status", currentStatus);
@@ -247,27 +253,41 @@ export function renderMatch(store, preferences) {
 		byId("player-avatar").replaceChildren(gamePiece("KING", color, preferences.theme));
 		byId("opponent-avatar").replaceChildren(gamePiece("KING", rival, preferences.theme));
 	}
-	setText("player-name", spectator
-		? (state?.whiteModel ?? "Modelo blanco")
-		: shared
-			? colorName(color)
-			: "Tú");
-	setText("opponent-name", spectator
-		? (state?.blackModel ?? "Modelo negro")
-		: shared
-			? colorName(rival)
-			: session?.gamemode === "PVAI"
-				? "IA local"
-				: session?.cpu
-					? (session.alfi === "revealed" ? "Alfi" : "Stockfish")
-					: "Oponente");
+	// Who is who. A plugin shows its model first ("qwen3:14b" over "Ollama"); between machines the page learns the
+	// plugin of each colour when the server names it (session.machineNames).
+	const machineNames = session?.machineNames ?? {};
+	const versusMachine = !!session?.cpu; // PvCPU and PvAI: one machine, named from the start
+	const machine = session?.pluginNames?.[0];
+	const title = (name, fallback) => (name ? displayName(name) : fallback);
+	const detail = (name, side) => [name ? subName(name) : "", colorName(side)].filter(Boolean).join(" · ");
+
+	setText("player-name", watching
+		? colorName(color)
+		: spectator
+			? title(machineNames[color], state?.whiteModel ?? "Modelo blanco")
+			: shared
+				? colorName(color)
+				: "Tú");
+	setText("opponent-name", watching
+		? colorName(rival)
+		: spectator
+			? title(machineNames[rival], state?.blackModel ?? "Modelo negro")
+			: shared
+				? colorName(rival)
+				: session?.gamemode === "PVAI"
+					? title(machine, "IA local")
+					: versusMachine
+						? (session.alfi === "revealed" ? "Alfi" : title(machine, "Stockfish"))
+						: "Oponente");
 	setText("player-detail", !session
 		? ""
 		: store.practice
 			? "Práctica libre"
 			: store.local
 				? "En este equipo"
-				: colorName(color));
+				: spectator && !watching
+					? detail(machineNames[color], color)
+					: colorName(color));
 	setText("opponent-detail", !session
 		? ""
 		: state?.waitingForOpponent
@@ -276,7 +296,24 @@ export function renderMatch(store, preferences) {
 				? "Práctica libre"
 				: store.local
 					? "En este equipo"
-					: colorName(rival));
+					: spectator && !watching
+						? detail(machineNames[rival], rival)
+						: versusMachine
+							? detail(machine, rival)
+							: colorName(rival));
+
+	// Identity colours (identity.js): plugins and guests draw a random one for each game, an account keeps its own.
+	const account = loadAccount();
+	const humanIdentity = account ? accountIdentity(account.username) : "guest";
+	const identityOf = (side) => {
+		if(watching) return `watching:${side}`;
+		if(spectator) return pluginIdentity(machineNames[side]) ?? `machine:${side}`;
+		if(versusMachine) return side === color ? humanIdentity : (pluginIdentity(machine) ?? "machine");
+		if(shared) return side === color ? humanIdentity : "guest:2";
+		return side === color ? humanIdentity : "rival";
+	};
+	document.querySelector('.player[data-side="player"]').style.setProperty("--tone", toneFor(identityOf(color)));
+	document.querySelector('.player[data-side="opponent"]').style.setProperty("--tone", toneFor(identityOf(rival)));
 
 	const active = !!session && state?.status === "ACTIVE" && !reviewing;
 	byId("player-turn").hidden = !active || state.turn !== color;
@@ -286,9 +323,11 @@ export function renderMatch(store, preferences) {
 	renderTurn(state, session, finished, reviewing, check, preferences);
 
 	byId("spectator-banner").hidden = !spectator;
+	// The machines' turn log: only in games against machines, and not with Alfi, who has his own stage.
+	byId("thinking-tab").hidden = !((session?.cpu || session?.machines) && !session?.alfi);
 	setText("thinking-status", state?.thinkingColor
 		? `Pensando: ${state.thinkingColor === "WHITE" ? "blancas" : "negras"}`
-		: "Partida entre modelos");
+		: watching ? "Viendo la partida" : "Partida entre modelos");
 	renderCaptured("player-captured", state?.eatenPieces?.[rival], preferences);
 	renderCaptured("opponent-captured", state?.eatenPieces?.[color], preferences);
 	renderMaterial(store.pieces, color);

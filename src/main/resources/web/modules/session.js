@@ -5,6 +5,9 @@ import { modeDefinition } from "./modes.js";
 const colors = ["WHITE", "BLACK"];
 const rival = (color) => (color === "WHITE" ? "BLACK" : "WHITE");
 
+const defaultDifficulty = { PVCPU: "EASY", PVAI: "MAX", AIVAI: "MAX" };
+const pluginDifficulty = (mode, chosen) =>
+	mode in defaultDifficulty ? (chosen ?? defaultDifficulty[mode]) : "NOT_PLUGIN";
 const seated = (state) => (state ? { ...state, waitingForOpponent: false } : undefined);
 
 export class SessionAccess {
@@ -12,8 +15,30 @@ export class SessionAccess {
 		this.api = api;
 	}
 
-	async open(sessionId, mode = "PVP", cpuDifficulty = "EASY", pluginNames) {
-		const difficulty = mode === "PRACTICE" ? "PRACTICE" : mode === "PVCPU" ? cpuDifficulty : "NOT_CPU";
+	/**
+	 * Follows a game without sitting in it: the state is read like any player does, but the server is never asked
+	 * for a seat, so the room keeps its players. The board stays closed and no machine move is requested from here.
+	 */
+	async watch(sessionId) {
+		let state;
+		try {
+			state = await this.api.state(sessionId);
+		} catch (error) {
+			if(error.status === HttpStatus.NOT_FOUND)
+				throw new ApiError("La partida no existe.", error.status, error.code);
+			throw error;
+		}
+		const session = { sessionId, playerColor: null, gamemode: "SPECTATE", difficulty: "NOT_PLUGIN", watching: true };
+		return { session, state };
+	}
+
+	async open(sessionId, mode = "PVP", chosenDifficulty, pluginNames) {
+		if(sessionId && mode === "SPECTATE") return this.watch(sessionId);
+
+		// Every mode with a plugin sends a plugin difficulty: the one the player chose, or the mode's default
+		// (PvCPU starts easy, the AI modes play at full strength). Modes without a plugin send NOT_PLUGIN.
+		const difficulty = mode === "PRACTICE" ? "PRACTICE"
+			: pluginDifficulty(mode, chosenDifficulty);
 		const local = !sessionId && mode === "LOCAL";
 		const practice = !sessionId && mode === "PRACTICE";
 		const created = sessionId ? null :
@@ -92,21 +117,30 @@ export class SessionAccess {
 		forgetSession(sessionId);
 		const url = new URL(location.href);
 		url.searchParams.delete("session");
+		url.searchParams.delete("watch");
 		url.hash = "";
 		window.history.replaceState({}, "", url);
 	}
 
 	persist(session) {
-		saveSession(session);
 		const url = new URL(location.href);
-		url.searchParams.set("session", session.sessionId);
+		// A watcher has no seat to remember: reloading the page just watches again.
+		if(session.watching) {
+			url.searchParams.delete("session");
+			url.searchParams.set("watch", session.sessionId);
+		} else {
+			saveSession(session);
+			url.searchParams.delete("watch");
+			url.searchParams.set("session", session.sessionId);
+		}
 		url.hash = "";
 		window.history.replaceState({}, "", url);
 	}
 
-	invitation(sessionId, origin = location.origin) {
+	/** The link that invites to play ("play": takes the free seat) or to watch ("watch": read-only). */
+	invitation(sessionId, origin = location.origin, kind = "play") {
 		const url = new URL("/", origin);
-		url.searchParams.set("session", sessionId);
+		url.searchParams.set(kind === "watch" ? "watch" : "session", sessionId);
 		return url.href;
 	}
 

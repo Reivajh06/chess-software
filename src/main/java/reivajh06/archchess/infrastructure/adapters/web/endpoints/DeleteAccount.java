@@ -7,12 +7,12 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.DeleteAccount
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.AccountRequestDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.AccountRequest;
 
-public class DeleteAccount implements EndpointOperator<AccountRequestDto, Void> {
+public class DeleteAccount implements EndpointOperator<AccountRequest, Void> {
 
 	@Override
-	public Void run(EndpointContext ctx, AccountRequestDto input) {
+	public Void run(EndpointContext ctx, AccountRequest input) {
 		Player player = new Player(ctx.sessionPlayer().username(), input.password());
 
 		if(!Archchess.instance().database().playerExists(player)) {
@@ -26,7 +26,7 @@ public class DeleteAccount implements EndpointOperator<AccountRequestDto, Void> 
 	}
 
 	@Override
-	public AccountRequestDto deserializeBody(String body) {
-		return Json.fromJsonPretty(body, AccountRequestDto.class);
+	public AccountRequest deserializeBody(String body) {
+		return Json.fromJsonPretty(body, AccountRequest.class);
 	}
 }

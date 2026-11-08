@@ -1,4 +1,5 @@
 import { ApiError, HttpStatus } from "./api.js";
+import { accountTone } from "./identity.js";
 
 const byId = (id) => document.getElementById(id);
 const accountKey = "archchess.account";
@@ -17,6 +18,25 @@ export function saveAccount(account) {
 		if(account) localStorage.setItem(accountKey, JSON.stringify(account));
 		else localStorage.removeItem(accountKey);
 	} catch {}
+}
+
+/**
+ * The login lives in the server's session, which a restart or an expiry forgets, while the account saved in this
+ * browser stays. Asks the server (the history is only served to registered players) before trusting it.
+ * @returns false when the server no longer knows the account, which is then forgotten; true otherwise
+ *          (also when the server cannot be reached: then there is no way to tell).
+ */
+export async function verifySavedAccount(api) {
+	const saved = loadAccount();
+	if(!saved) return false;
+	try {
+		await api.history();
+		return true;
+	} catch (error) {
+		if(error?.status !== HttpStatus.FORBIDDEN) return true;
+		if(loadAccount()?.username === saved.username) saveAccount(null);
+		return false;
+	}
 }
 
 const accountRules = Object.freeze({
@@ -110,8 +130,9 @@ export class AccountScreen {
 			if(this.mode === "signup") await this.api.createAccount(username, password);
 			else await this.api.login(username, password);
 			byId("account-form").reset();
-			saveAccount({ username });
-			this.onLoggedIn({ username });
+			// The colour is drawn when the account is created (sign-up) and is the same every time after.
+			saveAccount({ username, tone: accountTone(username) });
+			this.onLoggedIn({ username, tone: accountTone(username) });
 		} catch (error) {
 			if(error.name === "AbortError") return;
 			this.showError(error);

@@ -90,7 +90,7 @@ select {
   background: none;
 }
 
-button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel),
+button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, .side-heading, [role="tab"], .promotion-choice, .promotion-cancel),
 select,
 input:not([type="checkbox"], [type="range"]) {
   margin: var(--pixel);
@@ -109,10 +109,10 @@ input:not([type="checkbox"], [type="range"]) {
 button {
   cursor: pointer;
 }
-button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel):hover:not(:disabled) {
+button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, .side-heading, [role="tab"], .promotion-choice, .promotion-cancel):hover:not(:disabled) {
   background: var(--surface-hover);
 }
-button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel):active:not(:disabled) {
+button:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, .side-heading, [role="tab"], .promotion-choice, .promotion-cancel):active:not(:disabled) {
   transform: translateY(2px);
 }
 button:disabled {
@@ -514,7 +514,7 @@ button.account-chip {
   height: 32px;
   font: 16px Silkscreen, monospace;
   color: var(--bg);
-  background: var(--accent);
+  background: var(--tone, var(--accent));
   box-shadow: 0 0 0 2px var(--line);
 }
 .account-chip-text {
@@ -972,6 +972,189 @@ button.account-chip {
 }
 .last-move-card.is-capture #last-move-detail {
   color: var(--accent);
+}
+/* Right column: tabs "Jugadas" | "Pensando". Exactly one panel shows. */
+.side-tabs {
+  display: flex;
+  gap: 4px;
+}
+.side-tab {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+.side-tab[hidden] {
+  display: none;
+}
+.side-tab:hover {
+  color: var(--text);
+}
+.side-tab[aria-selected="true"] {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  animation: live-blink 1s steps(2) infinite;
+}
+.live-dot[hidden] {
+  display: none;
+}
+@keyframes live-blink {
+  50% { opacity: 0.2; }
+}
+.side-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+/* Only the selected panel shows (the moves always do when there is no thinking tab). */
+.side-panel[data-open="moves"] #thinking-body,
+.side-panel[data-open="thinking"] #moves-body {
+  display: none;
+}
+.side-panel:has(#thinking-tab[hidden]) #moves-body {
+  display: flex;
+}
+.thinking-log {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  align-content: start;
+  gap: 8px;
+  min-height: 120px;
+  margin: 0;
+  padding: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+/* One slab per machine turn. --tone identifies the plugin: the same colour and initials every time. */
+.thinking-entry {
+  --tone: #8f9bb3;
+  display: grid;
+  gap: 5px;
+  padding: 8px 8px 8px 12px;
+  background: color-mix(in srgb, var(--tone) 11%, var(--bg));
+  box-shadow: inset 5px 0 0 var(--tone), inset 0 0 0 2px color-mix(in srgb, var(--tone) 38%, var(--line));
+}
+.thinking-entry.is-thinking {
+  box-shadow: inset 5px 0 0 var(--tone), inset 0 0 0 2px var(--tone);
+}
+.slab-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.slab-chip {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #14171d;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--tone);
+}
+.thinking-entry.is-thinking .slab-chip {
+  animation: live-blink 1s steps(2) infinite;
+}
+.slab-name {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.1;
+}
+.slab-name strong {
+  overflow: hidden;
+  color: var(--tone);
+  font-size: 19px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slab-name small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slab-name small:empty {
+  display: none;
+}
+.slab-side {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+.slab-side[data-side="WHITE"] {
+  background: #f0e8d6;
+}
+.slab-side[data-side="BLACK"] {
+  background: #14171d;
+  box-shadow: inset 0 0 0 2px #6d7788;
+}
+.thinking-entry time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.thinking-text {
+  color: var(--muted);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.thinking-entry.is-thinking .thinking-text::after {
+  content: "";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: thinking-dots 1.2s steps(4) infinite;
+}
+.thinking-entry.is-done .thinking-text {
+  color: var(--text);
+  font-weight: 600;
+}
+@keyframes thinking-dots {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .thinking-entry.is-thinking .slab-chip {
+    animation: none;
+  }
+  .thinking-entry.is-thinking .thinking-text::after {
+    animation: none;
+    content: "…";
+  }
 }
 .review-banner {
   box-shadow: inset 0 0 0 2px var(--accent);
@@ -2268,7 +2451,8 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) {
   .match-actions {
     grid-template-columns: 1fr 1fr;
   }
-  .move-history {
+  .move-history,
+  .thinking-log {
     flex: none;
     height: 260px;
   }
@@ -3366,4 +3550,63 @@ dialog.replay-dialog {
 	.replay-move {
 		font-size: 20px;
 	}
+}
+.thinking-details {
+  width: 0;
+  min-width: 100%;
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 2px solid var(--line);
+  font-size: 16px;
+  line-height: 1.25;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  color: var(--muted);
+}
+.detail-row strong {
+  min-width: 0;
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.detail-long > summary {
+  color: var(--muted);
+  cursor: pointer;
+}
+.detail-long[open] > summary {
+  color: var(--accent);
+}
+.detail-long > p {
+  max-height: 150px;
+  margin: 4px 0 0;
+  padding: 6px;
+  overflow-y: auto;
+  color: var(--muted);
+  font-size: 15px;
+  white-space: pre-wrap;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  scrollbar-width: thin;
+}
+
+/* Identity colour of each participant (see modules/identity.js): ring of the avatar and name. */
+.player {
+  --tone: #8f9bb3;
+}
+.player .avatar {
+  box-shadow: 0 0 0 var(--pixel) var(--tone);
+}
+.player.to-move .avatar {
+  box-shadow: 0 0 0 var(--pixel) var(--accent);
+}
+.player-identity strong {
+  color: var(--tone);
 }
