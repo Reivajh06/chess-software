@@ -4,7 +4,6 @@ import reivajh06.plugins.Plugin;
 import reivajh06.plugins.PluginException;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -13,7 +12,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PluginsManager {
-
 
 	public File pluginsFolder;
     public Map<String, Plugin> plugins;
@@ -48,7 +46,7 @@ public class PluginsManager {
             while(true) {
 				try {
 					reloadPlugins();
-					System.out.println("New Plugins loaded: %s".formatted(pluginNames()));
+					System.out.println("Plugins loaded: %s".formatted(pluginNames()));
 					Thread.sleep(Duration.ofMinutes(1));
 
 				} catch (PluginException | InterruptedException e) {
@@ -62,7 +60,7 @@ public class PluginsManager {
         thread.start();
     }
 
-    public List<String> pluginNames() {
+	public List<String> pluginNames() {
         return plugins.keySet().stream().toList();
     }
 

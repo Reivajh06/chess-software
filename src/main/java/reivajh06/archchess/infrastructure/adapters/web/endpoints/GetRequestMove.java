@@ -6,6 +6,7 @@ import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.Tile;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
 import reivajh06.archchess.infrastructure.Archchess;
+import reivajh06.archchess.infrastructure.adapters.datalake.events.MovePieceEvent;
 import reivajh06.archchess.infrastructure.adapters.datalake.events.RequestMoveEvent;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
@@ -59,6 +60,16 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 				.getKey();
 
 		Archchess.instance().publish(new RequestMoveEvent(player.username()));
+		Archchess.instance().publish(new MovePieceEvent(
+				player.username(),
+				session.id(),
+				moveId,
+				from,
+				to,
+				promoteTo,
+				session.toFEN(),
+				session.gameState().status())
+		);
 
 		director.movePieceAndUpdate(moveId, from, to);
 

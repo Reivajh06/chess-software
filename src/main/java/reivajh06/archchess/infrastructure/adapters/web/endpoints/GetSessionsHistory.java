@@ -4,21 +4,16 @@ import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.game.GameStatus;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.datalake.EventReader;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.CreateSessionEvent;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.JoinSessionEvent;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.MovePieceEvent;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.PromotePieceEvent;
+import reivajh06.archchess.infrastructure.adapters.datalake.events.*;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.HistoricalMove;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.History;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.Move;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.Session;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GetSessionsHistory implements EndpointOperator<Void, History> {
