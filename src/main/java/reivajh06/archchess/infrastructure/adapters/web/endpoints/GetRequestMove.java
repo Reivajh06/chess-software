@@ -60,6 +60,8 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 				.getKey();
 
 		Archchess.instance().publish(new RequestMoveEvent(player.username()));
+		director.movePieceAndUpdate(moveId, from, to);
+
 		Archchess.instance().publish(new MovePieceEvent(
 				player.username(),
 				session.id(),
@@ -70,8 +72,6 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 				session.toFEN(),
 				session.gameState().status())
 		);
-
-		director.movePieceAndUpdate(moveId, from, to);
 
 		if(promoteTo != null) director.promotePiece(to, promoteTo);
 
