@@ -1,11 +1,12 @@
 import { saveSession, readSession, forgetSession } from "./preferences.js";
 import { ApiError, HttpStatus } from "./api.js";
 import { modeDefinition } from "./modes.js";
+import { strongestEngine } from "./engine-plugins.js";
 
 const colors = ["WHITE", "BLACK"];
 const rival = (color) => (color === "WHITE" ? "BLACK" : "WHITE");
 
-const defaultDifficulty = { PVCPU: "EASY", PVAI: "MAX", AIVAI: "MAX" };
+const defaultDifficulty = { PVCPU: "EASY", AIVAI: "MAX" };
 const pluginDifficulty = (mode, chosen) =>
 	mode in defaultDifficulty ? (chosen ?? defaultDifficulty[mode]) : "NOT_PLUGIN";
 const seated = (state) => (state ? { ...state, waitingForOpponent: false } : undefined);
@@ -35,27 +36,34 @@ export class SessionAccess {
 			state = await this.api.state(sessionId);
 		} catch (error) {
 			if(error.status === HttpStatus.NOT_FOUND)
-				throw new ApiError("La partida no existe.", error.status, error.code);
+				throw new ApiError("The game does not exist.", error.status, error.code);
 			throw error;
 		}
-		const session = { sessionId, playerColor: null, gamemode: "SPECTATE", difficulty: "NOT_PLUGIN", watching: true };
+		const session = { sessionId, playerColor: null, gamemode: state.gamemode ?? state.gameState?.gamemode ?? "SPECTATE", difficulty: "NOT_PLUGIN", watching: true };
 		return { session, state };
 	}
 
 	async open(sessionId, mode = "PVP", chosenDifficulty, pluginNames) {
 		if(sessionId && mode === "SPECTATE") return this.watch(sessionId);
+		if(mode === "PVAI") mode = "PVCPU"; // Rematches of saved games use the merged mode.
+		const alfiBoss = !sessionId && mode === "PVCPU" && chosenDifficulty === "ALFI";
+		if(alfiBoss || (!sessionId && mode === "PVCPU" && chosenDifficulty === "MAX")) {
+			const engine = strongestEngine(await this.api.plugins());
+			if(alfiBoss && !engine) throw new Error("No chess engine is installed.");
+			if(engine) pluginNames = [engine];
+		}
 
 		// Every mode with a plugin sends a plugin difficulty: the one the player chose, or the mode's default
-		// (PvCPU starts easy, the AI modes play at full strength). Modes without a plugin send NOT_PLUGIN.
+		// (human vs machine starts easy; machines play at full strength). Other modes send NOT_PLUGIN.
 		const difficulty = mode === "PRACTICE" ? "PRACTICE"
-			: pluginDifficulty(mode, chosenDifficulty);
+			: pluginDifficulty(mode, alfiBoss ? "MAX" : chosenDifficulty);
 		const local = !sessionId && mode === "LOCAL";
 		const practice = !sessionId && mode === "PRACTICE";
 		const created = sessionId ? null :
 			await this.api.create(modeDefinition(mode).server ?? mode, difficulty, pluginNames);
 		const id = sessionId ?? created.sessionId ?? created.id;
 		if(!id)
-			throw new Error("El servidor no ha proporcionado el ID de sesión.");
+			throw new Error("The server did not provide the session ID.");
 
 		let gamemode = local ? mode : (created?.gamemode ?? mode);
 		let seat;
@@ -87,7 +95,7 @@ export class SessionAccess {
 			playerColor: seat.playerColor,
 			gamemode,
 			difficulty: seat.difficulty ?? created?.difficulty ?? difficulty,
-			...(cpu ? { cpu, alfi: gamemode === "PVCPU" && difficulty === "HARD" ? "hidden" : null } : {}),
+			...(cpu ? { cpu, alfiBoss, alfi: alfiBoss ? "hidden" : null } : {}),
 			...(machines ? { machines } : {}),
 			...(pluginNames ? { pluginNames } : {}),
 		};
@@ -100,7 +108,7 @@ export class SessionAccess {
 	creatorSeat(created) {
 		if(colors.includes(created.playerColor))
 			return { playerColor: created.playerColor };
-		throw new Error("El servidor no ha asignado un color al creador de la sala.");
+		throw new Error("The server did not assign a color to the room's creator.");
 	}
 
 	async join(sessionId) {
@@ -109,18 +117,21 @@ export class SessionAccess {
 			seat = await this.api.join(sessionId);
 		} catch (error) {
 			if(error.status === HttpStatus.CONFLICT)
-				throw new ApiError("La sala ya está completa.", error.status, error.code);
+				throw new ApiError("The room is full.", error.status, error.code);
 			if(error.status === HttpStatus.NOT_FOUND)
-				throw new ApiError("La sala no existe.", error.status, error.code);
+				throw new ApiError("The room does not exist.", error.status, error.code);
 			throw error;
 		}
 		if(!colors.includes(seat.playerColor))
-			throw new Error("El servidor no ha asignado un color a este jugador.");
+			throw new Error("The server did not assign a color to this player.");
 		return seat;
 	}
 
 	saved(sessionId) {
-		return readSession(sessionId);
+		const saved = readSession(sessionId);
+		// Older seats already saved an explicit reveal phase. Do not infer a boss
+		// from difficulty: a normal HARD or MAX game must remain a normal CPU.
+		return saved ? { ...saved, alfiBoss: saved.alfiBoss ?? !!saved.alfi } : null;
 	}
 
 	forget(sessionId) {

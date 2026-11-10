@@ -1,16 +1,22 @@
+import { modeLabel, modeIcon } from "./modes.js";
+import { byId, dialog, element } from "./ui.js";
 import { pieceImage } from "./assets.js";
 import { BoardView } from "./board.js";
 import { glyph } from "./glyphs.js";
 import { initialFen, labels, parseFen } from "./state.js";
+import { Mascot } from "./mascot.js";
 
-const byId = (id) => document.getElementById(id);
 
 const speeds = [0.5, 1, 2, 4];
 const pauseBetweenMoves = 900;
+const captureCommentChance = 0.5;
+const endingKinds = { win: "replayWin", loss: "replayLoss", draw: "replayDraw" };
+const moods = { replayCapture: "contento", replayQueen: "ko", replayCastle: "contento", replayPromotion: "estrellas",
+	replayWin: "estrellas", replayLoss: "triste", replayDraw: "aburrido", replayEnd: "guino", replayStart: "guino" };
 
 function describeMove(move) {
-	const promotion = move.promotion ? ` y corona a ${labels[move.promotion]}` : "";
-	const action = move.capture ? "captura en" : "→";
+	const promotion = move.promotion ? ` and promotes to ${labels[move.promotion]}` : "";
+	const action = move.capture ? "captures on" : "→";
 
 	return `${move.player}: ${labels[move.piece]} ${move.from} ${action} ${move.to}${promotion}`;
 }
@@ -21,8 +27,10 @@ function moveNumber(ply) {
 
 export class ReplayPlayer {
 
-	constructor(preferences) {
+	constructor(preferences, audio = null) {
 		this.preferences = preferences;
+		// Alfi narrates the replay from the side panel (silent when he is switched off in Settings).
+		this.mascot = new Mascot(byId("replay-mascot"), audio, preferences, { idle: false });
 		this.game = null;
 		this.positions = [];
 		this.moves = [];
@@ -77,8 +85,9 @@ export class ReplayPlayer {
 		this.renderMoveList();
 
 		byId("replay-progress").max = this.moves.length;
-		byId("replay-dialog").showModal();
+		dialog("replay-dialog");
 		this.show(0);
+		this.comment("replayStart");
 
 		if(this.moves.length > 0) this.play();
 	}
@@ -86,9 +95,9 @@ export class ReplayPlayer {
 	renderHeading() {
 		const game = this.game;
 
-		byId("replay-mode-icon").src = `./assets/ui/mode-${game.gamemode.toLowerCase()}.png`;
-		byId("replay-mode").textContent = game.modeName;
-		byId("replay-title").textContent = `${game.white} contra ${game.black}`;
+		byId("replay-mode-icon").src = `./assets/ui/${modeIcon(game.gamemode)}.png`;
+		byId("replay-mode").textContent = modeLabel(game.gamemode);
+		byId("replay-title").textContent = `${game.white} vs ${game.black}`;
 
 		const result = byId("replay-result");
 		result.className = `result-badge tone-${game.result.tone}`;
@@ -108,9 +117,8 @@ export class ReplayPlayer {
 
 	renderMoveList() {
 		byId("replay-moves").replaceChildren(...this.moves.map(move => {
-			const item = document.createElement("li");
-			const button = document.createElement("button");
-			button.type = "button";
+			const item = element("li");
+			const button = element("button");
 			button.dataset.ply = move.ply;
 			button.setAttribute("aria-label", `${moveNumber(move.ply)} ${describeMove(move)}`);
 			button.append(
@@ -126,11 +134,9 @@ export class ReplayPlayer {
 
 	renderSpeeds() {
 		byId("replay-speeds").replaceChildren(...speeds.map(speed => {
-			const button = document.createElement("button");
-			button.type = "button";
-			button.textContent = `×${String(speed).replace(".", ",")}`;
+			const button = element("button", "", `×${speed}`);
 			button.dataset.speed = speed;
-			button.setAttribute("aria-label", `Velocidad ${String(speed).replace(".", ",")} por uno`);
+			button.setAttribute("aria-label", `${speed} times playback speed`);
 			button.setAttribute("aria-pressed", String(speed === this.speed));
 			button.addEventListener("click", () => this.setSpeed(speed));
 			return button;
@@ -225,6 +231,7 @@ export class ReplayPlayer {
 
 	close() {
 		this.pause();
+		this.mascot.silence();
 		this.position++;
 		this.moving = false;
 		this.board.finishAnimation?.();
@@ -240,12 +247,13 @@ export class ReplayPlayer {
 		this.playing = playing;
 		const button = byId("replay-play");
 		button.replaceChildren(glyph(playing ? "pause" : "play"));
-		button.setAttribute("aria-label", playing ? "Pausar" : "Reproducir");
-		button.title = playing ? "Pausar" : "Reproducir";
+		button.setAttribute("aria-label", playing ? "Pause" : "Play");
+		button.title = playing ? "Pause" : "Play";
 	}
 
 	show(ply) {
 		const position = ++this.position;
+		if(ply === this.ply + 1) this.narrate(ply);
 		this.ply = ply;
 		this.store.state = { moves: this.moves.slice(0, ply), checkedColor: null };
 		this.store.pieces = this.positions[ply];
@@ -265,15 +273,35 @@ export class ReplayPlayer {
 		if(this.playing && this.ply === this.moves.length) this.pause();
 	}
 
+	comment(kind, vars = {}) {
+		this.mascot.talk(kind, 1, { mood: moods[kind] }, vars);
+	}
+
+	// Comments on notable plies only, and only when the replay steps forward one move at a time.
+	narrate(ply) {
+		const move = this.moves[ply - 1];
+		if(!move) return;
+
+		if(ply === this.moves.length) return this.comment(endingKinds[this.game.result.tone] ?? "replayEnd");
+
+		const taken = this.positions[ply - 1].get(move.to);
+		const castled = move.piece === "KING" && Math.abs(move.from.charCodeAt(0) - move.to.charCodeAt(0)) === 2;
+
+		if(move.promotion) this.comment("replayPromotion", { piece: labels[move.promotion] });
+		else if(taken?.type === "QUEEN") this.comment("replayQueen");
+		else if(castled) this.comment("replayCastle");
+		else if(taken && Math.random() < captureCommentChance) this.comment("replayCapture", { piece: labels[taken.type] });
+	}
+
 	renderPosition() {
 		const move = this.moves[this.ply - 1] ?? null;
 		const last = this.ply === this.moves.length;
 
 		byId("replay-move").textContent = move
 				? `${moveNumber(move.ply)} ${describeMove(move)}`
-				: this.moves.length > 0 ? "Posición inicial" : "Esta partida no tiene jugadas.";
+				: this.moves.length > 0 ? "Starting position" : "This game has no moves.";
 		byId("replay-progress").value = this.ply;
-		byId("replay-progress").setAttribute("aria-valuetext", `Jugada ${this.ply} de ${this.moves.length}`);
+		byId("replay-progress").setAttribute("aria-valuetext", `Move ${this.ply} of ${this.moves.length}`);
 		byId("replay-counter").textContent = `${this.ply} / ${this.moves.length}`;
 		byId("replay-first").disabled = this.ply === 0;
 		byId("replay-prev").disabled = this.ply === 0;

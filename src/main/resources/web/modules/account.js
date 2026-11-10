@@ -1,7 +1,7 @@
+import { byId, dialog } from "./ui.js";
 import { ApiError, HttpStatus } from "./api.js";
 import { accountTone } from "./identity.js";
 
-const byId = (id) => document.getElementById(id);
 const accountKey = "archchess.account";
 
 export function loadAccount() {
@@ -49,32 +49,32 @@ const accountRules = Object.freeze({
 
 function usernameProblem(username) {
 	const field = "account-username";
-	if(!username) return { field, message: "Escribe un nombre de usuario." };
+	if(!username) return { field, message: "Enter a username." };
 	if(username.length < accountRules.usernameMin || username.length > accountRules.usernameMax)
-		return { field, message: `El usuario debe tener entre ${accountRules.usernameMin} y ${accountRules.usernameMax} caracteres.` };
+		return { field, message: `Your username must be ${accountRules.usernameMin}–${accountRules.usernameMax} characters long.` };
 	if(!accountRules.usernamePattern.test(username))
-		return { field, message: "El usuario solo puede tener letras sin tilde, números, «_» o «-»." };
+		return { field, message: "Your username can only contain unaccented letters, numbers, “_” or “-”." };
 	return null;
 }
 
 function passwordProblem(password, username = "") {
 	const field = "account-password";
-	if(!password) return { field, message: "Escribe una contraseña." };
+	if(!password) return { field, message: "Enter a password." };
 	if(password.length < accountRules.passwordMin)
-		return { field, message: `La contraseña debe tener al menos ${accountRules.passwordMin} caracteres.` };
+		return { field, message: `Your password must be at least ${accountRules.passwordMin} characters long.` };
 	if(password.length > accountRules.passwordMax)
-		return { field, message: `La contraseña no puede pasar de ${accountRules.passwordMax} caracteres.` };
-	if(/\s/.test(password)) return { field, message: "La contraseña no puede tener espacios." };
+		return { field, message: `Your password cannot exceed ${accountRules.passwordMax} characters.` };
+	if(/\s/.test(password)) return { field, message: "Your password cannot contain spaces." };
 	if(!/\p{L}/u.test(password) || !/\d/.test(password))
-		return { field, message: "La contraseña necesita al menos una letra y un número." };
+		return { field, message: "Your password needs at least one letter and one number." };
 	if(username && password.toLowerCase().includes(username.toLowerCase()))
-		return { field, message: "La contraseña no puede contener tu nombre de usuario." };
+		return { field, message: "Your password cannot contain your username." };
 	return null;
 }
 
 const modes = {
-	login: { label: "Entrar", busy: "Entrando...", password: "current-password" },
-	signup: { label: "Crear cuenta", busy: "Creando...", password: "new-password" },
+	login: { label: "Sign in", busy: "Signing in...", password: "current-password" },
+	signup: { label: "Create account", busy: "Creating...", password: "new-password" },
 };
 
 export class AccountScreen {
@@ -118,10 +118,10 @@ export class AccountScreen {
 			const problem = usernameProblem(username) ?? passwordProblem(password, username);
 			if(problem) return this.setMessage(problem.message, problem.field);
 			if(password !== byId("account-repeat").value)
-				return this.setMessage("Las contraseñas no coinciden.", "account-repeat");
+				return this.setMessage("Passwords do not match.", "account-repeat");
 		} else {
-			if(!username) return this.setMessage("Escribe tu nombre de usuario.", "account-username");
-			if(!password) return this.setMessage("Escribe tu contraseña.", "account-password");
+			if(!username) return this.setMessage("Enter your username.", "account-username");
+			if(!password) return this.setMessage("Enter your password.", "account-password");
 		}
 
 		this.setBusy(true);
@@ -144,9 +144,9 @@ export class AccountScreen {
 	showError(error) {
 		const status = error instanceof ApiError ? error.status : 0;
 		if(this.mode === "signup" && status === HttpStatus.CONFLICT)
-			return this.setMessage("Ese nombre de usuario ya existe.", "account-username");
+			return this.setMessage("That username is already taken.", "account-username");
 		if(this.mode === "login" && [HttpStatus.UNAUTHORIZED, HttpStatus.NOT_FOUND].includes(status))
-			return this.setMessage("Usuario o contraseña incorrectos.", "account-password");
+			return this.setMessage("Incorrect username or password.", "account-password");
 		this.setMessage(error.message);
 	}
 
@@ -182,26 +182,26 @@ export class AccountDialog {
 		byId("account-delete-form").reset();
 		byId("account-dialog-name").textContent = account.username;
 		this.setError();
-		byId("account-dialog").showModal();
+		dialog("account-dialog");
 		byId("account-delete-password").focus();
 	}
 
 	async submit() {
 		if(this.busy) return;
 		const password = byId("account-delete-password").value;
-		if(!password) return this.setError("Escribe tu contraseña.");
+		if(!password) return this.setError("Enter your password.");
 
 		this.setBusy(true);
 		this.setError();
 		try {
 			await this.api.deleteAccount(this.account.username, password);
 			byId("account-delete-form").reset();
-			byId("account-dialog").close();
+			dialog("account-dialog", false);
 			await this.onDeleted();
 		} catch (error) {
 			if(error.name === "AbortError") return;
 			this.setError(error instanceof ApiError && error.status === HttpStatus.NOT_FOUND
-				? "Contraseña incorrecta."
+				? "Incorrect password."
 				: error.message);
 		} finally {
 			this.setBusy(false);
@@ -212,7 +212,7 @@ export class AccountDialog {
 		this.busy = busy;
 		const submit = byId("account-delete-submit");
 		submit.disabled = busy;
-		submit.textContent = busy ? "Borrando..." : "Borrar cuenta";
+		submit.textContent = busy ? "Deleting..." : "Delete account";
 	}
 
 	setError(error = "") {

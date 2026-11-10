@@ -1,0 +1,140 @@
+/* Title and account screens: the night castle backdrop, Alfi on the stone ledge, the menu in a stone panel. */
+.title-screen,
+.account-screen {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  padding: 28px clamp(16px, 3vw, 40px) 40px;
+  overflow: auto;
+  background: var(--ink) url("../assets/castle/backdrop.png") center bottom / cover no-repeat;
+}
+.title-layout,
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 660px);
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Left column: logo on top, Alfi standing on the ledge painted into the backdrop. */
+.title-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  align-self: stretch;
+  gap: 16px;
+  min-height: 0;
+}
+.title-brand { margin: 0 0 0 clamp(0px, 3vw, 48px); }
+.title-logo { display: block; width: min(300px, 26vw); filter: drop-shadow(0 6px 0 #0008); }
+#title-mascot {
+  --mascot-size: min(300px, 34vh);
+  align-items: center;
+  margin: 0 0 clamp(8px, 4vh, 40px) clamp(0px, 4vw, 64px);
+}
+
+/* Menu panel on the right. */
+.title-card,
+.account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  justify-self: end;
+}
+.title-card-heading { font-size: 26px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.title-menu { display: grid; gap: 4px; width: 100%; }
+
+/* Menu rows (also reused by the person/plugin/difficulty dialogs). No highlight box: the pawn cursor marks the choice. */
+.title-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 6px 8px 6px 40px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.title-option::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  width: 24px;
+  height: 30px;
+  background: var(--text);
+  -webkit-mask: var(--pawn) center / contain no-repeat;
+  mask: var(--pawn) center / contain no-repeat;
+  visibility: hidden;
+  --pawn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10' shape-rendering='crispEdges'><path d='M3 0h2v1h1v2H5v1h1v1H5v2h1v1h1v2H1V8h1V7h1V5H2V4h1V3H2V1h1z'/></svg>");
+}
+.title-option:focus::before,
+.title-option.is-loading::before { visibility: visible; animation: nudge 0.8s steps(2) infinite; }
+.title-option:focus { outline: none; }
+.title-option:focus strong { color: var(--accent-hi); }
+.title-option-art { width: 76px; height: 76px; object-fit: contain; }
+.title-option strong { display: block; font-size: 42px; line-height: 1; }
+.title-option small { display: block; color: var(--muted); font-size: 28px; line-height: 1.05; }
+.title-option.is-loading:disabled { opacity: 1; }
+.title-option.is-loading small { color: var(--accent-hi); }
+.title-option.is-loading small::after { content: "..."; display: inline-block; width: 0; overflow: hidden; vertical-align: bottom; animation: dots 1.2s steps(4) infinite; }
+@keyframes dots { to { width: 1.6em; } }
+
+.join-form { display: grid; gap: 10px; }
+.join-form label { color: var(--muted); font-size: 24px; }
+.join-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.title-hint { font-size: 20px; letter-spacing: 1px; color: var(--muted); }
+
+/* Account form. */
+.account-tabs { display: flex; gap: 6px; }
+.account-tabs [role="tab"] { flex: 1; }
+.account-form { display: flex; flex-direction: column; gap: 12px; }
+.account-form[data-mode="login"] [data-signup] { display: none; }
+.account-field { display: flex; flex-direction: column; gap: 6px; }
+.account-field label { font: 26px var(--head); color: var(--muted); }
+.account-hint { color: var(--muted); font-size: 20px; }
+.account-divider { display: flex; align-items: center; gap: 12px; font-size: 20px; color: var(--muted); }
+.account-divider span { flex: 1; height: var(--pixel); background: var(--line); }
+.account-anonymous { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 26px; }
+.account-anon-mark { display: grid; place-items: center; width: 28px; height: 28px; font: 24px var(--head); color: var(--ink); background: var(--muted); }
+.account-perks {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 8px solid transparent;
+  border-image: url("../assets/castle/button-secondary.png") 4 fill / 1 / 0 repeat;
+}
+.account-title { font-size: 26px; }
+.account-title span { color: var(--accent-hi); }
+.account-perk-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.account-perk-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; gap: 12px; }
+.account-perk-list svg { fill: var(--accent-hi); }
+.account-perk-list strong { display: block; font-size: 24px; line-height: 1; }
+.account-perk-list small { display: block; color: var(--muted); font-size: 20px; }
+.account-note { color: var(--muted); font-size: 20px; }
+
+/* Account: as in the release, just the sign in / create account card centred (the top bar carries the logo). */
+.account-screen { padding-block: 12px; }
+.account-layout { grid-template-columns: minmax(0, 560px); justify-content: center; align-content: center; }
+.account-screen .title-hero { display: none; }
+.account-card { justify-self: center; }
+
+/* Alfi switched off: logo centred on top, the panel centred below. */
+body[data-mascot="off"] .title-layout { grid-template-columns: minmax(0, 660px); justify-content: center; justify-items: center; align-content: center; }
+body[data-mascot="off"] .title-hero { align-items: center; align-self: auto; }
+body[data-mascot="off"] .title-brand { margin: 0; }
+body[data-mascot="off"] .title-logo { width: min(260px, 40vw); }
+body[data-mascot="off"] #title-mascot { display: none; }
+body[data-mascot="off"] .title-card { justify-self: center; }
+
+@media (max-width: 900px) {
+  .title-layout { grid-template-columns: minmax(0, 660px); justify-content: center; }
+  .title-hero { align-items: center; }
+  .title-brand, #title-mascot { margin: 0; }
+  #title-mascot { --mascot-size: 140px; }
+  .title-card { justify-self: center; }
+}

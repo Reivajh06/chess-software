@@ -106,7 +106,7 @@ test("the installed plugins are read from the server, and an empty list is a val
 
 test("a plugin answer without a list is rejected", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response("{}", { status: 200 }));
-  await assert.rejects(new ChessApi().plugins(), /Respuesta del servidor no válida/);
+  await assert.rejects(new ChessApi().plugins(), /Invalid server response/);
 });
 
 test("the chosen plugins are sent on creation and kept for the rematch", async (t) => {
@@ -218,7 +218,7 @@ test("serialized and array histories normalize to the same state in supported en
 test("rejects malformed serialized histories instead of silently dropping moves", () => {
   for (const movesHistory of ["not JSON", "{}", "null", 42]) {
     assert.throws(() => normalizeState({ ...currentState(1), movesHistory }),
-      /El historial de movimientos no es válido/);
+      /Invalid move history/);
   }
 });
 
@@ -268,12 +268,12 @@ test("error bodies provide the message and code; known statuses fall back to a d
     error => error.status === 409 && error.code === "NOT_YOUR_TURN" && error.message === "No es tu turno.");
   t.mock.method(globalThis, "fetch", async () => new Response("", { status: HttpStatus.NOT_FOUND }));
   await assert.rejects(new ChessApi().state("id"),
-    error => error.status === 404 && error.code === null && /no existe/.test(error.message));
+    error => error.status === 404 && error.code === null && /does not exist/.test(error.message));
 });
 
 test("rejects malformed successful responses with the correct diagnostic", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response("<html>not JSON</html>", { status: 201 }));
-  await assert.rejects(new ChessApi().create("PRACTICE", "PRACTICE"), /Respuesta del servidor no válida/);
+  await assert.rejects(new ChessApi().create("PRACTICE", "PRACTICE"), /Invalid server response/);
 });
 
 test("PvP creation takes the creator's seat from the creation response without joining", async () => {
@@ -291,7 +291,7 @@ test("PvP creation takes the creator's seat from the creation response without j
 
 test("PvP creation without a seat in the response is an error", async () => {
   const api = { create: async () => ({ sessionId: created.sessionId, gamemode: "PVP", state }) };
-  await assert.rejects(new SessionAccess(api).open(null, "PVP"), /no ha asignado un color/);
+  await assert.rejects(new SessionAccess(api).open(null, "PVP"), /did not assign a color/);
 });
 
 test("the invited player joins with an empty body and takes the seat the server assigns", async (t) => {
@@ -313,7 +313,7 @@ test("the invited player joins with an empty body and takes the seat the server 
 test("joining a full room reports it", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response("", { status: 409 }));
   await assert.rejects(new SessionAccess(new ChessApi()).open(created.sessionId),
-    error => error.status === 409 && /completa/.test(error.message));
+    error => error.status === 409 && /full/.test(error.message));
 });
 
 test("the invitation address falls back to the page's port when the server reports an unusable one", async (t) => {

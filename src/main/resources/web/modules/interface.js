@@ -1,18 +1,18 @@
-import { gamePiece, pieceImage, variantTag, uiIcon } from "./assets.js";
+import { byId, element, optionButton } from "./ui.js";
+import { gamePiece, pieceImage, variantTag } from "./assets.js";
 import { shownColor } from "./colors.js";
-import { gameModes, menuOrder, modeDefinition } from "./modes.js";
+import { gameModes, menuOrder, modeLabel, modeIcon } from "./modes.js";
 import { labels, pieceValues } from "./state.js";
 import { themes } from "./themes.js";
 import { loadAccount } from "./account.js";
 import { accountIdentity, pluginIdentity, toneFor } from "./identity.js";
 import { displayName, subName } from "./thinking.js";
 
-const byId = (id) => document.getElementById(id);
 const statusLabels = {
-	ACTIVE: "En juego",
-	WHITE_WIN: "Ganan las blancas",
-	BLACK_WIN: "Ganan las negras",
-	DRAW: "Tablas",
+	ACTIVE: "In progress",
+	WHITE_WIN: "White wins",
+	BLACK_WIN: "Black wins",
+	DRAW: "Draw",
 };
 const statusLabel = (status) => {
 	const winner = { WHITE_WIN: "WHITE", BLACK_WIN: "BLACK" }[status];
@@ -42,18 +42,18 @@ export class TitleScreen {
 			entries.push({
 				id,
 				label: mode.name,
-				icon: `mode-${id.toLowerCase()}`,
-				detail: mode.available ? mode.detail : "Próximamente",
-				disabled: !mode.available,
-				title: mode.reason,
+				icon: modeIcon(id),
+				detail: mode.detail,
 				hint: mode.hint,
 				action: () => this.onStart(id),
 			});
 		}
 		entries.push({
 			id: "join",
-			label: "Tengo una invitación",
-			hint: "¿Tienes un enlace? Pégalo. Prometo no abrir un asistente.",
+			label: "Join a game",
+			icon: "mode-pvp",
+			detail: "Paste an invitation",
+			hint: "Got a link? Paste it here. I promise not to open a setup wizard.",
 			action: () => this.showJoin(),
 		});
 		return entries;
@@ -62,26 +62,11 @@ export class TitleScreen {
 	render() {
 		const fragment = document.createDocumentFragment();
 		for(const entry of this.entries()) {
-			const button = document.createElement("button");
-			button.type = "button";
-			button.className = "title-option";
-			button.dataset.entry = entry.id;
-			button.disabled = this.busy || !!entry.disabled;
 			const loading = this.busy && entry.id === this.pending;
+			const button = optionButton(entry.label, loading ? "Preparing the board" : entry.detail, entry.icon, entry.action);
+			button.dataset.entry = entry.id;
+			button.disabled = this.busy;
 			button.classList.toggle("is-loading", loading);
-			if(entry.title) button.title = entry.title;
-			if(entry.icon) button.append(uiIcon(entry.icon, "title-option-art"));
-			const text = document.createElement("span");
-			const label = document.createElement("strong");
-			label.textContent = entry.label;
-			text.append(label);
-			if(entry.detail || loading) {
-				const detail = document.createElement("small");
-				detail.textContent = loading ? "Preparando el tablero" : entry.detail;
-				text.append(detail);
-			}
-			button.append(text);
-			button.addEventListener("click", entry.action);
 			if(entry.hint) {
 				const hover = () => this.onHover?.(entry.id, entry.hint);
 				button.addEventListener("pointerenter", hover);
@@ -127,7 +112,7 @@ export class TitleScreen {
 		this.busy = busy;
 		this.pending = busy ? pending : null;
 		byId("join-submit").disabled = busy;
-		byId("join-submit").textContent = busy ? "Conectando…" : "Unirse";
+		byId("join-submit").textContent = busy ? "Connecting…" : "Join";
 		this.render();
 	}
 
@@ -137,16 +122,6 @@ export class TitleScreen {
 		if(message) this.onError?.(message);
 	}
 }
-
-const modeIcons = {
-	PVP: "mode-pvp",
-	PVAI: "mode-pvai",
-	AIVAI: "mode-aivai",
-	PVCPU: "mode-pvcpu",
-	PRACTICE: "mode-practice",
-	LOCAL: "mode-pvp",
-	SPECTATE: "mode-aivai",
-};
 
 const rendered = new Map();
 function changed(id, key) {
@@ -161,20 +136,15 @@ function setText(id, text) {
 
 export function populateThemeGrid(container, onPick) {
 	for(const [id, theme] of Object.entries(themes)) {
-		const button = document.createElement("button");
-		button.type = "button";
-		button.className = "choice theme-choice";
+		const button = element("button", "choice theme-choice");
 		button.dataset.value = id;
 		button.setAttribute("role", "radio");
 		button.style.setProperty("--swatch-light", theme.colors.light);
 		button.style.setProperty("--swatch-dark", theme.colors.dark);
-		button.style.setProperty("--swatch-accent", theme.colors.accent);
-		const swatch = document.createElement("span");
-		swatch.className = "theme-swatch";
+
+		const swatch = element("span", "theme-swatch");
 		swatch.append(pieceImage("KING", "WHITE", id));
-		const name = document.createElement("span");
-		name.className = "choice-name";
-		name.textContent = theme.name;
+		const name = element("span", "choice-name", theme.name);
 		button.append(swatch, name);
 		button.addEventListener("click", () => onPick(id));
 		container.append(button);
@@ -192,11 +162,11 @@ export function markChoice(container, value) {
 export function renderAppearance(preferences) {
 	const sound = byId("sound-toggle");
 	sound.setAttribute("aria-pressed", String(preferences.muted));
-	sound.setAttribute("aria-label", preferences.muted ? "Activar sonido" : "Silenciar sonido");
+	sound.setAttribute("aria-label", preferences.muted ? "Enable sound" : "Mute sound");
 	sound.classList.toggle("is-muted", preferences.muted);
 	const music = byId("music-toggle");
 	music.setAttribute("aria-pressed", String(preferences.music));
-	music.setAttribute("aria-label", preferences.music ? "Desactivar música" : "Activar música");
+	music.setAttribute("aria-label", preferences.music ? "Disable music" : "Enable music");
 	music.classList.toggle("is-muted", !preferences.music || preferences.muted);
 }
 
@@ -205,38 +175,37 @@ export function renderMatch(store, preferences) {
 	const state = store.state;
 	const watching = !!session?.watching; // somebody else's game, followed from an invitation to watch
 	const spectator = session?.gamemode === "AIVAI" || watching;
-	const mode = modeDefinition(session?.gamemode);
 	const shared = store.practice || store.local;
 	const color = shared ? store.orientation : (session?.playerColor ?? "WHITE");
 	const rival = color === "WHITE" ? "BLACK" : "WHITE";
-	const colorName = (value) => (shownColor(value) === "WHITE" ? "Blancas" : "Negras");
+	const colorName = (value) => (shownColor(value) === "WHITE" ? "White" : "Black");
 	const finished = ["WHITE_WIN", "BLACK_WIN", "DRAW"].includes(state?.status);
 	const check = state?.status === "ACTIVE" && !!state.checkedColor;
 	const currentStatus = !session
-		? "Sin partida"
+		? "No game"
 		: state?.waitingForOpponent
-			? "Esperando oponente"
+			? "Waiting for opponent"
 			: check
-				? "¡Jaque!"
-				: (statusLabel(state?.status) ?? "Conectando");
+				? "Check!"
+				: (statusLabel(state?.status) ?? "Connecting");
 	const reviewing = store.reviewPly !== null;
 
 	byId("review-banner").hidden = !reviewing;
 	setText("review-label", !reviewing
 		? ""
 		: store.reviewPly === 0
-			? "Posición inicial"
-			: `Jugada ${store.reviewPly} de ${state?.moves.length ?? 0}`);
+			? "Starting position"
+			: `Move ${store.reviewPly} of ${state?.moves.length ?? 0}`);
 	setText("move-count", String(state?.moves.length ?? 0));
 	byId("session-details").hidden = !session;
 	setText("session-id", session?.sessionId ?? "");
 	byId("invite").hidden = !session || session.gamemode !== "PVP";
 	byId("watch-invite").hidden = !session || store.practice || store.local;
-	setText("arena-mode", session ? mode.badge : "—");
-	setText("arena-name", session ? mode.name : "Sin partida");
+	setText("arena-mode", session ? modeLabel(session.gamemode) : "—");
+	setText("arena-name", session ? modeLabel(session.gamemode) : "No game");
 	setText("arena-status", currentStatus);
 	byId("arena-status").dataset.alert = String(check);
-	const icon = `./assets/ui/${modeIcons[session?.gamemode] ?? "mode-practice"}.png`;
+	const icon = `./assets/ui/${modeIcon(session?.gamemode)}.png`;
 	if(byId("arena-icon").getAttribute("src") !== icon) byId("arena-icon").setAttribute("src", icon);
 
 	if(changed("avatars", `${color}:${preferences.theme}${variantTag("KING", rival)}`)) {
@@ -247,45 +216,43 @@ export function renderMatch(store, preferences) {
 	// plugin of each colour when the server names it (session.machineNames).
 	const machineNames = session?.machineNames ?? {};
 	const versusMachine = !!session?.cpu; // PvCPU and PvAI: one machine, named from the start
-	const machine = session?.pluginNames?.[0];
+	const machine = session?.alfiBoss ? null : session?.pluginNames?.[0];
 	const title = (name, fallback) => (name ? displayName(name) : fallback);
 	const detail = (name, side) => [name ? subName(name) : "", colorName(side)].filter(Boolean).join(" · ");
 
 	setText("player-name", watching
 		? colorName(color)
 		: spectator
-			? title(machineNames[color], state?.whiteModel ?? "Modelo blanco")
+			? title(machineNames[color], state?.whiteModel ?? "White model")
 			: shared
 				? colorName(color)
-				: "Tú");
+				: "You");
 	setText("opponent-name", watching
 		? colorName(rival)
 		: spectator
-			? title(machineNames[rival], state?.blackModel ?? "Modelo negro")
+			? title(machineNames[rival], state?.blackModel ?? "Black model")
 			: shared
 				? colorName(rival)
-				: session?.gamemode === "PVAI"
-					? title(machine, "IA local")
-					: versusMachine
-						? (session.alfi === "revealed" ? "Alfi" : title(machine, "Stockfish"))
-						: "Oponente");
+				: versusMachine
+					? (session.alfiBoss ? (session.alfi === "revealed" ? "Alfi" : "???") : title(machine, "Machine"))
+					: "Opponent");
 	setText("player-detail", !session
 		? ""
 		: store.practice
-			? "Práctica libre"
+			? "Free practice"
 			: store.local
-				? "En este equipo"
+				? "On this device"
 				: spectator && !watching
 					? detail(machineNames[color], color)
 					: colorName(color));
 	setText("opponent-detail", !session
 		? ""
 		: state?.waitingForOpponent
-			? "Esperando invitación"
+			? "Waiting for invitation"
 			: store.practice
-				? "Práctica libre"
+				? "Free practice"
 				: store.local
-					? "En este equipo"
+					? "On this device"
 					: spectator && !watching
 						? detail(machineNames[rival], rival)
 						: versusMachine
@@ -305,6 +272,12 @@ export function renderMatch(store, preferences) {
 	document.querySelector('.player[data-side="player"]').style.setProperty("--tone", toneFor(identityOf(color)));
 	document.querySelector('.player[data-side="opponent"]').style.setProperty("--tone", toneFor(identityOf(rival)));
 
+	// The seat frames wear the colour they play, in the theme's own light and dark.
+	document.querySelector('.player[data-side="player"]').dataset.color = shownColor(color);
+	// Alfi's bar stays plain: the frame fights with his sprite and bubble.
+	if(session?.alfiBoss) delete document.querySelector('.player[data-side="opponent"]').dataset.color;
+	else document.querySelector('.player[data-side="opponent"]').dataset.color = shownColor(rival);
+
 	const active = !!session && state?.status === "ACTIVE" && !reviewing;
 	byId("player-turn").hidden = !active || state.turn !== color;
 	byId("opponent-turn").hidden = !active || state.turn !== rival;
@@ -314,10 +287,10 @@ export function renderMatch(store, preferences) {
 
 	byId("spectator-banner").hidden = !spectator;
 	// The machines' turn log: only in games against machines, and not with Alfi, who has his own stage.
-	byId("thinking-tab").hidden = !((session?.cpu || session?.machines) && !session?.alfi);
+	byId("thinking-tab").hidden = !((session?.cpu || session?.machines) && !session?.alfiBoss);
 	setText("thinking-status", state?.thinkingColor
-		? `Pensando: ${state.thinkingColor === "WHITE" ? "blancas" : "negras"}`
-		: watching ? "Viendo la partida" : "Partida entre modelos");
+		? `Thinking: ${state.thinkingColor === "WHITE" ? "White" : "Black"}`
+		: watching ? "Watching game" : "Game between models");
 	renderCaptured("player-captured", state?.eatenPieces?.[rival], preferences);
 	renderCaptured("opponent-captured", state?.eatenPieces?.[color], preferences);
 	renderMaterial(store.pieces, color);
@@ -341,11 +314,11 @@ function renderTurn(state, session, finished, reviewing, check, preferences) {
 		: finished
 			? statusLabel(state.status)
 			: reviewing
-				? "Revisando"
+				? "Reviewing"
 				: state?.waitingForOpponent
-					? "Esperando rival"
-					: shownColor(turn) === "WHITE" ? "Blancas" : "Negras";
-	setText("turn-eyebrow", finished ? "Resultado" : check && !reviewing ? "¡Jaque! Mueven" : "Mueven");
+					? "Waiting for opponent"
+					: shownColor(turn) === "WHITE" ? "White" : "Black";
+	setText("turn-eyebrow", finished ? "Result" : check && !reviewing ? "Check! To move" : "To move");
 	setText("turn-name", label);
 	card.dataset.turn = !session || finished || reviewing ? "" : shownColor(turn);
 	card.dataset.check = String(check && !reviewing);
@@ -360,12 +333,12 @@ function renderTurn(state, session, finished, reviewing, check, preferences) {
 function renderLastMove(move, preferences) {
 	byId("last-move-card").hidden = !move;
 	if(!move) return;
-	const name = labels[move.type] ?? "pieza";
+	const name = labels[move.type] ?? "piece";
 	setText("last-move-route", `${move.from ?? "?"} → ${move.to ?? "?"}`);
 	const captured = move.capturedPiece;
 	setText("last-move-detail", move.capture
-		? `${name[0].toUpperCase()}${name.slice(1)} captura ${captured ? labels[captured.type] : "pieza"}`
-		: `${name[0].toUpperCase()}${name.slice(1)} ${shownColor(move.color) === "WHITE" ? "blanco" : "negro"}`);
+		? `${name[0].toUpperCase()}${name.slice(1)} captures ${captured ? labels[captured.type] : "piece"}`
+		: `${shownColor(move.color) === "WHITE" ? "White" : "Black"} ${name}`);
 	byId("last-move-card").classList.toggle("is-capture", !!move.capture);
 	if(changed("last-move-piece", `${move.type}:${move.color}:${preferences.theme}${variantTag(move.type, move.color)}`)) {
 		byId("last-move-piece").replaceChildren(gamePiece(move.type, move.color, preferences.theme));
@@ -383,7 +356,7 @@ function renderMaterial(pieces, color) {
 	const shownLead = shownColor("WHITE") === "WHITE" ? lead : -lead;
 	const share = 50 + Math.max(-10, Math.min(10, shownLead)) * 4.5;
 	byId("material-white").style.width = `${share}%`;
-	setText("score-lead", !shownLead ? "Igualado" : `${shownLead > 0 ? "Blancas" : "Negras"} +${Math.abs(shownLead)}`);
+	setText("score-lead", !shownLead ? "Even" : `${shownLead > 0 ? "White" : "Black"} +${Math.abs(shownLead)}`);
 	const rival = color === "WHITE" ? "BLACK" : "WHITE";
 	for(const [id, side, other] of [["player-advantage", color, rival], ["opponent-advantage", rival, color]]) {
 		const diff = totals[side] - totals[other];

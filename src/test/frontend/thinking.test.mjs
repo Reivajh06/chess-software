@@ -64,8 +64,8 @@ test("plugin details become labelled rows, with the long texts last and optional
   const details = { thinking: "Primero e4...", depth: "25", nodes: "1174167", reason: "Controla el centro.", time: "1000", custom_key: "x" };
   const rows = detailRows(details);
   assert.deepEqual(rows.map((row) => row.key), ["depth", "nodes", "reason", "time", "custom_key", "thinking"]);
-  assert.equal(rows[0].label, "Profundidad");
-  assert.equal(rows[1].value, Number(1174167).toLocaleString("es-ES"));
+  assert.equal(rows[0].label, "Depth");
+  assert.equal(rows[1].value, Number(1174167).toLocaleString("en-GB"));
   assert.equal(rows[3].value, "1000 ms");
   assert.equal(rows[4].label, "Custom key");
   assert.equal(rows.at(-1).long, true);

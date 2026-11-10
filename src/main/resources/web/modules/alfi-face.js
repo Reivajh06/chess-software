@@ -1,3 +1,4 @@
+import { element } from "./ui.js";
 import { pieceBounds } from "./piece-layouts.js";
 
 const P = 10;
@@ -143,7 +144,7 @@ export function eraseCross(image) {
 	sheet.src = image.src;
 	image.style.visibility = "hidden";
 	sheet.decode().then(() => {
-		const canvas = document.createElement("canvas");
+		const canvas = element("canvas");
 		canvas.width = width;
 		canvas.height = height;
 		const context = canvas.getContext("2d");

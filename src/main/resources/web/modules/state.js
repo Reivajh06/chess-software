@@ -8,12 +8,12 @@ const types = ["KING", "QUEEN", "ROOK", "BISHOP", "KNIGHT", "PAWN"];
 export const pieceValues = { PAWN: 1, KNIGHT: 3, BISHOP: 3, ROOK: 5, QUEEN: 9, KING: 0 };
 
 export const labels = {
-	KING: "rey",
-	QUEEN: "dama",
-	ROOK: "torre",
-	BISHOP: "alfil",
-	KNIGHT: "caballo",
-	PAWN: "peón",
+	KING: "king",
+	QUEEN: "queen",
+	ROOK: "rook",
+	BISHOP: "bishop",
+	KNIGHT: "knight",
+	PAWN: "pawn",
 };
 
 export const initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -47,7 +47,7 @@ export function parseFen(fen) {
 	const rows = String(fen).split(" ")[0].split("/");
 
 	if(rows.length !== 8) {
-		throw new Error("Posición FEN no válida.");
+		throw new Error("Invalid FEN position.");
 	}
 
 	const pieces = new Map();
@@ -69,7 +69,7 @@ export function parseFen(fen) {
 				column += Number(char);
 			} else {
 				if(!names[char.toLowerCase()] || column >= 8) {
-					throw new Error("Posición FEN no válida.");
+					throw new Error("Invalid FEN position.");
 				}
 
 				pieces.set(`${"abcdefgh"[column++]}${8 - index}`, {
@@ -80,7 +80,7 @@ export function parseFen(fen) {
 		}
 
 		if(column !== 8) {
-			throw new Error("Posición FEN no válida.");
+			throw new Error("Invalid FEN position.");
 		}
 	});
 
@@ -130,7 +130,7 @@ export function normalizeState(payload) {
 					raw.gameStateFen == null
 			)
 	) {
-		throw new Error("El servidor no ha proporcionado el tablero.");
+		throw new Error("The server did not provide the board.");
 	}
 
 	let events = raw.movesHistory ?? null;
@@ -139,12 +139,12 @@ export function normalizeState(payload) {
 		try {
 			events = JSON.parse(events);
 		} catch {
-			throw new Error("El historial de movimientos no es válido.");
+			throw new Error("Invalid move history.");
 		}
 	}
 
 	if(raw.movesHistory != null && !Array.isArray(events)) {
-		throw new Error("El historial de movimientos no es válido.");
+		throw new Error("Invalid move history.");
 	}
 
 	const history = events
@@ -152,7 +152,7 @@ export function normalizeState(payload) {
 			: (raw.moves ?? raw.moveHistory ?? []);
 
 	if(!Array.isArray(history)) {
-		throw new Error("El historial de movimientos no es válido.");
+		throw new Error("Invalid move history.");
 	}
 
 	const moves = history.map((entry, index) => {

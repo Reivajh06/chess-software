@@ -1,13 +1,14 @@
+import { element } from "./ui.js";
 import { pluginLabel } from "./modes.js";
 import { pluginIdentity, toneFor } from "./identity.js";
 
 const maxEntries = 8;
-const sides = { WHITE: "Blancas", BLACK: "Negras" };
+const sides = { WHITE: "White", BLACK: "Black" };
 
 export const elapsedLabel = (ms) => `${(Math.max(0, ms) / 1000).toFixed(1)} s`;
 
 export function describeMove(move) {
-	if(!move) return "sin respuesta";
+	if(!move) return "no response";
 	const promotion = move.promotion ? ` = ${String(move.promotion)[0]}` : "";
 	return `${move.from} → ${move.to}${promotion}`;
 }
@@ -33,18 +34,19 @@ export const pluginTone = (name) => toneFor(pluginIdentity(name));
 // Against a machine the plugin is known from the start; between machines the page only learns it
 // when the server names the plugin that played (see ChessApi.machineMove).
 export function machineName(session) {
+	if(session?.alfiBoss) return session.alfi === "revealed" ? "Alfi" : "???";
 	return session?.cpu && session.pluginNames?.length ? session.pluginNames[0] : null;
 }
 
 // What plugins tell about their calculation (see ChessApi.machineMove). They choose the keys; the common ones
 // get a Spanish label and a unit, any other key is shown with its own name.
 const detailLabels = {
-	depth: "Profundidad",
-	nodes: "Nodos",
-	nps: "Nodos/s",
-	time: "Tiempo",
-	reason: "Motivo",
-	thinking: "Pensamiento",
+	depth: "Depth",
+	nodes: "Nodes",
+	nps: "Nodes/s",
+	time: "Time",
+	reason: "Reason",
+	thinking: "Thinking",
 };
 const longDetails = new Set(["thinking"]);
 
@@ -53,7 +55,7 @@ export function detailLabel(key) {
 }
 
 export function formatDetail(key, value) {
-	if((key === "nodes" || key === "nps") && /^\d+$/.test(value)) return Number(value).toLocaleString("es-ES");
+	if((key === "nodes" || key === "nps") && /^\d+$/.test(value)) return Number(value).toLocaleString("en-GB");
 	if(key === "time" && /^\d+$/.test(value)) return `${value} ms`;
 	return value;
 }
@@ -69,12 +71,6 @@ export function detailRows(details, { thinking = true } = {}) {
 	return [...rows.filter((row) => !row.long), ...rows.filter((row) => row.long)];
 }
 
-function element(tag, className, text) {
-	const node = document.createElement(tag);
-	if(className) node.className = className;
-	if(text !== undefined) node.textContent = text;
-	return node;
-}
 
 function renderDetails(rows) {
 	const box = element("div", "thinking-details");
@@ -127,7 +123,7 @@ export class ThinkingLog {
 		const names = element("span", "slab-name");
 		names.append(title, model);
 		head.append(chip, names, side, time);
-		const text = element("span", "thinking-text", "pensando");
+		const text = element("span", "thinking-text", "thinking");
 		item.append(head, text);
 
 		const parts = { item, chip, title, model, time, text, startedAt: performance.now(), name: null };
@@ -171,7 +167,7 @@ export class ThinkingLog {
 	#identify(parts, name) {
 		parts.name = name ?? null;
 		parts.chip.textContent = name ? initials(name) : "··";
-		parts.title.textContent = name ? displayName(name) : "Máquina";
+		parts.title.textContent = name ? displayName(name) : "Machine";
 		parts.model.textContent = name ? subName(name) : "";
 		parts.item.style.setProperty("--tone", pluginTone(name));
 		parts.item.title = name ?? "";

@@ -84,7 +84,7 @@ test("every detected event has lines and placeholders get filled", () => {
   for (const [, kind] of source.matchAll(/push\("(\w+)"/g)) assert.ok(alfiLines[kind], kind);
   for (const kind of Object.keys(alfiLines)) {
     for (let i = 0; i < 20; i++) {
-      const text = line(kind, { to: "h3", from: "g1", pieza: "caballo", victima: "alfil", bando: "blancas", ply: "4", moves: "10" });
+      const text = line(kind, { to: "h3", from: "g1", pieza: "knight", victima: "bishop", bando: "White", ply: "4", moves: "10" });
       assert.ok(text && !/\{\w+\}/.test(text), `${kind}: ${text}`);
     }
   }
@@ -95,7 +95,7 @@ test("theme lines only cover existing kinds and fill their placeholders", () => 
     for (const kind of Object.keys(kinds)) {
       assert.ok(alfiLines[kind], `${theme}/${kind}`);
       for (let i = 0; i < 20; i++) {
-        const text = line(kind, { to: "h3", victima: "alfil" }, theme);
+        const text = line(kind, { to: "h3", victima: "bishop" }, theme);
         assert.ok(text && !/\{\w+\}/.test(text), `${theme}/${kind}: ${text}`);
       }
     }

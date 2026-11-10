@@ -8,12 +8,26 @@ export const HttpStatus = Object.freeze({
 });
 
 const defaultMessages = {
-	[HttpStatus.BAD_REQUEST]: "El servidor ha rechazado una petición no válida.",
-	[HttpStatus.FORBIDDEN]: "No puedes hacer eso en esta partida.",
-	[HttpStatus.NOT_FOUND]: "La partida no existe en el servidor.",
-	[HttpStatus.CONFLICT]: "Esa acción no es posible en el estado actual de la partida.",
-	[HttpStatus.SERVICE_UNAVAILABLE]: "El servidor no está disponible ahora mismo.",
+	[HttpStatus.BAD_REQUEST]: "The server rejected an invalid request.",
+	[HttpStatus.FORBIDDEN]: "You can't do that in this game.",
+	[HttpStatus.NOT_FOUND]: "The game does not exist on the server.",
+	[HttpStatus.CONFLICT]: "That action isn't possible in the game's current state.",
+	[HttpStatus.SERVICE_UNAVAILABLE]: "The server is currently unavailable.",
 };
+
+// The server names its machine modes PVM (player vs machine) and MVM (machine vs machine). The page keeps its own
+// PVCPU / AIVAI ids, so gamemodes are translated here, at the boundary, and nowhere else.
+const toServerMode = { PVCPU: "PVM", PVAI: "PVM", AIVAI: "MVM" };
+const fromServerMode = { PVM: "PVCPU", MVM: "AIVAI" };
+
+function localModes(value) {
+	if(Array.isArray(value)) return value.map(localModes);
+	if(!value || typeof value !== "object") return value;
+	const result = {};
+	for(const [key, item] of Object.entries(value))
+		result[key] = key === "gamemode" && typeof item === "string" ? fromServerMode[item] ?? item : localModes(item);
+	return result;
+}
 
 export class ApiError extends Error {
 	constructor(message, status = 0, code = null) {
@@ -51,27 +65,27 @@ export class ChessApi {
 			}
 			if(!response.ok) {
 				throw new ApiError(
-					payload?.message || defaultMessages[response.status] || `Error del servidor (${response.status}).`,
+					payload?.message || defaultMessages[response.status] || `Server error (${response.status}).`,
 					response.status,
 					typeof payload?.error === "string" ? payload.error : null,
 				);
 			}
 			if(payload === null && allowEmpty && !bodyText.trim()) return null;
 			if(!payload || typeof payload !== "object" || Array.isArray(payload))
-				throw new ApiError("Respuesta del servidor no válida.");
-			return payload;
+				throw new ApiError("Invalid server response.");
+			return localModes(payload);
 		} catch (error) {
 			if(error instanceof ApiError) throw error;
 			if(controller.signal.aborted && controller.signal.reason !== "timeout")
 				throw new DOMException("Cancelado", "AbortError");
-			throw new ApiError("No se puede conectar con el servidor.");
+			throw new ApiError("Cannot connect to the server.");
 		} finally {
 			clearTimeout(timer);
 			this.controllers.delete(controller);
 		}
 	}
 	create(mode, difficulty, pluginNames) {
-		return this.request("/sessions", { gamemode: mode, difficulty, pluginNames });
+		return this.request("/sessions", { gamemode: toServerMode[mode] ?? mode, difficulty, pluginNames });
 	}
 	async history() {
 		const { sessions } = await this.request("/history");
@@ -79,7 +93,7 @@ export class ChessApi {
 	}
 	async plugins() {
 		const { plugins } = await this.request("/plugins");
-		if(!Array.isArray(plugins)) throw new ApiError("Respuesta del servidor no válida.");
+		if(!Array.isArray(plugins)) throw new ApiError("Invalid server response.");
 		return plugins;
 	}
 	createAccount(username, password) {
@@ -120,7 +134,7 @@ export class ChessApi {
 	}
 	async move(id, from, to, moveId, promotion = null) {
 		if(!Number.isSafeInteger(moveId) || moveId < 0)
-			throw new TypeError("La jugada necesita un moveId válido del servidor.");
+			throw new TypeError("The move requires a valid moveId from the server.");
 		const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
 			from,
 			moveId,
@@ -168,7 +182,7 @@ function playedMove(response) {
 	const from = typeof response.from === "string" ? response.from.trim().toLowerCase() : null;
 	const to = typeof response.to === "string" ? response.to.trim().toLowerCase() : null;
 	if(!/^[a-h][1-8]$/.test(from ?? "") || !/^[a-h][1-8]$/.test(to ?? ""))
-		throw new ApiError("El motor ha devuelto una jugada no válida.");
+		throw new ApiError("The engine returned an invalid move.");
 	const promotion = response.promotion ?? response.promote_to ?? response.promoteTo ?? null;
 	return { from, to, promotion: promotion ? String(promotion).toUpperCase() : null };
 }

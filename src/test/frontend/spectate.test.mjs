@@ -50,7 +50,7 @@ test("watch translates a missing game while preserving its error status and code
     error: "SESSION_NOT_FOUND", message: "Unknown session on server",
   }), { status: HttpStatus.NOT_FOUND }));
   await assert.rejects(new SessionAccess(new ChessApi()).watch(sessionId),
-    error => error instanceof ApiError && error.message === "La partida no existe." &&
+    error => error instanceof ApiError && error.message === "The game does not exist." &&
       error.status === HttpStatus.NOT_FOUND && error.code === "SESSION_NOT_FOUND");
 });
 

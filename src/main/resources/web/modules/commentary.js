@@ -124,14 +124,14 @@ export class Commentator {
 	}
 
 	vars(move, after) {
-		const name = (type) => labels[type] ?? "pieza";
+		const name = (type) => labels[type] ?? "piece";
 		const lead = material(after.pieces);
 		return {
 			from: move.from ?? "",
 			to: move.to ?? "",
 			pieza: name(move.type),
-			victima: move.capturedPiece ? name(move.capturedPiece.type) : "pieza",
-			bando: shownColor(lead > 0 ? "WHITE" : "BLACK") === "WHITE" ? "blancas" : "negras",
+			victima: move.capturedPiece ? name(move.capturedPiece.type) : "piece",
+			bando: shownColor(lead > 0 ? "WHITE" : "BLACK") === "WHITE" ? "White" : "Black",
 			ply: String(move.ply ?? after.moves.length),
 			moves: String(Math.ceil((move.ply ?? after.moves.length) / 2)),
 		};

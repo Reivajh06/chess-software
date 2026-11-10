@@ -1,6 +1,5 @@
 import { pieceValues } from "./state.js";
 
-export const cheatCosts = { double: 20, dodge: 15, rewind: 25, flip: 40 };
 export const cheatChances = { double: 0.3, dodge: 0.5, rewind: 0.65, flip: 1 };
 export const flipLead = 5;
 export const cleanPlies = 6;
@@ -36,9 +35,3 @@ export function materialLead(pieces, color) {
 	return lead;
 }
 
-export function secondMove(options, first, pieces) {
-	const busy = new Set([first.from, first.to]);
-	const candidates = options.filter((option) =>
-		!busy.has(option.from) && !busy.has(option.to) && pieces.get(option.to)?.type !== "KING");
-	return candidates[Math.floor(Math.random() * candidates.length)] ?? null;
-}
