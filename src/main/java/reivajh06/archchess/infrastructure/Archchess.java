@@ -9,8 +9,10 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.Event;
 import reivajh06.archchess.infrastructure.adapters.plugins.PluginsManager;
 import reivajh06.archchess.infrastructure.adapters.sqlite.SqliteDatabaseClient;
 import reivajh06.archchess.infrastructure.adapters.web.ChessAPI;
+import reivajh06.plugins.Plugin;
 
 import java.io.File;
+import java.util.List;
 import java.util.UUID;
 
 public class Archchess {
@@ -59,8 +61,12 @@ public class Archchess {
 		userDatabaseClient.init();
 	}
 
-	public PluginsManager getPluginsManager() {
-		return pluginsManager;
+	public List<String> pluginNames() {
+		return pluginsManager.pluginNames();
+	}
+
+	public Plugin plugin(String pluginName) {
+		return pluginsManager.plugin(pluginName);
 	}
 
 	public synchronized void publish(Event event) {

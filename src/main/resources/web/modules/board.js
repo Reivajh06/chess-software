@@ -1,3 +1,4 @@
+import { element } from "./ui.js";
 import { labels } from "./state.js";
 import { gamePiece, setBoardTiles, variantTag } from "./assets.js";
 import { shownColor } from "./colors.js";
@@ -51,7 +52,9 @@ export class BoardView {
 			: null;
 		const captured = animateMove && last.capture
 			? [...this.element.querySelectorAll(".square .piece")].find(image =>
-				image.dataset.color !== last.color &&
+				image.parentElement.dataset.square !== last.from &&
+					// Sprites carry the SHOWN colour (Alfi swaps colours visually), so compare in shown terms.
+					image.dataset.color !== shownColor(last.color) &&
 				(image.parentElement.dataset.square === last.to || !pieces.has(image.parentElement.dataset.square)))
 			: null;
 		const capture = captured ? {
@@ -61,7 +64,7 @@ export class BoardView {
 		this.element.dataset.theme = this.preferences.theme;
 		setBoardTiles(this.element, this.preferences.theme);
 		const bottom = shownColor(black ? "BLACK" : "WHITE");
-		this.element.setAttribute("aria-label", `Tablero, ${bottom === "BLACK" ? "negras" : "blancas"} abajo`);
+		this.element.setAttribute("aria-label", `Board, ${bottom === "BLACK" ? "Black" : "White"} at the bottom`);
 		const targets = this.store.targets;
 		const interactive = this.store.interactive;
 		const movableColor = this.store.movableColor;
@@ -72,8 +75,7 @@ export class BoardView {
 			const fragment = document.createDocumentFragment();
 			[...ranks].forEach((rank, row) =>
 				[...files].forEach((file, column) => {
-					const button = document.createElement("button");
-					button.type = "button";
+					const button = element("button");
 					button.dataset.square = file + rank;
 					button.className = "square";
 					if(("abcdefgh".indexOf(file) + Number(rank)) % 2 === 1) button.classList.add("dark");
@@ -97,9 +99,9 @@ export class BoardView {
 				item?.type === "KING" &&
 				item.color === this.store.state?.checkedColor);
 			const state = this.store.selected === tile
-				? ", seleccionada"
-				: targets.has(tile) ? (item ? ", captura posible" : ", destino legal") : "";
-			const label = `${tile}${item ? `, ${labels[item.type]} ${shownColor(item.color) === "WHITE" ? "blanc" : "negr"}${["QUEEN", "ROOK"].includes(item.type) ? "a" : "o"}` : ""}${state}`;
+				? ", selected"
+				: targets.has(tile) ? (item ? ", capture available" : ", legal destination") : "";
+			const label = `${tile}${item ? `, ${shownColor(item.color) === "WHITE" ? "white" : "black"} ${labels[item.type]}` : ""}${state}`;
 			if(button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
 			const current = button.querySelector(".piece");
 			const key = item ? `${item.type}:${item.color}:${this.preferences.theme}${variantTag(item.type, item.color)}` : null;

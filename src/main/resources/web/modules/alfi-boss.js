@@ -1,14 +1,12 @@
+import { byId, wait, element } from "./ui.js";
 import { Mascot } from "./mascot.js";
 import { pieceImage, setPieceSkin } from "./assets.js";
 import { createFace, drawFace, eraseCross } from "./alfi-face.js";
 import { alfiTrack, alfiTracks } from "./alfi-theme.js";
 import { calmTrack } from "./music.js";
 import { setColorSwap } from "./colors.js";
-import { cheatCosts } from "./cheats.js";
 import { line } from "./mascot.js";
 
-const byId = (id) => document.getElementById(id);
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const rules = { theme: "classic", mascot: true, muted: false, music: true };
 const minimumVolume = 20;
 
@@ -23,22 +21,13 @@ function alfiKing() {
 }
 const glyphs = "#%&@$?!<>/\\|=+*01";
 
-export const fullEnergy = 100;
-const energyLevels = [
-	{ level: "fresh", from: 60, mood: "normal", label: "En forma" },
-	{ level: "tired", from: 30, mood: "cansado", label: "Cansado", line: "bossTired" },
-	{ level: "exhausted", from: 1, mood: "agotado", label: "Agotado", line: "bossExhausted" },
-	{ level: "asleep", from: 0, mood: "durmiendo", label: "Dormido", line: "bossAsleep" },
-];
-export const energyLevel = (energy) => energyLevels.find((entry) => energy >= entry.from);
-
 export class AlfiBoss {
 	constructor(audio, music, preferences) {
 		this.audio = audio;
 		this.music = music;
 		this.preferences = preferences;
 		this.lastProtest = 0;
-		this.energy = fullEnergy;
+		this.track = alfiTrack();
 		this.side = "BLACK";
 		const always = { mascot: true, get theme() { return preferences.theme; } };
 		this.intro = new Mascot(byId("alfi-intro"), audio, always, { idle: false, voice: "alfiTalk" });
@@ -48,8 +37,6 @@ export class AlfiBoss {
 			pokes: { poke: "bossPoke", annoyed: "bossPoked", wake: "bossAsleep" },
 		});
 		this.stage = byId("alfi-stage");
-		this.energyBar = byId("alfi-energy-bar");
-		this.energyBar.replaceChildren(...Array.from({ length: 10 }, () => document.createElement("i")));
 		this.crowds = [...document.querySelectorAll(".alfi-dancers")];
 		for(const crowd of this.crowds) {
 			const first = crowd.dataset.first ?? "BLACK";
@@ -74,19 +61,18 @@ export class AlfiBoss {
 		if(!on) for(const crowd of this.crowds) delete crowd.dataset.pose;
 		document.body.dataset.alfi = on ? "on" : "off";
 		byId("alfi-seat").hidden = !on;
-		byId("alfi-energy").hidden = !on;
 		if(!on) this.seat.silence();
 		for(const element of document.querySelectorAll("[data-alfi-breaks]")) element.classList.toggle("alfi-broken", on);
 		if(on && this.audio.context) for(const track of alfiTracks) track.load(this.audio.context);
-		this.music.play(on ? this.theme() : calmTrack);
+		this.music.play(on ? this.track : calmTrack);
 	}
 
-	theme() {
-		return alfiTrack(energyLevel(this.energy).level);
-	}
-
-	followEnergy() {
-		if(this.active && !this.music.silenced) this.music.play(this.theme());
+	followGame(state, waiting = false) {
+		// Keep the full soundtrack without stamina: tension follows the board and pauses.
+		const phase = waiting ? "asleep" : state.checkedColor ? "check"
+			: state.pieces.size <= 10 ? "exhausted" : state.moves.length >= 20 ? "tired" : "fresh";
+		this.track = alfiTrack(phase);
+		if(this.active && !this.music.silenced) this.music.play(this.track);
 	}
 
 	enforce(on) {
@@ -99,43 +85,6 @@ export class AlfiBoss {
 		} else if(!on && preferences.held) {
 			Object.assign(preferences, preferences.held);
 			delete preferences.held;
-		}
-	}
-
-	get asleep() {
-		return this.energy <= 0;
-	}
-
-	setEnergy(value) {
-		this.energy = Math.max(0, Math.min(fullEnergy, value));
-		this.renderEnergy();
-		this.followEnergy();
-	}
-
-	spend(cost) {
-		if(this.energy < cost || this.asleep) return false;
-		const before = energyLevel(this.energy);
-		this.energy -= cost;
-		const after = energyLevel(this.energy);
-		this.renderEnergy();
-		this.onEnergyChange?.(this.energy);
-		if(after !== before) this.followEnergy();
-		if(after !== before && after.line) this.seat.talk(after.line, 3, { mood: after.mood });
-		return true;
-	}
-
-	renderEnergy() {
-		const { level, mood, label } = energyLevel(this.energy);
-		const lit = Math.ceil(this.energy / 10);
-		[...this.energyBar.children].forEach((segment, index) => segment.classList.toggle("on", index < lit));
-		this.energyBar.setAttribute("aria-valuenow", String(this.energy));
-		byId("alfi-energy").dataset.level = level;
-		byId("alfi-energy-state").textContent = label;
-		this.seat.restMood = mood;
-		this.seat.restClass = this.asleep ? "is-sleeping" : null;
-		if(!this.seat.timer) {
-			this.seat.setMood(mood);
-			this.seat.root.classList.toggle("is-sleeping", this.asleep);
 		}
 	}
 
@@ -163,11 +112,8 @@ export class AlfiBoss {
 		const now = performance.now();
 		if(now - this.lastProtest > 1500) {
 			this.lastProtest = now;
-			if(this.asleep) this.seat.talk("bossAsleep", 4, { mood: "durmiendo" });
-			else {
-				this.audio.play("alfiLaugh");
-				this.seat.talk(kind, 4, { mood: kind === "bossVolume" ? "sonrisa" : "vacio" });
-			}
+			this.audio.play("alfiLaugh");
+			this.seat.talk(kind, 4, { mood: kind === "bossVolume" ? "sonrisa" : "vacio" });
 		}
 		return true;
 	}
@@ -183,30 +129,14 @@ export class AlfiBoss {
 		setColorSwap(on && this.side === "BLACK");
 	}
 
-	canAfford(kind) {
-		return !this.asleep && this.energy >= cheatCosts[kind];
-	}
-
 	cheat(kind) {
-		const before = energyLevel(this.energy);
-		if(!this.canAfford(kind)) return false;
-		this.energy -= cheatCosts[kind];
-		const after = energyLevel(this.energy);
-		this.renderEnergy();
-		this.onEnergyChange?.(this.energy);
 		this.audio.play("alfiEye");
 		const frame = document.querySelector(".board-frame");
 		frame.classList.remove("alfi-cheat");
 		void frame.offsetWidth;
 		frame.classList.add("alfi-cheat");
 		const kinds = { double: "bossDouble", dodge: "bossDodge", rewind: "bossRewind", flip: "bossFlip" };
-		this.seat.speak(line(kinds[kind]), { mood: "brillo" }).then(() => {
-			if(after !== before) {
-				this.followEnergy();
-				if(after.line) this.seat.talk(after.line, 3, { mood: after.mood });
-			}
-		});
-		return true;
+		this.seat.speak(line(kinds[kind]), { mood: "brillo" });
 	}
 
 	dress(theme) {
@@ -224,22 +154,21 @@ export class AlfiBoss {
 	async ending(outcome, alive = () => true) {
 		const scenes = {
 			win: [
-				...(this.asleep ? [["¿eh…? ¿qué me he perdido?", "sorpresa"]] : []),
-				["…heh.", "agotado"],
-				["vaya. lo has conseguido de verdad.", "agotado"],
-				["¿sabes por qué hacía trampas? no era porque fuera fácil.", "cansado"],
-				["era porque eras bueno.", "normal"],
-				["bueno… supongo que esta vez sí.", "guino"],
+				["...well. there goes my quiet afternoon.", "agotado"],
+				["you won. even with all my little adjustments.", "agotado"],
+				["i bent the rules. you kept finding the gaps.", "cansado"],
+				["that's good play. don't make me say it twice.", "normal"],
+				["enjoy the win. i'll be reviewing the fine print.", "guino"],
 			],
 			loss: [
-				["heh.", "sonrisa"],
-				["parece que alguien se ha llevado una buena paliza.", "sonrisa"],
-				["no te preocupes. casi nadie me gana.", "vacio"],
-				["casi.", "brillo"],
+				["hm. quiet board all of a sudden.", "sonrisa"],
+				["your king ran out of safe squares. awkward place to end a plan.", "sonrisa"],
+				["you can try again. i do admire an unfinished argument.", "vacio"],
+				["the board will remember where we left off.", "brillo"],
 			],
 			draw: [
-				["¿tablas? vale. empate técnico.", "aburrido"],
-				["pero que conste que iba ganando.", "guino"],
+				["a draw. nobody wins. clever way to deny me the satisfaction.", "aburrido"],
+				["i'll call it mercy. you can file a different report.", "guino"],
 			],
 		};
 		this.music.cut();
@@ -293,12 +222,12 @@ export class AlfiBoss {
 
 		const opening = encounters === 0
 			? [
-				["heh.", "guino"],
-				["perdona, ¿te tocaba a ti?", "vacio"],
-				["stockfish no ha podido venir. le dije que yo me encargaba.", "contento"],
+				["right. let's adjust a few expectations.", "guino"],
+				["oh, your turn? how inconvenient for the schedule.", "vacio"],
+				["computer needed a break. i offered. very public-spirited of me.", "contento"],
 			]
 			: [
-				["heh.", "guino"],
+				["well. you know where the pieces go.", "guino"],
 				[line(encounters >= 2 ? "bossAgainMany" : "bossAgain", { veces: String(encounters + 1) }), "sonrisa"],
 			];
 		for(const [text, mood] of opening) {
@@ -312,7 +241,7 @@ export class AlfiBoss {
 		const scramble = this.scramble(byId("opponent-name"), "Alfi");
 		for(const element of document.querySelectorAll("[data-alfi-breaks]")) this.shatter(element);
 		this.audio.play("alfiEye");
-		await this.intro.speak("así que hoy juegas conmigo.", { mood: "brillo" });
+		await this.intro.speak("you get me today. quite the upgrade in problems.", { mood: "brillo" });
 		await scramble;
 		if(!live()) return false;
 		await wait(500);
@@ -326,11 +255,11 @@ export class AlfiBoss {
 		if(!live()) return false;
 		await wait(300);
 
-		await this.intro.speak("uy, casi se me olvida.", { mood: "sorpresa" });
+		await this.intro.speak("one little detail. hardly worth reading the rules for.", { mood: "sorpresa" });
 		if(!live()) return false;
 		await crownKing?.();
 		if(!live()) return false;
-		await this.intro.speak("aquí mando yo.", { mood: "sonrisa" });
+		await this.intro.speak("i handle the rules. you handle the consequences.", { mood: "sonrisa" });
 		if(!live()) return false;
 		await wait(600);
 		if(!live()) return false;
@@ -349,7 +278,7 @@ export class AlfiBoss {
 		this.apply(true);
 		this.seat.setMood("brillo");
 		await wait(400);
-		this.seat.say("vas a pasarlo fatal.", 3, { mood: "brillo" });
+		this.seat.say("think you've got a winning move? good. i'd hate for this to be dull.", 3, { mood: "brillo" });
 		return true;
 	}
 
@@ -372,8 +301,7 @@ export class AlfiBoss {
 		if(!rect.width || !rect.height) return;
 		this.audio.play("shatter");
 		const strips = 5;
-		const rubble = document.createElement("div");
-		rubble.className = "alfi-rubble";
+		const rubble = element("div", "alfi-rubble");
 		Object.assign(rubble.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
 		for(let index = 0; index < strips; index++) {
 			const shard = element.cloneNode(true);

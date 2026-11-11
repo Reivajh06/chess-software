@@ -6,24 +6,24 @@ import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.ReadStateResponseDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.ReadStateResponse;
 
 import java.util.UUID;
 
-public class GetReadCurrentState implements EndpointOperator<Void, ReadStateResponseDto> {
+public class GetReadCurrentState implements EndpointOperator<Void, ReadStateResponse> {
 
 	@Override
-	public ReadStateResponseDto run(EndpointContext ctx, Void input) {
+	public ReadStateResponse run(EndpointContext ctx, Void input) {
 		GameSession session = Archchess.instance().session(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
-		return new ReadStateResponseDto(
+		return new ReadStateResponse(
 				session.gameState().status(),
 				false,
 				session.gameState().turnColor(),
 				session.gameState().checkedColor(),
-				FenParser.gameStateToFen(session.gameState()),
+				session.toFEN(),
 				session.gameState().eatenPieces(),
 				session.gameState().movesHistory()
 		);

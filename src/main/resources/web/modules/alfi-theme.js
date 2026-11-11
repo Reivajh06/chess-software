@@ -45,7 +45,7 @@ const lastBreath = theme("ultimo-aliento", 108);
 const asleep = theme("zzz", 96);
 const checkDance = theme("jaque-y-baile", 144, [[12, 20], [28, 36], [40, 48]]);
 
-const byLevel = { fresh: badMove, tired: allIn, exhausted: lastBreath, asleep };
+const byLevel = { fresh: badMove, tired: allIn, exhausted: lastBreath, asleep, check: checkDance };
 
 export const alfiTracks = [badMove, allIn, lastBreath, asleep, checkDance];
 

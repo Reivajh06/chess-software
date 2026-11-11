@@ -60,3 +60,15 @@ export function loopbackHost(hostname = location.hostname) {
 	return hostname === "localhost" || hostname.endsWith(".localhost") ||
 		hostname === "[::1]" || hostname === "::1" || /^127\./.test(hostname);
 }
+
+/** The session of an invitation to watch (a link with ?watch=<id>), or null when the text is not one. */
+export function parseWatchInvitation(value) {
+	const text = String(value ?? "").trim();
+	if(!text.includes("://")) return null;
+	try {
+		const id = new URL(text).searchParams.get("watch");
+		return id && /^[a-zA-Z0-9_-]{1,128}$/.test(id) ? id : null;
+	} catch {
+		return null;
+	}
+}

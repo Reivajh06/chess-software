@@ -13,12 +13,13 @@ const IGNORE = Object.freeze({ type: "ignore" });
 export function boardInteractive(session, state) {
 	if(!session || !state) return false;
 	if(state.status !== "ACTIVE" || state.waitingForOpponent) return false;
-	return session.gamemode !== "AIVAI";
+	// Only the players move: nobody does in a game between machines or in one that is only being watched.
+	return session.gamemode !== "AIVAI" && !session.watching;
 }
 
 export function normalizeLegalMoves(payload) {
 	if(!payload || !Array.isArray(payload.moves)) {
-		throw new Error("El servidor no ha proporcionado movimientos legales válidos.");
+		throw new Error("The server did not provide valid legal moves.");
 	}
 
 	const byDestination = new Map();
@@ -32,20 +33,20 @@ export function normalizeLegalMoves(payload) {
 				!Array.isArray(rule.tiles) ||
 				seenIds.has(rule.moveId)
 		) {
-			throw new Error("El servidor ha enviado un identificador de movimiento no válido.");
+			throw new Error("The server sent an invalid move identifier.");
 		}
 
 		seenIds.add(rule.moveId);
 
 		if(rule.label !== undefined && typeof rule.label !== "string") {
-			throw new Error("El servidor ha enviado una descripción de movimiento no válida.");
+			throw new Error("The server sent an invalid move description.");
 		}
 
 		for(const rawTile of rule.tiles) {
 			const tile = square(rawTile);
 
 			if(!tile) {
-				throw new Error("El servidor ha enviado una casilla legal no válida.");
+				throw new Error("The server sent an invalid legal square.");
 			}
 
 			if(!byDestination.has(tile)) {

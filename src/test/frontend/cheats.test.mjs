@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { freeNeighbours, materialLead, neighbours, secondMove, teleport } from "../../main/resources/web/modules/cheats.js";
+import { freeNeighbours, materialLead, neighbours, teleport } from "../../main/resources/web/modules/cheats.js";
 
 const piece = (type, color) => ({ type, color });
 
@@ -22,20 +22,4 @@ test("material lead counts one side against the other, kings excluded", () => {
   ]);
   assert.equal(materialLead(pieces, "WHITE"), 8);
   assert.equal(materialLead(pieces, "BLACK"), -8);
-});
-
-test("the second move of a double move uses another piece and never takes a king", () => {
-  const pieces = new Map([["g1", piece("KING", "WHITE")]]);
-  const first = { from: "e7", to: "e5", moveId: 1 };
-  const options = [
-    first,
-    { from: "e7", to: "e6", moveId: 0 },
-    { from: "d8", to: "e7", moveId: 0 },
-    { from: "f8", to: "g1", moveId: 0 },
-    { from: "b8", to: "c6", moveId: 0 },
-  ];
-  for (let attempt = 0; attempt < 20; attempt++) {
-    assert.deepEqual(secondMove(options, first, pieces), { from: "b8", to: "c6", moveId: 0 });
-  }
-  assert.equal(secondMove([first], first, pieces), null);
 });

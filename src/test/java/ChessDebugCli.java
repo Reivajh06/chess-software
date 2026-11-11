@@ -88,7 +88,7 @@ public final class ChessDebugCli {
     }
 
     private static GameSession freshSession() {
-        return new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        return new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
     }
 
 

@@ -1,0 +1,181 @@
+/* Shared foundation: tokens, castle-stone chrome and the controls every screen reuses.
+   Chrome art lives in assets/castle (generated pixel art, scaled 3x so pixels stay crisp). */
+:root {
+  color-scheme: dark;
+  --ink: #0d1018;
+  --bg: #141a28;
+  --panel: #1a2132;
+  --surface: #232c42;
+  --surface-hover: #2c3854;
+  --line: #3d4b70;
+  --steel: #55648a;
+  --text: #f1ead9;
+  --muted: #9aa6c4;
+  --accent: #4169e1;
+  --accent-hi: #8fb0ff;
+  --win: #4f8cff;
+  --loss: #e5584c;
+  --draw: #6b7896;
+  --danger: #e5584c;
+  --light: #ded0b8;
+  --dark: #333d54;
+  --pixel: 3px;
+  --header: 64px;
+  --head: "Jersey 10", monospace;
+  --body: "VT323", monospace;
+  --highlight: color-mix(in srgb, var(--accent) 35%, transparent);
+  --legal: color-mix(in srgb, var(--ink) 65%, transparent);
+  --castle: url("../assets/castle/");
+  font: 24px/1.15 var(--body);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  display: grid;
+  grid-template-rows: var(--header) minmax(0, 1fr);
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg) linear-gradient(#0d1018cc, #0d1018ee);
+  image-rendering: pixelated;
+}
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3, strong { font-family: var(--head); font-weight: 400; }
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: var(--text); }
+button { cursor: pointer; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+:focus-visible { outline: var(--pixel) solid var(--accent-hi); outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Stone frame for panels and dialogs (12px slices at 3x). */
+.pixel-frame {
+  border: 36px solid transparent;
+  border-image: url("../assets/castle/panel-frame.png") 12 fill / 1 / 0 repeat;
+  background: none;
+  padding: 6px;
+}
+
+/* Buttons: dark stone by default, royal-blue stone for the main action. */
+button:where(:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel, .title-option, .account-chip)) {
+  min-height: 44px;
+  padding: 2px 18px;
+  border: 8px solid transparent;
+  border-image: url("../assets/castle/button-secondary.png") 4 fill / 1 / 0 repeat;
+  background: none;
+  font-size: 24px;
+}
+button:where(:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel, .title-option, .account-chip)):hover:not(:disabled) { filter: brightness(1.18); }
+button:where(:not(.square, .move-button, .icon-button, .brand, .mascot-sprite, .mascot-dismiss, .choice, [role="tab"], .promotion-choice, .promotion-cancel, .title-option, .account-chip)):active:not(:disabled) { translate: 0 2px; }
+button.primary {
+  border-width: 10px;
+  border-image: url("../assets/castle/button-primary.png") 5 fill / 1 / 0 repeat;
+  font-family: var(--head);
+  font-size: 28px;
+}
+button.danger { border-image: none; border: var(--pixel) solid var(--danger); color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+/* Tabs share the generated tab art everywhere (account, settings, side panel). */
+[role="tab"] {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 10px solid transparent;
+  border-image: url("../assets/castle/tab-normal.png") 5 fill / 1 / 0 repeat;
+  background: none;
+  color: var(--muted);
+  font: 26px var(--head);
+}
+[role="tab"]:hover { color: var(--text); }
+[role="tab"][aria-selected="true"] { border-image-source: url("../assets/castle/tab-active.png"); color: var(--text); }
+
+/* Text fields: plain dark inset slot in the frame's colours. */
+input:not([type="checkbox"], [type="range"]), select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: var(--pixel) solid #101a30;
+  background: #0c1424;
+  box-shadow: 0 0 0 var(--pixel) #6b80a5, inset 0 var(--pixel) #050a14, inset var(--pixel) 0 #050a14;
+}
+input:not([type="checkbox"], [type="range"]):focus { outline: none; box-shadow: 0 0 0 var(--pixel) var(--accent), inset 0 var(--pixel) #050a14, inset var(--pixel) 0 #050a14; }
+input[aria-invalid="true"] { box-shadow: 0 0 0 var(--pixel) var(--danger) !important; }
+
+/* Pixel slider and switch. */
+input[type="range"] { appearance: none; width: 100%; height: 18px; background: none; }
+input[type="range"]::-webkit-slider-runnable-track { height: 12px; background: linear-gradient(var(--accent) 0 0) 0 / var(--fill, 50%) 100% no-repeat, #0c1424; box-shadow: 0 0 0 var(--pixel) #6b80a5; }
+input[type="range"]::-moz-range-track { height: 12px; background: #0c1424; box-shadow: 0 0 0 var(--pixel) #6b80a5; }
+input[type="range"]::-moz-range-progress { height: 12px; background: var(--accent); }
+input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 24px; margin-top: -6px; background: var(--text); box-shadow: 0 0 0 var(--pixel) var(--ink); }
+input[type="range"]::-moz-range-thumb { width: 18px; height: 24px; border: 0; border-radius: 0; background: var(--text); box-shadow: 0 0 0 var(--pixel) var(--ink); }
+.switch { appearance: none; position: relative; width: 52px; height: 28px; margin: 0; background: #0c1424; box-shadow: 0 0 0 var(--pixel) #6b80a5; cursor: pointer; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; background: var(--muted); transition: left 0.15s steps(3); }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { left: 28px; background: var(--text); }
+
+.eyebrow { font-size: 20px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.badge { display: inline-block; padding: 0 8px; font-size: 20px; color: var(--accent-hi); background: var(--surface); box-shadow: 0 0 0 2px var(--line); }
+.notice, .title-error { padding: 6px 10px; font-size: 22px; background: color-mix(in srgb, var(--accent) 14%, var(--panel)); box-shadow: inset var(--pixel) 0 var(--accent); }
+.title-error { background: color-mix(in srgb, var(--danger) 14%, var(--panel)); box-shadow: inset var(--pixel) 0 var(--danger); }
+.ui-icon { width: 32px; height: 32px; object-fit: contain; }
+
+/* Top bar with the generated icons. */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  background: #111727;
+  box-shadow: 0 var(--pixel) var(--steel);
+  z-index: 1;
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px; border: 0; background: none; }
+.brand img { width: 44px; height: 44px; object-fit: contain; }
+.brand-wordmark { font: 34px var(--head); letter-spacing: 2px; }
+.brand-wordmark span { color: var(--accent-hi); }
+body[data-screen="title"] .brand { visibility: hidden; }
+.header-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.icon-button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; }
+.icon-button:hover { filter: brightness(1.25); }
+.pixel-icon { display: block; width: 40px; height: 40px; background: center / contain no-repeat; }
+.pixel-icon[data-icon="music"] { background-image: url("../assets/castle/icons/music.png"); }
+.pixel-icon[data-icon="sound"] { background-image: url("../assets/castle/icons/sound-on.png"); }
+.is-muted .pixel-icon[data-icon="sound"] { background-image: url("../assets/castle/icons/sound-off.png"); }
+.pixel-icon[data-icon="settings"] { background-image: url("../assets/castle/icons/settings.png"); }
+.icon-button.is-muted { opacity: 0.55; }
+#connection { display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); box-shadow: 0 0 0 2px var(--line); }
+#connection::before { content: ""; width: 20px; height: 20px; background: url("../assets/castle/icons/disconnected.png") center / contain; }
+#connection[data-state="online"] { color: var(--text); }
+#connection[data-state="online"]::before { background-image: url("../assets/castle/icons/connected.png"); }
+body[data-account] #connection[data-state="idle"] { display: none; }
+#account-open, #account-logout { min-height: 40px; font-size: 22px; }
+.account-chip { display: inline-flex; align-items: center; gap: 8px; padding: 2px 6px 2px 2px; border: 0; background: none; text-align: left; }
+.account-chip-mark { display: grid; place-items: center; width: 34px; height: 34px; font: 24px var(--head); color: var(--ink); background: var(--tone, var(--accent-hi)); box-shadow: 0 0 0 2px var(--line); }
+.account-chip-text { display: flex; flex-direction: column; line-height: 1; }
+.account-chip-text strong { font-size: 24px; }
+.account-chip-text small { color: var(--muted); font-size: 18px; }
+
+/* One screen at a time. */
+body[data-screen="title"] #game-screen,
+body[data-screen="game"] #title-screen,
+body[data-screen="account"] #title-screen,
+body[data-screen="account"] #game-screen,
+body[data-screen="profile"] #title-screen,
+body[data-screen="profile"] #game-screen,
+body:not([data-screen="profile"]) #profile-screen,
+body:not([data-screen="account"]) #account-screen,
+body:not([data-screen="title"]) #account-open { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+}
+
+/* Motion shared by several screens. */
+@keyframes nudge { 50% { translate: 4px 0; } }
+@keyframes hop { 50% { transform: translateY(-3px); } }
+@keyframes unfold { from { transform: scaleY(0.2); } }
+
+/* The mode menu and the selection dialogs keep the release frame (baked with its classic colours). */
+.title-card.pixel-frame,
+dialog.pixel-frame {
+  border-width: 20px;
+  border-image: url("../assets/castle/release-frame.png") 20 fill / 1 / 0 stretch;
+}

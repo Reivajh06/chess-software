@@ -1,7 +1,6 @@
-import { uiIcon } from "./assets.js";
-import { modeDefinition, pluginLabel } from "./modes.js";
+import { byId, dialog, optionButton } from "./ui.js";
+import { modeDefinition, modeIcon, pluginLabel } from "./modes.js";
 
-const byId = (id) => document.getElementById(id);
 
 export class PluginDialog {
 	constructor(api, onChosen) {
@@ -13,8 +12,8 @@ export class PluginDialog {
 	async open(mode) {
 		const opening = ++this.opening;
 		byId("plugin-title").textContent = modeDefinition(mode).name;
-		this.show("Buscando plugins…");
-		byId("plugin-dialog").showModal();
+		this.show("Looking for plugins…");
+		dialog("plugin-dialog");
 
 		let plugins;
 		try {
@@ -28,33 +27,20 @@ export class PluginDialog {
 		if(plugins.length) {
 			this.ask(mode, plugins, []);
 		} else {
-			this.show("No hay plugins instalados. Añade uno al servidor para jugar este modo.");
+			this.show("No plugins installed. Add one to the server to play this mode.");
 		}
 	}
 
 	ask(mode, plugins, chosen) {
 		const prompts = modeDefinition(mode).pluginPrompts;
 		if(chosen.length === prompts.length) {
-			byId("plugin-dialog").close();
-			this.onChosen(mode, chosen);
+			dialog("plugin-dialog", false);
+			this.onChosen(mode, chosen, plugins);
 			return;
 		}
 		this.show(prompts[chosen.length], plugins.map((name) =>
-			this.option(mode, name, () => this.ask(mode, plugins, [...chosen, name]))));
+			optionButton(pluginLabel(name), null, modeIcon(mode), () => this.ask(mode, plugins, [...chosen, name]))));
 		byId("plugin-options").firstElementChild.focus();
-	}
-
-	option(mode, name, action) {
-		const button = document.createElement("button");
-		const text = document.createElement("span");
-		const label = document.createElement("strong");
-		button.type = "button";
-		button.className = "title-option";
-		label.textContent = pluginLabel(name);
-		text.append(label);
-		button.append(uiIcon(`mode-${mode.toLowerCase()}`, "title-option-art"), text);
-		button.addEventListener("click", action);
-		return button;
 	}
 
 	show(note, options = []) {

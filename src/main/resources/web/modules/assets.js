@@ -1,7 +1,8 @@
-export const logoUrl = "./assets/archchess_logo.png";
+import { element } from "./ui.js";
+export const logoUrl = "./assets/castle/logo.png";
 
 export function uiIcon(name, className = "ui-icon") {
-	const image = document.createElement("img");
+	const image = element("img");
 	image.src = `./assets/ui/${name}.png`;
 	image.className = className;
 	image.alt = "";
@@ -40,21 +41,19 @@ export function gamePiece(type, color, style = "classic") {
 
 export function pieceImage(type, color, style = "classic") {
 	const theme = themes[style] ?? themes.classic;
-	const sprite = document.createElement("span");
-	sprite.className = "piece-sprite";
+	const sprite = element("span", "piece-sprite");
 	sprite.setAttribute("aria-hidden", "true");
 	sprite.dataset.piece = type;
 	sprite.dataset.color = color;
 
-	const image = document.createElement("img");
+	const image = element("img");
 	image.src = `./assets/${theme.pieces}`;
 	image.alt = "";
 	image.draggable = false;
 
 	const [x, y, width, height] = pieceBounds(style, type, color);
 	const displayHeight = classicPieceHeight(type);
-	const artwork = document.createElement("span");
-	artwork.className = "piece-art";
+	const artwork = element("span", "piece-art");
 	artwork.style.width = `${(width / height) * displayHeight * 100}%`;
 	artwork.style.height = `${displayHeight * 100}%`;
 	image.style.width = `${(pieceSheetSize.width / width) * 100}%`;
@@ -71,7 +70,8 @@ export function setBoardTiles(board, style) {
 	const redesigned = theme.spriteLayout === "redesigned";
 	const sheetSize = redesigned ? redesignedTileSheetSize : tileSheetSize;
 	const face = redesigned ? redesignedTileFace : tileFace;
-	board.style.setProperty("--tile-sheet", `url("./assets/${theme.tiles}")`);
+	// Absolute URL: a url() inside a custom property resolves against the stylesheet that uses it (css/).
+	board.style.setProperty("--tile-sheet", `url("${new URL(`../assets/${theme.tiles}`, import.meta.url)}")`);
 	board.style.setProperty(
 		"--tile-size",
 		`${(sheetSize.width / face.size) * 100}% ${(sheetSize.height / face.size) * 100}%`,

@@ -44,6 +44,14 @@ function noise(context, output, { start, length, volume = 0.2, frequency = 2000,
 
 const vary = (value, amount = 0.04) => value * (1 + (Math.random() * 2 - 1) * amount);
 
+function pieceTap(context, output, start, pitch) {
+	const from = vary(pitch, 0.06);
+	return [
+		tone(context, output, { type: "triangle", from, to: from * 0.35, start, length: 0.045, volume: 0.22 }),
+		noise(context, output, { start, length: 0.015, volume: 0.08, frequency: 3200, q: 1.2 }),
+	];
+}
+
 export const synthCues = {
 	select(context, output, start) {
 		return [
@@ -117,10 +125,8 @@ Object.assign(synthCues, {
 			tone(context, output, { from: note(86), start: start + 0.05, length: 0.08, volume: 0.06 }),
 		];
 	},
-	talk(context, output, start) {
-		const pitch = note(62 + Math.floor(Math.random() * 7));
-		return [tone(context, output, { from: pitch * 1.06, to: pitch, start, length: 0.045, volume: 0.07 })];
-	},
+	// "Piece tap": Alfi's typing voice, a chess piece set down on the board.
+	talk: (context, output, start) => pieceTap(context, output, start, 520),
 	victory: (context, output, start) => jingle(context, output, start,
 		[[72, 1], [76, 1], [79, 1], [84, 2], [79, 1], [84, 4]],
 		[[48, 3], [55, 3], [48, 4]]),
@@ -173,11 +179,6 @@ Object.assign(synthCues, {
 });
 
 Object.assign(synthCues, {
-	alfiTalk(context, output, start) {
-		const pitch = note(55 + Math.floor(Math.random() * 5));
-		return [
-			tone(context, output, { from: pitch * 1.05, to: pitch, start, length: 0.05, volume: 0.07 }),
-			tone(context, output, { type: "triangle", from: pitch / 2, start, length: 0.05, volume: 0.12 }),
-		];
-	},
+	// Boss Alfi taps the same piece, a few tones lower.
+	alfiTalk: (context, output, start) => pieceTap(context, output, start, 360),
 });

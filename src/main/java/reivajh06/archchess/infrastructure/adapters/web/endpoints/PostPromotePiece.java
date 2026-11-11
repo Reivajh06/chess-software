@@ -2,21 +2,20 @@ package reivajh06.archchess.infrastructure.adapters.web.endpoints;
 
 import reivajh06.archchess.architecture.domain.logic.GameDirector;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
-import reivajh06.archchess.architecture.domain.services.FenParser;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.Json;
 import reivajh06.archchess.infrastructure.adapters.datalake.events.PromotePieceEvent;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.PromotePieceDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.PromotePiece;
 
 import java.util.UUID;
 
-public class PostPromotePiece implements EndpointOperator<PromotePieceDto, Void> {
+public class PostPromotePiece implements EndpointOperator<PromotePiece, Void> {
 
     @Override
-    public Void run(EndpointContext ctx, PromotePieceDto request) {
+    public Void run(EndpointContext ctx, PromotePiece request) {
         GameSession session = Archchess.instance().session(UUID.fromString(ctx.pathParams().get("sessionId")));
 
         if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
@@ -34,14 +33,14 @@ public class PostPromotePiece implements EndpointOperator<PromotePieceDto, Void>
                 request.newType(),
                 session.id(),
                 session.gameState().status(),
-                FenParser.gameStateToFen(session.gameState())
+                session.toFEN()
         ));
 
         return null;
     }
 
     @Override
-    public PromotePieceDto deserializeBody(String body) {
-        return Json.fromJsonPretty(body, PromotePieceDto.class);
+    public PromotePiece deserializeBody(String body) {
+        return Json.fromJsonPretty(body, PromotePiece.class);
     }
 }

@@ -1,3 +1,4 @@
+import { element } from "./ui.js";
 import { pieceImage } from "./assets.js";
 import { alfiLines, themeLines } from "./alfi-lines.js";
 import { createFace, drawFace, eraseCross } from "./alfi-face.js";
@@ -63,6 +64,9 @@ export class Mascot {
 		this.pokeLines = { poke: "idle", annoyed: "poked", wake: "wakeUp", ...pokes };
 		this.audio = audio;
 		this.preferences = preferences;
+		root.insertAdjacentHTML("beforeend", `<div class="mascot-bubble" hidden>${idle
+			? '<button class="mascot-dismiss" type="button" aria-label="Hide Alfi" title="Hide Alfi (show him again in Settings)">&times;</button>' : ""}
+			<span class="mascot-name">ALFI</span><p class="mascot-text" aria-live="polite"></p></div>`);
 		this.text = root.querySelector(".mascot-text");
 		this.bubble = root.querySelector(".mascot-bubble");
 		this.timer = null;
@@ -78,22 +82,18 @@ export class Mascot {
 		this.theme = preferences?.theme ?? "classic";
 		this.mood = "normal";
 		this.restMood = "normal";
-		this.restClass = null;
 
 		const body = pieceImage("BISHOP", "WHITE", "classic");
 		this.face = createFace(body.querySelector(".piece-art"));
 		eraseCross(body.querySelector("img"));
 		body.append(this.face);
-		const book = document.createElement("span");
-		book.className = "mascot-book";
+		const book = element("span", "mascot-book");
 		book.setAttribute("aria-hidden", "true");
 		book.append(document.createElement("i"));
-		const pawn = document.createElement("span");
-		pawn.className = "mascot-pawn";
+		const pawn = element("span", "mascot-pawn");
 		pawn.setAttribute("aria-hidden", "true");
 		pawn.append(pieceImage("PAWN", "WHITE", "classic"));
-		const zzz = document.createElement("span");
-		zzz.className = "mascot-zzz";
+		const zzz = element("span", "mascot-zzz");
 		zzz.setAttribute("aria-hidden", "true");
 		zzz.innerHTML = "<i>z</i><i>z</i><i>Z</i>";
 		const sprite = root.querySelector(".mascot-sprite");
@@ -168,12 +168,9 @@ export class Mascot {
 	}
 
 	reset(priority) {
-		this.resolveSpoken();
-		clearTimeout(this.timer);
-		clearTimeout(this.lingerTimer);
+		this.silence();
 		this.stopIdle();
 		this.root.classList.add("is-active");
-		this.root.classList.remove("is-staring");
 		this.priority = priority;
 	}
 
@@ -199,17 +196,12 @@ export class Mascot {
 		const letters = [];
 		const words = message.split(/(\s+)/).map((chunk) => {
 			if(/^\s+$/.test(chunk)) {
-				const space = document.createElement("span");
-				space.className = "space";
-				space.textContent = " ";
+				const space = element("span", "space", " ");
 				return space;
 			}
-			const word = document.createElement("span");
-			word.className = "word";
+			const word = element("span", "word");
 			for(const character of chunk) {
-				const letter = document.createElement("span");
-				letter.className = hidden ? "letter" : "letter shown";
-				letter.textContent = character;
+				const letter = element("span", hidden ? "letter" : "letter shown", character);
 				word.append(letter);
 				letters.push(letter);
 			}
@@ -265,7 +257,6 @@ export class Mascot {
 		this.priority = 0;
 		this.root.classList.remove("is-talking");
 		this.stopIdle();
-		if(this.restClass) this.root.classList.add(this.restClass);
 		this.moodTimer = setTimeout(() => this.setMood(this.restMood), moodDelay);
 		if(this.idle) this.idleTimer = setTimeout(() => this.startIdle(), idleDelay);
 		this.lingerTimer = setTimeout(() => this.root.classList.remove("is-active"), lingerDelay);

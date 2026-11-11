@@ -26,13 +26,13 @@ class MoveValidationTest {
             "a1, b1"
     })
     void legalMovesExcludeIllegalDestinations(String from, String to) {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         assertFalse(isOffered(session, from, to));
     }
 
     @Test
     void legalMovesAreEmptyForTheSideNotToMove() {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         assertFalse(isOffered(session, "e7", "e6"));
     }
 
@@ -49,7 +49,7 @@ class MoveValidationTest {
             "a1, b1, 1"
     })
     void updaterAppliesUnvalidatedMovesForDebugging(String from, String to, int moveId) {
-        assertApplied(new GameSession(Gamemode.PVP, Difficulty.NOT_CPU), from, to, moveId);
+        assertApplied(new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN), from, to, moveId);
     }
 
     @Test
@@ -59,13 +59,13 @@ class MoveValidationTest {
 
     @Test
     void unknownRuleDoesNotChangeState() {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         assertUnchanged(session, "e2", "e4", 99);
     }
 
     @Test
     void emptyOriginDoesNotChangeState() {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         assertUnchanged(session, "e3", "e4", 0);
     }
 

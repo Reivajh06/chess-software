@@ -4,27 +4,22 @@ import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.game.GameStatus;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.datalake.EventReader;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.CreateSessionEvent;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.JoinSessionEvent;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.MovePieceEvent;
-import reivajh06.archchess.infrastructure.adapters.datalake.events.PromotePieceEvent;
+import reivajh06.archchess.infrastructure.adapters.datalake.events.*;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.HistoricalMoveDto;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.HistoryDto;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.SessionDto;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.HistoricalMove;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.History;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.Move;
+import reivajh06.archchess.infrastructure.adapters.web.dtos.Session;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class GetSessionsHistory implements EndpointOperator<Void, HistoryDto> {
+public class GetSessionsHistory implements EndpointOperator<Void, History> {
 
 	@Override
-	public HistoryDto run(EndpointContext ctx, Void input) {
+	public History run(EndpointContext ctx, Void input) {
 		Player player = ctx.sessionPlayer();
 
 		if(player.username().startsWith("guest#")) throw new ApiException(HttpStatus.FORBIDDEN, "Player not registered");
@@ -47,7 +42,7 @@ public class GetSessionsHistory implements EndpointOperator<Void, HistoryDto> {
 
 		List<PromotePieceEvent> promoteEvents = eventReader.events(PromotePieceEvent.class);
 
-		List<SessionDto> sessionDtos = new ArrayList<>();
+		List<Session> sessions = new ArrayList<>();
 
 		for(CreateSessionEvent event : createSessionEvents) {
 			String rivalUsername = joinSessionEvents.stream()
@@ -61,7 +56,7 @@ public class GetSessionsHistory implements EndpointOperator<Void, HistoryDto> {
 					.filter(m -> m.sessionId().equals(event.sessionId()))
 					.toList();
 
-			List<HistoricalMoveDto> historicalMoveDtos = new ArrayList<>();
+			List<HistoricalMove> historicalMoves = new ArrayList<>();
 
 			for(int i = 0; i < sessionMoves.size(); i++) {
 				MovePieceEvent move = sessionMoves.get(i);
@@ -74,7 +69,7 @@ public class GetSessionsHistory implements EndpointOperator<Void, HistoryDto> {
 						.findFirst()
 						.orElse(null);
 
-				historicalMoveDtos.add(new HistoricalMoveDto(
+				historicalMoves.add(new HistoricalMove(
 						i + 1,
 						move.username(),
 						move.pieceType(),
@@ -87,22 +82,22 @@ public class GetSessionsHistory implements EndpointOperator<Void, HistoryDto> {
 				));
 			}
 
-			sessionDtos.add(new SessionDto(
+			sessions.add(new Session(
 					event.sessionId(),
 					event.gamemode(),
 					event.timestamp(),
 					event.username(),
 					rivalUsername,
-					historicalMoveDtos.isEmpty() ? GameStatus.ACTIVE : historicalMoveDtos.getLast().status(),
-					historicalMoveDtos
+					historicalMoves.isEmpty() ? GameStatus.ACTIVE : historicalMoves.getLast().status(),
+					historicalMoves
 			));
 		}
 
-		sessionDtos.sort(Comparator.comparing(SessionDto::createdAt).reversed());
+		sessions.sort(Comparator.comparing(Session::createdAt).reversed());
 
-		return new HistoryDto(
+		return new History(
 				player.username(),
-				sessionDtos
+				sessions
 		);
 	}
 

@@ -2,6 +2,7 @@ package reivajh06.archchess.infrastructure.adapters.web;
 
 import io.javalin.http.Context;
 import reivajh06.archchess.architecture.domain.model.Player;
+import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 
 import java.util.Map;
 
@@ -22,11 +23,6 @@ public class JavalinEndpointContext implements EndpointContext {
         return ctx.sessionAttribute("username") == null ?
                 Player.guest(ctx.req().getSession().getId())
                 : new Player(ctx.sessionAttribute("username"), "");
-    }
-
-    @Override
-    public String ip() {
-        return ctx.ip();
     }
 
     @Override

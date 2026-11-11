@@ -1,0 +1,294 @@
+/* Alfi everywhere: the mascot, his speech bubble, his moods and the boss match.
+   The bubble uses the generated castle art: an 8px-slice plaque and a left-pointing tail (16x11, 3x). */
+.mascot {
+  --mascot-size: 96px;
+  --mascot-outline: var(--ink);
+  --float: calc(var(--mascot-size) * -0.06);
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+}
+.mascot.is-talking { --float: calc(var(--mascot-size) * -0.08); }
+.mascot-large { --mascot-size: 216px; align-items: center; gap: 60px; }
+body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) { display: none; }
+
+.mascot-sprite {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--mascot-size);
+  height: var(--mascot-size);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.mascot-sprite::after {
+  content: "";
+  position: absolute;
+  inset: auto 22% 0;
+  height: 7%;
+  background: #0007;
+  clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
+  animation: mascot-shadow 2.6s steps(6) infinite;
+}
+.mascot-sprite > .piece-sprite {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter:
+    drop-shadow(var(--pixel) 0 0 var(--mascot-outline))
+    drop-shadow(calc(-1 * var(--pixel)) 0 0 var(--mascot-outline))
+    drop-shadow(0 var(--pixel) 0 var(--mascot-outline))
+    drop-shadow(0 calc(-1 * var(--pixel)) 0 var(--mascot-outline));
+  animation: mascot-float 2.6s steps(6) infinite;
+}
+.mascot.is-talking :is(.mascot-sprite > .piece-sprite, .mascot-book, .mascot-sprite::after) {
+  animation-duration: 0.9s;
+  animation-timing-function: steps(4);
+}
+.mascot-face {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 1%;
+  overflow: visible;
+  transform: translateX(-50%);
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+/* Speech bubble: slate plaque, blue ALFI label, tail pointing at Alfi. */
+.mascot-bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 560px;
+  padding: 4px 30px 6px 8px;
+  border: 24px solid transparent;
+  border-image: url("../assets/castle/bubble-frame.png") 8 fill / 1 / 0 repeat;
+  cursor: pointer;
+}
+.mascot-bubble::before {
+  content: "";
+  position: absolute;
+  left: -51px;
+  top: calc(50% - 16px);
+  width: 48px;
+  height: 33px;
+  background: url("../assets/castle/bubble-tail.png") 0 0 / 48px 33px no-repeat;
+  pointer-events: none;
+}
+.mascot-name { display: block; margin-bottom: 2px; font: 20px var(--head); letter-spacing: 2px; color: var(--accent-hi); }
+.mascot-text { font: 28px/1.1 var(--body); color: var(--text); }
+.mascot-text .word { white-space: nowrap; }
+.mascot-text .space { display: inline-block; width: 0.4em; }
+.mascot-text .letter { display: inline-block; visibility: hidden; }
+.mascot-text .letter.shown { visibility: visible; animation: letter-pop 0.14s steps(2); }
+.mascot-dismiss {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 28px;
+  line-height: 1;
+}
+.mascot-dismiss:hover { color: var(--danger); }
+
+/* Small Alfi (game side panel): bubble above him, tail pointing down at his head. */
+.mascot-small { flex-direction: column-reverse; align-items: flex-start; gap: 30px; }
+.mascot-small .mascot-bubble { align-self: stretch; }
+.mascot-small .mascot-bubble::before {
+  left: calc(var(--mascot-size) / 2 - 24px);
+  top: auto;
+  bottom: -60px;
+  rotate: -90deg;
+}
+.mascot-small .mascot-sprite { margin-left: 4px; }
+.mascot-small .mascot-text { font-size: 24px; }
+
+/* Moods driven by mascot.js. */
+.mascot-book {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 56%;
+  width: 34%;
+  height: 16%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #f2e6c9 0 46%, #8a5a3b 46% 54%, #f2e6c9 54%);
+  box-shadow: 0 0 0 var(--pixel) var(--mascot-outline), 0 var(--pixel) 0 var(--pixel) #7a2f2f;
+  visibility: hidden;
+  animation: mascot-float 2.6s steps(6) infinite;
+}
+.mascot-book::before {
+  content: "";
+  position: absolute;
+  inset: 22% 8%;
+  background: repeating-linear-gradient(#0000 0 2px, #9c8a6a 2px 4px);
+  mask: linear-gradient(90deg, #000 0 38%, #0000 38% 62%, #000 62%);
+}
+.mascot-book i {
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 46%;
+  background: #fff8e6;
+  transform-origin: left center;
+  animation: page-turn 4s steps(4) infinite;
+}
+.mascot.is-reading .mascot-book { visibility: visible; }
+.mascot.is-reading :is(.mascot-sprite > .piece-sprite, .mascot-book, .mascot-sprite::after) { animation-duration: 3.6s; }
+.mascot.is-staring .mascot-sprite > .piece-sprite { animation: stare 0.3s steps(3) forwards; transform-origin: 50% 95%; }
+.mascot.is-staring .mascot-text { color: var(--muted); }
+.mascot.is-looking .mascot-eyes { animation: look-around 4s steps(1) infinite; }
+.mascot-note { visibility: hidden; fill: var(--accent-hi); }
+.mascot-note rect { fill: inherit; }
+.mascot.is-humming .mascot-note { visibility: visible; animation: note-rise 2.4s steps(6) infinite; }
+.mascot.is-humming .mascot-note-2 { animation-delay: -1.2s; }
+.mascot-steam { animation: steam 1.6s steps(2) infinite; }
+.mascot-pawn { position: absolute; z-index: 2; left: 33%; top: -30%; width: 34%; height: 34%; visibility: hidden; }
+.mascot-pawn > .piece-sprite { width: 100%; height: 100%; }
+.mascot.is-juggling .mascot-pawn { visibility: visible; animation: juggle 1.4s steps(7) infinite; }
+.mascot-zzz {
+  position: absolute;
+  z-index: 2;
+  right: 2%;
+  top: 4%;
+  visibility: hidden;
+  font: calc(var(--mascot-size) * 0.2) var(--head);
+  color: var(--accent-hi);
+  text-shadow: var(--pixel) var(--pixel) 0 var(--mascot-outline);
+}
+.mascot-zzz i { position: absolute; right: 0; top: 0; font-style: normal; opacity: 0; }
+.mascot.is-sleeping .mascot-zzz { visibility: visible; }
+.mascot.is-sleeping .mascot-zzz i { animation: zzz 3s steps(6) infinite; }
+.mascot.is-sleeping .mascot-zzz i:nth-child(2) { animation-delay: 1s; }
+.mascot.is-sleeping .mascot-zzz i:nth-child(3) { animation-delay: 2s; }
+.mascot.is-sleeping :is(.mascot-sprite > .piece-sprite, .mascot-sprite::after) { animation-duration: 4.4s; }
+
+/* Boss match: Alfi sits above the board in the opponent bar, still unless he talks. */
+.mascot-seat { --mascot-size: 96px; position: relative; flex: 0 0 auto; align-self: flex-end; }
+.mascot-seat .mascot-bubble {
+  position: absolute;
+  z-index: 4;
+  left: calc(var(--mascot-size) + 56px);
+  top: 50%;
+  width: calc(var(--board-fit, 600px) - var(--mascot-size) - 80px);
+  max-width: 620px;
+  transform: translateY(-50%);
+}
+.mascot-seat:not(.is-active) .mascot-bubble { display: none; }
+.mascot-seat:not(.is-talking) :is(.mascot-sprite > .piece-sprite, .mascot-sprite::after) { animation: none; }
+body[data-alfi="on"] :is(#game-mascot, #opponent-avatar) { display: none; }
+body[data-alfi="on"] .play-area { --board-fit: min(100cqw, calc(100cqh - 180px)); }
+body[data-alfi="on"] .player[data-side="opponent"] { min-height: 104px; }.player[data-side="opponent"]:has(.mascot-seat.is-active) :is(.player-identity, .turn) { visibility: hidden; }
+.piece-sprite.alfi-king {
+  overflow: visible;
+  filter: drop-shadow(2px 0 0 #15111c) drop-shadow(-2px 0 0 #15111c) drop-shadow(0 2px 0 #15111c) drop-shadow(0 -2px 0 #15111c);
+}
+.alfi-broken { visibility: hidden; }
+.board-frame.alfi-cheat { animation: alfi-cheat 0.6s steps(3); }
+
+/* Reveal: hush, Alfi drops to the centre, buttons shatter, the screen glitches. */
+body.alfi-hush #game-mascot { visibility: hidden; }
+body.alfi-hush .board-frame { filter: saturate(0.35) brightness(0.8); transition: filter 0.4s steps(4); }
+.alfi-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #000c;
+  animation: alfi-dim 0.45s steps(4);
+}
+.alfi-stage.is-leaving { background: transparent; transition: background 0.5s steps(5); }
+.alfi-stage.is-watching { align-items: end; background: #0005; }
+.alfi-stage.is-watching .mascot-intro { --mascot-size: 150px; }
+.alfi-stage.is-dark { background: #000; }
+.mascot-intro { width: min(900px, 100%); }
+.mascot-intro .mascot-sprite { cursor: default; animation: alfi-drop 0.5s steps(5); }
+.alfi-rubble { position: fixed; z-index: 70; pointer-events: none; }
+.alfi-rubble .alfi-shard { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; animation: alfi-shard 1.2s steps(10) forwards; }
+body.alfi-glitch :is(.game-screen, .topbar) { animation: alfi-glitch 0.7s steps(1) 2; }
+
+/* Dancing bishops follow the beat of Alfi's theme (poses set by alfi-boss.js). */
+.alfi-dancers { display: none; }
+body[data-alfi="on"] .alfi-dancers {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  min-height: 72px;
+  padding: 6px 4px 0;
+  box-shadow: inset 0 calc(-1 * var(--pixel)) var(--line);
+}
+body[data-alfi="on"] .alfi-crowd { flex: 1; justify-content: center; gap: clamp(6px, 2vw, 26px); min-height: 0; height: 100%; padding: 0 0 6px; box-shadow: none; }
+.alfi-dancer { width: 56px; height: 56px; transform-origin: 50% 100%; transition: transform 0.08s steps(2); }
+.alfi-crowd .alfi-dancer { width: 40px; height: 40px; }
+.alfi-dancers[data-pose="dip"] .alfi-dancer { transform: translateY(3px) scaleY(0.9); }
+.alfi-dancers[data-pose="left"] .alfi-dancer,
+.alfi-dancers[data-pose="right"] .alfi-dancer:nth-child(even) { transform: translateX(-6px) rotate(-10deg); }
+.alfi-dancers[data-pose="right"] .alfi-dancer,
+.alfi-dancers[data-pose="left"] .alfi-dancer:nth-child(even) { transform: translateX(6px) rotate(10deg); }
+.alfi-dancers[data-pose="hop"] .alfi-dancer { transform: translateY(-12px); }
+.alfi-dancers[data-pose="hop"] .alfi-dancer:nth-child(even) { transform: translateY(-18px) scaleX(-1); }
+.alfi-dancers[data-pose="spin"] .alfi-dancer { transform: scaleX(-1); }
+.alfi-crowd[data-pose="hop"] .alfi-dancer { transform: translateY(-6px); }
+.alfi-crowd[data-pose="hop"] .alfi-dancer:nth-child(even) { transform: translateY(-9px) scaleX(-1); }
+
+@media (max-width: 980px) {
+  .mascot-large { --mascot-size: 120px; gap: 40px; }
+}
+@media (max-width: 850px) {
+  .mascot-small {
+    position: fixed;
+    z-index: 20;
+    inset: auto 10px 10px;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 40px;
+    --mascot-size: 72px;
+    padding: 8px 10px 8px 8px;
+    background: var(--bg);
+    box-shadow: 0 0 0 var(--pixel) var(--line), 0 calc(2 * var(--pixel)) 0 var(--pixel) #000a;
+    animation: pop-in 0.2s steps(3);
+  }
+  .mascot-small:not(.is-active) { display: none; }
+  .mascot-small .mascot-bubble::before { left: -51px; top: calc(50% - 16px); bottom: auto; rotate: none; }
+  .mascot-seat { --mascot-size: 64px; }
+  body[data-alfi="on"] .play-area { --board-fit: 100cqw; }
+  .mascot-intro { flex-direction: column; --mascot-size: 150px; }
+  .mascot-intro .mascot-bubble::before { display: none; }
+  .alfi-crowd .alfi-dancer:nth-child(n + 5) { display: none; }
+}
+
+@keyframes mascot-float { 50% { translate: 0 var(--float); } }
+@keyframes mascot-shadow { 50% { transform: scaleX(0.72); opacity: 0.55; } }
+@keyframes letter-pop { from { transform: translateY(-4px) scale(1.35); } }
+@keyframes stare { to { transform: rotate(9deg) translateX(4%); } }
+@keyframes page-turn { 0%, 70% { transform: scaleX(1); } 85% { transform: scaleX(0.2); } 100% { transform: scaleX(-1); } }
+@keyframes look-around { 25% { transform: translateX(-10px); } 50% { transform: translateX(0); } 75% { transform: translateX(10px); } }
+@keyframes note-rise { from { transform: translate(0, 30px); opacity: 1; } 80% { opacity: 1; } to { transform: translate(10px, -40px); opacity: 0; } }
+@keyframes steam { 50% { transform: translate(0, -10px); } }
+@keyframes juggle { 0%, 100% { transform: translateY(40%) rotate(0deg); } 50% { transform: translateY(-25%) rotate(180deg); } }
+@keyframes zzz { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(60%, -180%); opacity: 0; } }
+@keyframes pop-in { from { transform: translateY(24px); } }
+/* Shared small motions (also used by the title menu and the turn card). */
+@keyframes pop { from { transform: scale(0.4); } }
+@keyframes alfi-dim { from { background: transparent; } }
+@keyframes alfi-drop { from { transform: translateY(-40vh); } 80% { transform: translateY(8px); } }
+@keyframes alfi-shard {
+  12% { transform: translate(calc(var(--dx) * 0.3), -6px) rotate(calc(var(--spin) * 0.3)); }
+  to { transform: translate(var(--dx), 70vh) rotate(var(--spin)); opacity: 0; }
+}
+@keyframes alfi-cheat { 0%, 66% { box-shadow: 0 0 0 4px var(--accent-hi), 0 0 0 8px var(--accent); filter: brightness(1.25) saturate(0.7); } }
+@keyframes alfi-glitch {
+  0% { transform: translate(-6px, 0); filter: drop-shadow(5px 0 #e0455a) drop-shadow(-5px 0 #6fc4ff); }
+  15% { transform: translate(4px, 2px); clip-path: inset(10% 0 55% 0); }
+  30% { transform: translate(0, -3px); filter: invert(1) hue-rotate(180deg); clip-path: none; }
+  45% { transform: translate(-3px, 0) skewX(4deg); filter: drop-shadow(-6px 0 #e0455a) drop-shadow(6px 0 #6fc4ff); }
+  60% { transform: translate(5px, 1px); clip-path: inset(40% 0 20% 0); filter: none; }
+  75% { transform: none; clip-path: none; filter: saturate(2) contrast(1.4); }
+  90% { transform: translate(-2px, 0); filter: drop-shadow(3px 0 #e0455a); }
+}

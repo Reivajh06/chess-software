@@ -27,7 +27,7 @@ final class ChessTestSupport {
     private ChessTestSupport() {}
 
     static GameSession sessionAt(String fen) {
-        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_CPU);
+        GameSession session = new GameSession(Gamemode.PVP, Difficulty.NOT_PLUGIN);
         loadFen(session, fen);
         return session;
     }

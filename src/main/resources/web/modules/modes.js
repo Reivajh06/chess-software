@@ -1,60 +1,64 @@
+import { strongestEngine } from "./engine-plugins.js";
+
 export const gameModes = {
 	PVP: {
-		hint: "Invita a un amigo. O a un enemigo, yo no juzgo.",
-		name: "Contra una persona",
+		hint: "invite a friend. chess really tests the warranty on those.",
+		name: "Play a person",
 		badge: "PvP",
-		detail: "Invitación o en este equipo",
-		available: true,
+		detail: "By invitation or on this device",
 	},
 	LOCAL: {
-		name: "Dos en este equipo",
+		name: "Two on this device",
 		badge: "Local",
-		available: true,
 		server: "PVP",
 	},
-	PVAI: {
-		hint: "La IA aún está aprendiendo. Como Clippy, pero con ganas.",
-		name: "Contra IA",
-		badge: "PvAI",
-		detail: "Elige un plugin instalado",
-		available: true,
-		pluginPrompts: ["¿Qué plugin será tu rival?"],
-	},
 	AIVAI: {
-		hint: "Dos IAs peleándose. Ve preparando palomitas.",
-		name: "IA contra IA",
-		badge: "Espectador",
-		detail: "Elige dos plugins y observa",
-		available: true,
-		pluginPrompts: ["¿Qué plugin juega con blancas?", "¿Qué plugin juega con negras?"],
+		hint: "two machines, one job. somehow you still get to call this a hobby.",
+		name: "Machine vs machine",
+		badge: "Machine vs Machine",
+		detail: "Choose two plugins and watch",
+		pluginPrompts: ["Which plugin plays White?", "Which plugin plays Black?"],
 	},
 	PVCPU: {
-		hint: "Contra la máquina. No se cansa, no se queja y no acepta sobornos.",
-		name: "Contra CPU",
-		badge: "PvCPU",
-		detail: "Elige plugin y dificultad",
-		available: true,
-		pluginPrompts: ["¿Qué plugin moverá la CPU?"],
+		hint: "pick a machine. finally, someone who can process all your excuses.",
+		name: "Play a machine",
+		badge: "vs Machine",
+		detail: "Choose a plugin and difficulty",
+		pluginPrompts: ["Which plugin will be your opponent?"],
+	},
+	SPECTATE: {
+		name: "Spectator",
+		badge: "Spectator",
 	},
 	PRACTICE: {
-		hint: "Juegas contra ti mismo. Por fin un rival a tu altura.",
-		name: "Práctica",
-		badge: "Libre",
-		detail: "Mueve ambos colores libremente",
-		available: true,
+		hint: "move both sides. finally, someone who agrees with your excuses.",
+		name: "Practice",
+		badge: "Free play",
+		detail: "Move both colors freely",
 	},
 };
 
 export const cpuLevels = [
-	{ id: "EASY", name: "Fácil", detail: "Para calentar" },
-	{ id: "MEDIUM", name: "Media", detail: "Ya muerde un poco" },
-	{ id: "HARD", name: "Difícil", detail: "La máquina a pleno rendimiento" },
+	{ id: "EASY", name: "Easy", detail: "A warm-up" },
+	{ id: "MEDIUM", name: "Medium", detail: "Starting to bite" },
+	{ id: "HARD", name: "Hard", detail: "An unforgiving opponent" },
+	{ id: "MAX", name: "Max", detail: "The computer at full strength" },
 ];
 
-export const menuOrder = ["PVP", "PRACTICE", "PVAI", "PVCPU", "AIVAI"];
+export function cpuLevelsFor(plugins) {
+	return strongestEngine(plugins)
+		? [...cpuLevels, { id: "ALFI", name: "???", detail: "…" }]
+		: [...cpuLevels];
+}
+
+export const menuOrder = ["PVP", "PRACTICE", "PVCPU", "AIVAI"];
 
 export const pluginLabel = (name) => name.replace(/\.jar$/i, "");
 
 export function modeDefinition(id) {
-	return gameModes[id] ?? gameModes.PVP;
+	return gameModes[id === "PVAI" ? "PVCPU" : id] ?? gameModes.PVP;
 }
+
+export const modeLabel = (id) => ["PVAI", "PVCPU", "AIVAI"].includes(id)
+	? modeDefinition(id).badge : modeDefinition(id).name;
+export const modeIcon = (id) => `mode-${({ PVAI: "PVCPU", LOCAL: "PVP", SPECTATE: "AIVAI" }[id] ?? id ?? "PRACTICE").toLowerCase()}`;
