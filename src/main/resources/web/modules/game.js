@@ -244,8 +244,8 @@ export function createGame({ api, preferences, audio, sessions, alfi, gameMascot
 		renderGame();
 	}
 
-	function submitMove({ from, to, moveId, promotion = null }) {
-		return sendMove(() => api.move(store.session.sessionId, from, to, moveId, promotion));
+	function submitMove({ from, to, moveId, promotion = null, cheat = false }, options) {
+		return sendMove(() => api.move(store.session.sessionId, from, to, moveId, promotion, { cheat }), options);
 	}
 
 	function sendMove(request, options) {
@@ -275,7 +275,9 @@ export function createGame({ api, preferences, audio, sessions, alfi, gameMascot
 					error.name !== "AbortError" &&
 					!quietFailure()
 			) {
-				setNotice(store.session?.alfiBoss ? "Alfi couldn't move. He'll try again." : error.message, true);
+				// Blame Alfi only for his own moves: a refused player move keeps the server's reason.
+				const alfisTurn = store.session?.alfiBoss && store.state?.turn === store.session.cpu?.color;
+				setNotice(alfisTurn ? "Alfi couldn't move. He'll try again." : error.message, true);
 			}
 		} finally {
 			if(sessionVersion === generation) {

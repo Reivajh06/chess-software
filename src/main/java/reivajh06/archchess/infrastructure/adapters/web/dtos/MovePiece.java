@@ -9,6 +9,7 @@ public record MovePiece(
 		Tile from,
 		Tile to,
 		Integer moveId,
-		UUID playerId
+		UUID playerId,
+		boolean cheat
 ) {
 }

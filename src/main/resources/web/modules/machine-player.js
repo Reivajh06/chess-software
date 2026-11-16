@@ -1,7 +1,8 @@
 import { wait } from "./ui.js";
 import { setColorSwap } from "./colors.js";
 import { legalOptions } from "./cpu.js";
-import { cheatChances, cleanPlies, flipLead, freeNeighbours, materialLead, teleport } from "./cheats.js";
+import { normalizeLegalMoves } from "./selection.js";
+import { cheatChances, cleanPlies, flipLead, materialLead, teleport } from "./cheats.js";
 import { profileLine } from "./alfi-profile.js";
 import { machineName } from "./thinking.js";
 
@@ -140,10 +141,18 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 		const generation = version();
 		store.cpuBusy = true;
 		try {
-			await alfiDodge(command);
+			const dodged = await alfiDodge(command);
 			if(generation !== version()) return;
-			await submitMove(command);
-			if(generation === version()) await alfiRewind(command);
+			// A dodge changes the board: it may give check or block the path, so the player's move is checked
+			// again. If it is no longer possible it is dropped and the player simply chooses again.
+			const move = dodged ? await stillPossible(command) : command;
+			if(generation !== version()) return;
+			if(!move) {
+				store.selection.reset();
+				return;
+			}
+			await submitMove(move);
+			if(generation === version()) await alfiRewind(move);
 		} finally {
 			if(generation === version()) {
 				store.cpuBusy = false;
@@ -154,15 +163,46 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 		}
 	}
 
+	// Dodge: the threatened piece makes one of its own legal, non-capturing moves during the player's turn.
 	async function alfiDodge(command) {
-		const target = store.state.pieces.get(command.to);
-		if(!target || target.color !== store.session.cpu.color || target.type === "KING" || !wantsCheat("dodge")) return;
-		const free = freeNeighbours(store.state.pieces, command.to).filter((tile) => tile !== command.from);
-		if(!free.length) return;
+		const { pieces } = store.state;
+		const target = pieces.get(command.to);
+		const attacker = pieces.get(command.from);
+		// A pawn or king capture may stop being legal once the square is empty, so those are never dodged.
+		if(!target || target.color !== store.session.cpu.color || target.type === "KING" ||
+			["PAWN", "KING"].includes(attacker?.type) || !wantsCheat("dodge")) return false;
+		const escapes = await dodgeEscapes(command.to, target);
+		if(!escapes.length) return false;
+		const { to, moveId } = escapes[Math.floor(Math.random() * escapes.length)];
 		alfi.cheat("dodge");
 		await wait(250);
-		await submitMove(teleport(command.to, free[Math.floor(Math.random() * free.length)]));
+		// A refused cheat stays silent: the player's own move simply goes ahead.
+		const dodged = await submitMove({ from: command.to, to, moveId, cheat: true }, { quietFailure: () => true });
 		await wait(350);
+		return dodged;
+	}
+
+	// The player's move after a dodge, with its current moveId, or null when it is no longer legal.
+	async function stillPossible(command) {
+		try {
+			const options = normalizeLegalMoves(await api.legal(store.session.sessionId, command.from)).get(command.to);
+			return options?.length ? { ...command, moveId: options[0].moveId } : null;
+		} catch {
+			return null;
+		}
+	}
+
+	async function dodgeEscapes(from, piece) {
+		let destinations;
+		try {
+			destinations = normalizeLegalMoves(await api.legal(store.session.sessionId, from, { cheat: true }));
+		} catch {
+			return [];
+		}
+		const promotes = (tile) => piece.type === "PAWN" && /[18]$/.test(tile);
+		return [...destinations]
+			.filter(([tile]) => !store.state.pieces.has(tile) && !promotes(tile))
+			.map(([to, [option]]) => ({ to, moveId: option.moveId }));
 	}
 
 	async function alfiRewind(command) {

@@ -68,8 +68,12 @@ public class MoveRules {
 		Tile enPassantDestination = ctx.gameState().enPassantDestination();
 
 		if(enPassantDestination == null) return false;
+		if(!ctx.to().equals(enPassantDestination)) return false;
 
-        return ctx.to().equals(enPassantDestination);
+		Tile adjacentTile = new Tile(ctx.to().file(), ctx.from().rank());
+
+		if(ctx.gameState().board().pieceAt(adjacentTile) == null) return false;
+		return ctx.gameState().board().pieceAt(ctx.from()).color() != ctx.gameState().board().pieceAt(adjacentTile).color();
     };
 
 	public static final MoveCondition QUEENSIDE_CASTLING = ctx -> {

@@ -58,6 +58,19 @@ test("selection and moves identify the player only by the session cookie: no ID,
   assert.equal(calls[1].options.headers["X-Player-Token"], undefined);
 });
 
+test("only Alfi's cheat moves carry the cheat flag", async (t) => {
+  const bodies = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    if(options?.body) bodies.push(JSON.parse(options.body));
+    return new Response(JSON.stringify(state), { status: 200 });
+  });
+  const api = new ChessApi();
+  await api.move(created.sessionId, "d5", "c4", 3, null, { cheat: true });
+  await api.move(created.sessionId, "e2", "e4", 1);
+  assert.deepEqual(bodies[0], { from: "d5", to: "c4", moveId: 3, cheat: true });
+  assert.deepEqual(bodies[1], { from: "e2", to: "e4", moveId: 1 });
+});
+
 test("PvCPU creates the session and asks the server for the machine's move", async (t) => {
   const replies = [
     { ...created, gamemode: "PVCPU", difficulty: "EASY", playerId, playerColor: "WHITE" },

@@ -4,6 +4,7 @@ import reivajh06.archchess.architecture.domain.logic.GameDirector;
 import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.Tile;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
+import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.Json;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
@@ -28,14 +29,15 @@ public class PostLegalMoves implements EndpointOperator<PieceMovesRequest, Piece
 		GameSession session = Archchess.instance().session(UUID.fromString(ctx.pathParams().get("sessionId")));
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
+		if(input.cheat() && session.gamemode() != Gamemode.PVALFI) throw new ApiException(HttpStatus.FORBIDDEN, "Session's gamemode does not allow cheats");
 
 		Player player = ctx.sessionPlayer();
 
-		if(!session.hasTurn(player)) return new PieceMovesResponse(new ArrayList<>());
+		if(!session.hasTurn(player) && !input.cheat()) return new PieceMovesResponse(new ArrayList<>());
 
 		GameDirector director = new GameDirector(session);
 
-		List<Move> pieceMoves = director.pieceMoves(new Tile(selectedPieceDetails.get("from"))).entrySet().stream()
+		List<Move> pieceMoves = director.pieceMoves(new Tile(selectedPieceDetails.get("from")), input.cheat()).entrySet().stream()
 				.map(e -> new Move(e.getKey(),
 						e.getValue().stream()
 								.map(t -> Map.of("file", t.file().name(), "rank", t.rank().name()))

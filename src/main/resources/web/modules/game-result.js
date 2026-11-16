@@ -11,7 +11,9 @@ export function createResults({ store, alfi, preferences, audio, version, mascot
 		const { lead } = materialBalance(store.state?.pieces);
 		byId("stat-moves").textContent = String(Math.ceil(moves.length / 2));
 		byId("stat-captures").textContent = `${captures("WHITE")} · ${captures("BLACK")}`;
-		byId("stat-material").textContent = !lead ? "=" : `${lead > 0 ? "W" : "B"} +${Math.abs(lead)}`;
+		// The side ahead is named with the colour shown on screen (Alfi swaps how colours look).
+		const ahead = shownColor(lead > 0 ? "WHITE" : "BLACK");
+		byId("stat-material").textContent = !lead ? "=" : `${ahead === "WHITE" ? "W" : "B"} +${Math.abs(lead)}`;
 		byId("result-rematch").textContent = store.session?.gamemode === "PVP" ? "New room" : "Rematch";
 		byId("result-rematch").hidden = !!store.session?.watching; // a watcher does not start games
 		const confetti = document.querySelector(".confetti");

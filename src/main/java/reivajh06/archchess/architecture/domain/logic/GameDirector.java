@@ -38,12 +38,16 @@ public class GameDirector {
 	}
 
 	public Map<Integer, List<Tile>> pieceMoves(Tile location) {
+		return pieceMoves(location, false);
+	}
+
+	public Map<Integer, List<Tile>> pieceMoves(Tile location, boolean ignoreTurn) {
 		Piece pieceToMove = session.gameState().board().pieceAt(location);
 
 		if(pieceToMove == null) return new HashMap<>();
 
 		if(session.gamemode() != Gamemode.PRACTICE) {
-			if(pieceToMove.color() != session.gameState().turnColor()) return new HashMap<>();
+			if(pieceToMove.color() != session.gameState().turnColor() && !ignoreTurn) return new HashMap<>();
 		}
 
 		return GameController.legalPieceMoves(session.gameState(), location);
@@ -146,7 +150,10 @@ public class GameDirector {
 
 		evaluators.forEach(e -> e.evaluate(updatedGameStateBuilder, transitiveState, move, movedPiece, capturedPiece, from, to));
 
-		if(!rotateTurn) updatedGameStateBuilder.turnColor(session.gameState().turnColor());
+		if(!rotateTurn && updatedGameStateBuilder.build().checkedColor() == null) {
+			updatedGameStateBuilder.turnColor(session.gameState().turnColor());
+			updatedGameStateBuilder.enPassantDestination(null);
+		}
 
 		return updatedGameStateBuilder.build();
 	}

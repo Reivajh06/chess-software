@@ -125,8 +125,9 @@ export class ChessApi {
 		return fetch(`/api/sessions/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true, cache: "no-store" })
 			.then(() => undefined, () => undefined);
 	}
-	legal(id, from) {
-		return this.request(`/sessions/${encodeURIComponent(id)}/legal-moves`, { from });
+	// cheat (PVALFI only): the legal moves of one of Alfi's pieces during the player's turn, for a dodge.
+	legal(id, from, { cheat = false } = {}) {
+		return this.request(`/sessions/${encodeURIComponent(id)}/legal-moves`, { from, ...(cheat ? { cheat: true } : {}) });
 	}
 	promote(id, tile, newType) {
 		return this.request(`/sessions/${encodeURIComponent(id)}/promote`, {
@@ -134,13 +135,15 @@ export class ChessApi {
 			newType,
 		}, { allowEmpty: true });
 	}
-	async move(id, from, to, moveId, promotion = null) {
+	// cheat (PVALFI only): one of Alfi's cheat moves. Still a legal move of that piece, but made out of turn.
+	async move(id, from, to, moveId, promotion = null, { cheat = false } = {}) {
 		if(!Number.isSafeInteger(moveId) || moveId < 0)
 			throw new TypeError("The move requires a valid moveId from the server.");
 		const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
 			from,
 			moveId,
 			to,
+			...(cheat ? { cheat: true } : {}),
 		}, { allowEmpty: true });
 		if(promotion) {
 			await this.promote(id, to, promotion);
