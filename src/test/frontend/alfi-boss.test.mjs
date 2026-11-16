@@ -14,10 +14,10 @@ test("every boss cheat stays available after repeated uses without stamina", (t)
     audio: { play() {} }, seat: { speak: (text) => { spoken.push(text); return Promise.resolve(); } },
   });
   for(let round = 0; round < 10; round++) {
-    for(const kind of ["double", "dodge", "rewind", "flip"]) boss.cheat(kind);
+    for(const kind of ["double", "dodge", "flip"]) boss.cheat(kind);
   }
-  assert.equal(spoken.length, 40);
-  assert.equal(effects.length, 40);
+  assert.equal(spoken.length, 30);
+  assert.equal(effects.length, 30);
   assert.ok(spoken.every((text) => typeof text === "string" && text.length));
 });
 

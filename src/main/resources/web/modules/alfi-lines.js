@@ -236,15 +236,6 @@ export const alfiLines = {
 			"my piece moved out of the way. terribly uncooperative of it.",
 		],
 	},
-	bossRewind: {
-		calm: [
-			"undoing that. lovely move. wrong audience.",
-			"let's put that move back where you found it.",
-		],
-		funny: [
-			"rewound. there. a much more convenient past.",
-		],
-	},
 	bossFlip: {
 		calm: [
 			"let's swap sides. you seem so pleased with yours.",

@@ -86,7 +86,8 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   const { session, state: initial } = await new SessionAccess(api).open(null, "PVCPU", "EASY");
   // El servidor ya sienta a la CPU: no se llama a /join.
   assert.equal(calls.length, 1);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVCPU", difficulty: "EASY" });
+  // The page's PVCPU is the server's PVM: api.js translates at the boundary.
+  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVM", difficulty: "EASY" });
   assert.deepEqual(session.cpu, { color: "BLACK" });
   assert.equal(initial.waitingForOpponent, false);
 
@@ -166,7 +167,8 @@ test("the chosen plugins are sent on creation and kept for the rematch", async (
   });
   const pluginNames = ["stockfish.jar", "alfi.jar"];
   const { session } = await new SessionAccess(new ChessApi()).open(null, "AIVAI", undefined, pluginNames);
-  assert.deepEqual(bodies[0], { gamemode: "AIVAI", difficulty: "MAX", pluginNames });
+  // The page's AIVAI is the server's MVM.
+  assert.deepEqual(bodies[0], { gamemode: "MVM", difficulty: "MAX", pluginNames });
   assert.deepEqual(session.pluginNames, pluginNames);
 });
 

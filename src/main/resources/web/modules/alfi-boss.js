@@ -131,7 +131,7 @@ export class AlfiBoss {
 		frame.classList.remove("alfi-cheat");
 		void frame.offsetWidth;
 		frame.classList.add("alfi-cheat");
-		const kinds = { double: "bossDouble", dodge: "bossDodge", rewind: "bossRewind", flip: "bossFlip" };
+		const kinds = { double: "bossDouble", dodge: "bossDodge", flip: "bossFlip" };
 		this.seat.speak(line(kinds[kind]), { mood: "brillo" });
 	}
 

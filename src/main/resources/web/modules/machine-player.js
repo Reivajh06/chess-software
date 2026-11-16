@@ -2,7 +2,7 @@ import { wait } from "./ui.js";
 import { setColorSwap } from "./colors.js";
 import { legalOptions } from "./cpu.js";
 import { normalizeLegalMoves } from "./selection.js";
-import { cheatChances, cleanPlies, flipLead, materialLead, teleport } from "./cheats.js";
+import { cheatChances, cleanPlies, flipLead, materialLead } from "./cheats.js";
 import { profileLine } from "./alfi-profile.js";
 import { machineName } from "./thinking.js";
 
@@ -152,7 +152,6 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 				return;
 			}
 			await submitMove(move);
-			if(generation === version()) await alfiRewind(move);
 		} finally {
 			if(generation === version()) {
 				store.cpuBusy = false;
@@ -203,17 +202,6 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 		return [...destinations]
 			.filter(([tile]) => !store.state.pieces.has(tile) && !promotes(tile))
 			.map(([to, [option]]) => ({ to, moveId: option.moveId }));
-	}
-
-	async function alfiRewind(command) {
-		const moved = store.state?.pieces.get(command.to);
-		const last = store.state?.moves.at(-1);
-		const castled = moved?.type === "KING" && Math.abs(command.from.charCodeAt(0) - command.to.charCodeAt(0)) > 1;
-		if(!moved || last?.capture || command.promotion || castled) return;
-		if(store.state.checkedColor !== store.session.cpu.color || !wantsCheat("rewind")) return;
-		alfi.cheat("rewind");
-		await wait(500);
-		await submitMove(teleport(command.to, command.from));
 	}
 
 	function alfiEncounters(add = 0) {

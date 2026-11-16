@@ -316,26 +316,23 @@ A `PVALFI` session starts on Black's turn (the engine's seat). Reveal order: (1)
 
 ### Alfi's cheats
 
-The existing cheat presentation, fatigue, hints, colour twist and endings remain. Explicit-square cheat attempts still use `/moves` with a `moveId`. **The current backend validates both the caller's turn and legal destinations: it does not provide arbitrary teleport or position-edit support.** `TurnColorUpdater` gives the turn to the rival of the moved piece. The following describes the intended cheats and their current limitations.
+Alfi has four rule-breaks. Every one goes through the server, which stays authoritative; the cheat flags are accepted only in `PVALFI` sessions (403 in any other gamemode).
 
-| Cheat | How it works | When it is sent |
+| Cheat | How it works | When |
 | --- | --- | --- |
 | Opening move | The session starts on Black's (Alfi's) turn, so his first move is a plain `request-move` before he appears. | Reveal. |
-| Double move | The first engine move is `GET /api/sessions/{id}/request-move?keepTurn=true`: the server applies it without passing the turn (PVALFI only; other gamemodes reject the flag with 403). The second is a plain `request-move`, sent only if the game is still ACTIVE and the authoritative turn is still Alfi's; it passes the turn to the player as usual. | Alfi's turn only. |
-| Dodge | When the player is about to capture one of his pieces (not the king, and not with a pawn or king), the frontend reads that piece's `legal-moves` and sends one random non-capturing, non-promoting move as `POST /moves` with `{ from, to, moveId, "cheat": true }`. The server skips only the turn check (PVALFI only; 403 otherwise) and still validates legality. The turn passes to the rival of the moved piece (the player), whose capture then goes ahead on the now empty square. A refused dodge is silent. The escapes come from `POST /legal-moves` with `{ from, "cheat": true }`, which answers for Alfi's piece during the player's turn. | Player's turn. |
-| Rewind | If the player's move gives check (no capture, promotion or castling), that piece teleports back. | CPU's turn. |
-| Board flip | Once per game, when the player leads by 5 points: `POST .../alfi/invert-seats`, then the frontend swaps `playerColor` and the CPU colour, persists them and spins the board. | CPU action. |
+| Double move | `GET /api/sessions/{id}/request-move?keepTurn=true` applies the engine move without passing the turn. The server still passes it when that move gives check or promotes, and clears the en-passant square when it keeps it. The frontend sends the second, plain `request-move` only if the game is ACTIVE and the turn is still Alfi's. | Alfi's turn. |
+| Dodge | When the player is about to capture one of his pieces (not the king, and not with a pawn or king), the frontend asks `POST /legal-moves` with `{ from, "cheat": true }` for that piece and sends one random non-capturing, non-promoting move as `POST /moves` with `{ from, to, moveId, "cheat": true }`. The server skips only the turn check and still validates legality; the turn passes to the player. The player's move is then checked again and dropped if it is no longer legal. A refused dodge is silent. | Player's turn. |
+| Board flip | Once per game, when the player leads by 5 points: `POST /api/sessions/{id}/alfi/invert-seats` (empty body, empty answer) swaps which seat plays each colour; position and turn colour are untouched, so the player now moves the side Alfi was about to move. Only after a success does the frontend swap `playerColor`/`cpu.color`, persist them and spin the board. | Alfi's turn. |
 
-Each cheat costs Alfi energy out of 100: double 20, dodge 15, rewind 25, flip 40. At zero he falls asleep and plays clean.
+Cheats have no cost. After the first six plies each one fires by chance (`cheatChances` in `modules/cheats.js`): double move 15% of Alfi's turns, dodge 50% of eligible captures, and the flip always once the player leads by 5. A rewind cheat was considered and dropped: undoing a move would need history and replay changes on the server.
 
-### Backend support — NEEDED (not implemented in this frontend task)
+### Known backend limitations
 
-- **NEEDED: `cheat` flag on `/moves`** (see Dodge above). **NEEDED: rewind** through the backend's undo; rewind cannot rely on `/moves` bypassing validation. Provide a documented atomic operation that returns authoritative state, with explicit turn handling. After an edit, the frontend must request a new engine move only when the resulting turn belongs to Alfi.
-- **NEEDED: authorized CPU fallback submission.** The random legal fallback is wired in the frontend, but the current `/moves` route rejects a human caller on the machine's turn. A documented way to submit a fallback for the machine seat is required for the fallback to advance a game when the engine is unavailable.
-- **NEEDED: `keepTurn` on `request-move`.** A boolean query flag; when true on a PVALFI session the engine's move is applied without rotating the turn colour. Rejected (403) on any other gamemode.
-- **Board flip: `POST /api/sessions/{id}/alfi/invert-seats`** (empty body, empty answer; 403 if not `PVALFI`). The server swaps which seat plays each colour; position and turn colour are untouched, so the side Alfi was about to move now belongs to the player, who moves next. The frontend calls it first and only flips (swaps `playerColor`/`cpu.color`, spins the board) after a success; on failure Alfi plays a normal move instead.
-- **NEEDED: mutation completion/idempotency for timed-out requests.** A frontend queue prevents overlapping browser calls, but a timed-out HTTP request may still run on the server. The backend must serialize mutations per session or expose completion/idempotency so a late engine result cannot race a retry or fallback.
-- **NEEDED for authoritative plugin classification:** expose an engine/AI type in `/api/plugins` in a future version. Until then the frontend uses only the filename allowlist above; no new response field or endpoint is assumed or implemented here.
+- **CPU fallback submission.** The random legal fallback is wired in the frontend, but `/moves` rejects a human caller on the machine's turn, so it cannot advance a game when the engine is unavailable.
+- **Engine restarts.** If the Stockfish process dies, the plugin does not restart it; every machine game fails until the server restarts.
+- **Mutation completion/idempotency for timed-out requests.** A frontend queue prevents overlapping browser calls, but a timed-out HTTP request may still run on the server.
+- **Plugin classification.** `/api/plugins` exposes only names; the frontend uses the filename allowlist above.
 
 ## 8. UI behaviour tied to this contract
 

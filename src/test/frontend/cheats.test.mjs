@@ -1,12 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { materialLead, teleport } from "../../main/resources/web/modules/cheats.js";
+import { materialLead } from "../../main/resources/web/modules/cheats.js";
 
 const piece = (type, color) => ({ type, color });
-
-test("a teleport uses the first moveset index, which /moves applies to any empty square", () => {
-  assert.deepEqual(teleport("d5", "e6"), { from: "d5", to: "e6", moveId: 0, promotion: null });
-});
 
 test("material lead counts one side against the other, kings excluded", () => {
   const pieces = new Map([

@@ -13,7 +13,6 @@ public class Piece {
 	private final String name;
 	private final String fenCode;
 	private final List<Move> moveset;
-	private final boolean isPromotable;
 
 	private int timesMoved;
 
@@ -22,7 +21,6 @@ public class Piece {
 		this.color = color;
 		name = color.name().charAt(0) + type.firstLetter;
 		this.moveset = moveset;
-		isPromotable = type == PieceType.PAWN;
 		fenCode = color == Color.BLACK ? type.firstLetter.toLowerCase() : type.firstLetter;
 	}
 
@@ -61,10 +59,6 @@ public class Piece {
 
 	public int timesMoved() {
 		return timesMoved;
-	}
-
-	public boolean isPromotable() {
-		return isPromotable;
 	}
 
 	@NotNull
