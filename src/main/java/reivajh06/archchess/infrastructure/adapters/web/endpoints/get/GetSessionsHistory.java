@@ -1,4 +1,4 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.get;
 
 import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.game.GameStatus;
@@ -10,8 +10,8 @@ import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.HistoricalMove;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.History;
-import reivajh06.archchess.infrastructure.adapters.web.dtos.Move;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.Session;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.util.*;
 import java.util.stream.Collectors;

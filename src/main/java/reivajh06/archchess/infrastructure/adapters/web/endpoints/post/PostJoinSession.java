@@ -1,4 +1,4 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.post;
 
 import reivajh06.archchess.architecture.domain.model.Color;
 import reivajh06.archchess.architecture.domain.model.Player;
@@ -9,6 +9,7 @@ import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.Join;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.util.UUID;
 

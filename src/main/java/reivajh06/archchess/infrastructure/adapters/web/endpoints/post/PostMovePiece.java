@@ -1,10 +1,11 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.post;
 
 import reivajh06.archchess.architecture.domain.logic.GameDirector;
 import reivajh06.archchess.architecture.domain.model.Piece;
 import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.Tile;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
+import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.Json;
 import reivajh06.archchess.infrastructure.adapters.datalake.events.MovePieceEvent;
@@ -12,6 +13,7 @@ import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.MovePiece;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,16 +30,20 @@ public class PostMovePiece implements EndpointOperator<MovePiece, Void> {
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
 
+		if(moveRequest.cheat() && session.gamemode() != Gamemode.PVALFI) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "Session's gamemode does not allow cheats");
+		}
+
 		Piece piece = session.gameState().board().pieceAt(moveRequest.from());
 		GameDirector updater = new GameDirector(session);
 
 		Player player = ctx.sessionPlayer();
 
-		if(!session.hasTurn(player)) {
+		if(!session.hasTurn(player) && !moveRequest.cheat()) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "Player tried to move on invalid turn");
 		}
 
-		List<Tile> allowed = updater.pieceMoves(moveRequest.from()).get(moveRequest.moveId());
+		List<Tile> allowed = updater.pieceMoves(moveRequest.from(), moveRequest.cheat()).get(moveRequest.moveId());
 
 		if(allowed == null || !allowed.contains(moveRequest.to())) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "Illegal move");

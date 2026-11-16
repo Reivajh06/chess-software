@@ -39,16 +39,5 @@ function fileTrack({ url, bpm, introBars, bars, chorus }) {
 
 const theme = (name, bpm, chorus = [[12, 36], [40, 48]]) => fileTrack({ url: `./assets/music/alfi-${name}.mp3`, bpm, introBars: 4, bars: 48, chorus });
 
-const badMove = theme("mal-movimiento", 120);
-const allIn = theme("a-por-todas", 132);
-const lastBreath = theme("ultimo-aliento", 108);
-const asleep = theme("zzz", 96);
-const checkDance = theme("jaque-y-baile", 144, [[12, 20], [28, 36], [40, 48]]);
-
-const byLevel = { fresh: badMove, tired: allIn, exhausted: lastBreath, asleep, check: checkDance };
-
-export const alfiTracks = [badMove, allIn, lastBreath, asleep, checkDance];
-
-export function alfiTrack(level = "fresh") {
-	return byLevel[level] ?? badMove;
-}
+// Alfi's one theme: the boss match keeps the same track from the reveal to the end.
+export const alfiTrack = theme("mal-movimiento", 120);

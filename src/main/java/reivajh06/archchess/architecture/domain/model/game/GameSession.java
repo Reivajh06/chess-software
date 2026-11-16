@@ -23,7 +23,7 @@ public class GameSession {
 
         this.gamemode = gamemode;
         this.difficulty = difficulty;
-        this.gameState = GameState.startingState();
+        this.gameState = GameState.startingState(gamemode == Gamemode.PVALFI ? Color.BLACK : Color.WHITE);
         colorPlayers = new HashMap<>();
     }
     public UUID id() {
@@ -61,6 +61,10 @@ public class GameSession {
         }
 
         return null;
+    }
+
+    public void assignColor(Player player, Color color) {
+        colorPlayers.put(color, player);
     }
 
     public Player playerIdentifier(Color color) {

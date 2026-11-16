@@ -36,7 +36,7 @@ test("a big lead is gloating or worry depending on who leads, and only the playe
 test("every rival kind has lines", () => {
   for (const kind of ["bossChecked", "bossCheck", "bossBlunder", "bossQueenLost", "bossQueenWon", "bossLostPiece",
     "bossAhead", "bossBehind", "bossComeback", "bossPromotion", "bossTaunt",
-    "bossAgain", "bossAgainMany", "bossWaiting", "bossReturn", "bossSleepTalk"]) {
+    "bossAgain","bossWaiting", "bossReturn", "bossSleepTalk"]) {
     assert.ok(alfiLines[kind]?.calm?.length, kind);
   }
 });

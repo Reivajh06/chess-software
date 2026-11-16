@@ -1,4 +1,4 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.delete;
 
 import reivajh06.archchess.architecture.domain.model.Color;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
@@ -8,6 +8,7 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.DeleteSession
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.util.UUID;
 

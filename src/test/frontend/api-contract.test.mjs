@@ -58,6 +58,19 @@ test("selection and moves identify the player only by the session cookie: no ID,
   assert.equal(calls[1].options.headers["X-Player-Token"], undefined);
 });
 
+test("only Alfi's cheat moves carry the cheat flag", async (t) => {
+  const bodies = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    if(options?.body) bodies.push(JSON.parse(options.body));
+    return new Response(JSON.stringify(state), { status: 200 });
+  });
+  const api = new ChessApi();
+  await api.move(created.sessionId, "d5", "c4", 3, null, { cheat: true });
+  await api.move(created.sessionId, "e2", "e4", 1);
+  assert.deepEqual(bodies[0], { from: "d5", to: "c4", moveId: 3, cheat: true });
+  assert.deepEqual(bodies[1], { from: "e2", to: "e4", moveId: 1 });
+});
+
 test("PvCPU creates the session and asks the server for the machine's move", async (t) => {
   const replies = [
     { ...created, gamemode: "PVCPU", difficulty: "EASY", playerId, playerColor: "WHITE" },
@@ -73,7 +86,8 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   const { session, state: initial } = await new SessionAccess(api).open(null, "PVCPU", "EASY");
   // El servidor ya sienta a la CPU: no se llama a /join.
   assert.equal(calls.length, 1);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVCPU", difficulty: "EASY" });
+  // The page's PVCPU is the server's PVM: api.js translates at the boundary.
+  assert.deepEqual(JSON.parse(calls[0].options.body), { gamemode: "PVM", difficulty: "EASY" });
   assert.deepEqual(session.cpu, { color: "BLACK" });
   assert.equal(initial.waitingForOpponent, false);
 
@@ -87,6 +101,42 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   assert.equal(calls.length, 3);
   assert.equal(calls[2].options.method, "GET");
   assert.equal(after.fen, state.fen);
+});
+
+test("Alfi is created as PVALFI with the player fixed as White, and the page still sees a machine game", async (t) => {
+  const calls = [];
+  const replies = [
+    { ...created, gamemode: "PVALFI", difficulty: "MAX", playerId, playerColor: "WHITE" },
+    { plugins: ["stockfish.jar"] },
+  ];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    calls.push({ path, options });
+    const reply = path.endsWith("/plugins") ? replies[1] : replies[0];
+    return new Response(JSON.stringify(reply), { status: 200 });
+  });
+  const { session } = await new SessionAccess(new ChessApi()).open(null, "PVCPU", "ALFI");
+  const create = calls.find((call) => call.path === "/api/sessions");
+  assert.deepEqual(JSON.parse(create.options.body),
+    { gamemode: "PVALFI", difficulty: "MAX", pluginNames: ["stockfish.jar"] });
+  assert.equal(session.alfiBoss, true);
+  assert.equal(session.gamemode, "PVCPU");
+  assert.equal(session.playerColor, "WHITE");
+  assert.deepEqual(session.cpu, { color: "BLACK" });
+});
+
+test("Alfi's double move asks for the first engine move with keepTurn; ordinary requests carry no flag", async (t) => {
+  const paths = [];
+  t.mock.method(globalThis, "fetch", async (path) => {
+    paths.push(path);
+    const body = path.includes("/request-move") ? { from: "e7", to: "e5" } : state;
+    return new Response(JSON.stringify(body), { status: 200 });
+  });
+  const api = new ChessApi();
+  await api.machineMove(created.sessionId, { keepTurn: true });
+  await api.machineMove(created.sessionId);
+  const requests = paths.filter((path) => path.includes("/request-move"));
+  assert.equal(requests[0], `/api/sessions/${created.sessionId}/request-move?keepTurn=true`);
+  assert.equal(requests[1], `/api/sessions/${created.sessionId}/request-move`);
 });
 
 test("the installed plugins are read from the server, and an empty list is a valid answer", async (t) => {
@@ -117,7 +167,8 @@ test("the chosen plugins are sent on creation and kept for the rematch", async (
   });
   const pluginNames = ["stockfish.jar", "alfi.jar"];
   const { session } = await new SessionAccess(new ChessApi()).open(null, "AIVAI", undefined, pluginNames);
-  assert.deepEqual(bodies[0], { gamemode: "AIVAI", difficulty: "MAX", pluginNames });
+  // The page's AIVAI is the server's MVM.
+  assert.deepEqual(bodies[0], { gamemode: "MVM", difficulty: "MAX", pluginNames });
   assert.deepEqual(session.pluginNames, pluginNames);
 });
 

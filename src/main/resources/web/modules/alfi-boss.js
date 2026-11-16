@@ -2,13 +2,17 @@ import { byId, wait, element } from "./ui.js";
 import { Mascot } from "./mascot.js";
 import { pieceImage, setPieceSkin } from "./assets.js";
 import { createFace, drawFace, eraseCross } from "./alfi-face.js";
-import { alfiTrack, alfiTracks } from "./alfi-theme.js";
+import { alfiTrack } from "./alfi-theme.js";
 import { calmTrack } from "./music.js";
 import { setColorSwap } from "./colors.js";
 import { line } from "./mascot.js";
 
 const rules = { theme: "classic", mascot: true, muted: false, music: true };
 const minimumVolume = 20;
+// Beats of the reveal around Alfi's first, out-of-turn move: enough time before it to notice the silence and after
+// it to read the board, so the player understands what is happening before he even appears.
+const beforeFirstMove = 2000;
+const afterFirstMove = 2600;
 
 function alfiKing() {
 	const body = pieceImage("BISHOP", "WHITE", "classic");
@@ -27,7 +31,7 @@ export class AlfiBoss {
 		this.music = music;
 		this.preferences = preferences;
 		this.lastProtest = 0;
-		this.track = alfiTrack();
+		this.track = alfiTrack;
 		this.side = "BLACK";
 		const always = { mascot: true, get theme() { return preferences.theme; } };
 		this.intro = new Mascot(byId("alfi-intro"), audio, always, { idle: false, voice: "alfiTalk" });
@@ -63,16 +67,8 @@ export class AlfiBoss {
 		byId("alfi-seat").hidden = !on;
 		if(!on) this.seat.silence();
 		for(const element of document.querySelectorAll("[data-alfi-breaks]")) element.classList.toggle("alfi-broken", on);
-		if(on && this.audio.context) for(const track of alfiTracks) track.load(this.audio.context);
+		if(on && this.audio.context) this.track.load(this.audio.context);
 		this.music.play(on ? this.track : calmTrack);
-	}
-
-	followGame(state, waiting = false) {
-		// Keep the full soundtrack without stamina: tension follows the board and pauses.
-		const phase = waiting ? "asleep" : state.checkedColor ? "check"
-			: state.pieces.size <= 10 ? "exhausted" : state.moves.length >= 20 ? "tired" : "fresh";
-		this.track = alfiTrack(phase);
-		if(this.active && !this.music.silenced) this.music.play(this.track);
 	}
 
 	enforce(on) {
@@ -135,7 +131,7 @@ export class AlfiBoss {
 		frame.classList.remove("alfi-cheat");
 		void frame.offsetWidth;
 		frame.classList.add("alfi-cheat");
-		const kinds = { double: "bossDouble", dodge: "bossDodge", rewind: "bossRewind", flip: "bossFlip" };
+		const kinds = { double: "bossDouble", dodge: "bossDodge", flip: "bossFlip" };
 		this.seat.speak(line(kinds[kind]), { mood: "brillo" });
 	}
 
@@ -200,7 +196,7 @@ export class AlfiBoss {
 		this.aborted = false;
 		const live = () => !this.aborted && alive();
 
-		await wait(1300);
+		await wait(beforeFirstMove);
 		if(!live()) return false;
 		this.music.cut();
 		this.enforce(true);
@@ -209,7 +205,7 @@ export class AlfiBoss {
 		document.body.classList.add("alfi-hush");
 		await cheat();
 		if(!live()) return false;
-		await wait(1100);
+		await wait(afterFirstMove);
 		if(!live()) return false;
 
 		this.intro.setMood("vacio");
@@ -228,7 +224,7 @@ export class AlfiBoss {
 			]
 			: [
 				["well. you know where the pieces go.", "guino"],
-				[line(encounters >= 2 ? "bossAgainMany" : "bossAgain", { veces: String(encounters + 1) }), "sonrisa"],
+				[line("bossAgain"), "sonrisa"],
 			];
 		for(const [text, mood] of opening) {
 			await this.intro.speak(text, { mood });
@@ -296,15 +292,15 @@ export class AlfiBoss {
 		element.textContent = target;
 	}
 
-	shatter(element) {
-		const rect = element.getBoundingClientRect();
+	shatter(target) {
+		const rect = target.getBoundingClientRect();
 		if(!rect.width || !rect.height) return;
 		this.audio.play("shatter");
 		const strips = 5;
 		const rubble = element("div", "alfi-rubble");
 		Object.assign(rubble.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
 		for(let index = 0; index < strips; index++) {
-			const shard = element.cloneNode(true);
+			const shard = target.cloneNode(true);
 			shard.removeAttribute("id");
 			shard.setAttribute("aria-hidden", "true");
 			shard.classList.add("alfi-shard");
@@ -317,7 +313,7 @@ export class AlfiBoss {
 			rubble.append(shard);
 		}
 		document.body.append(rubble);
-		element.classList.add("alfi-broken");
+		target.classList.add("alfi-broken");
 		setTimeout(() => rubble.remove(), 1400);
 	}
 

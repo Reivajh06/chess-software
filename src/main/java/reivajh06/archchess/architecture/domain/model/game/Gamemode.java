@@ -5,5 +5,6 @@ public enum Gamemode {
 	PRACTICE,
 	PVP,
 	PVM,
-	MVM
+	MVM,
+	PVALFI
 }

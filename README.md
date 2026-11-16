@@ -600,7 +600,7 @@ The result is what the frontend shows in the history screen and replays (`ply`, 
 
 ## 11. Communication contract
 
-HTTP + JSON. Squares are lowercase algebraic strings (`"e2"`) in requests; colours are `WHITE`/`BLACK`; statuses are `ACTIVE`, `WHITE_WIN`, `BLACK_WIN`, `DRAW`; game modes are `PRACTICE`, `PVP`, `PVM` (player vs machine) and `MVM` (machine vs machine). The player is identified by the **HTTP session cookie** (a guest becomes a registered player after `login`).
+HTTP + JSON. Squares are lowercase algebraic strings (`"e2"`) in requests; colours are `WHITE`/`BLACK`; statuses are `ACTIVE`, `WHITE_WIN`, `BLACK_WIN`, `DRAW`; game modes are `PRACTICE`, `PVP`, `PVM` (player vs machine), `MVM` (machine vs machine) and `PVALFI` (the Alfi boss match: the player is White, the engine Black, and Black moves first). The player is identified by the **HTTP session cookie** (a guest becomes a registered player after `login`).
 
 The complete frontend-facing description (every body, field and the frontend's behaviour per status) is in [`src/main/resources/FRONTEND_API_CONTRACT.md`](src/main/resources/FRONTEND_API_CONTRACT.md). Summary:
 
@@ -610,9 +610,10 @@ The complete frontend-facing description (every body, field and the frontend's b
 | `GET` | `/api/sessions/{id}` | Read the current state (also used to spectate) |
 | `POST` | `/api/sessions/{id}/join` | Take the free seat |
 | `POST` | `/api/sessions/{id}/legal-moves` | Legal moves of one piece, grouped by `moveId` |
-| `POST` | `/api/sessions/{id}/moves` | Play a move `{from, to, moveId}` |
+| `POST` | `/api/sessions/{id}/moves` | Play a move `{from, to, moveId}` (`"cheat": true`: `PVALFI` only, a legal move made out of turn, used by Alfi's dodge; the same flag on `legal-moves`) |
 | `POST` | `/api/sessions/{id}/promote` | Promote a pawn |
-| `GET` | `/api/sessions/{id}/request-move` | Ask the seat's plugin to play |
+| `GET` | `/api/sessions/{id}/request-move` | Ask the seat's plugin to play (`?keepTurn=true`: `PVALFI` only, the engine keeps the turn for a double move) |
+| `POST` | `/api/sessions/{id}/alfi/invert-seats` | `PVALFI` only: swap which seat plays each colour (Alfi's board flip) |
 | `DELETE` | `/api/sessions/{id}` | Leave the game |
 | `GET` | `/api/history` | Recorded games of the logged-in player |
 | `GET` | `/api/plugins` | Names of the loaded plugins |
@@ -679,7 +680,7 @@ erDiagram
     }
     GAME_SESSION {
         uuid id PK
-        enum gamemode "PRACTICE PVP PVM MVM"
+        enum gamemode "PRACTICE PVP PVM MVM PVALFI"
         enum difficulty "PRACTICE EASY MEDIUM HARD MAX NOT_PLUGIN"
     }
     GAME_STATE {
@@ -754,7 +755,7 @@ Honest note: `ChessApi` is a concrete class rather than an explicit interface, a
 
 1. **Engines as plugins.** The backend has no chess engine; it loads engines from jars at runtime with `ServiceLoader`, re-scanning every minute. Stockfish, a local LLM (Ollama) and a pure-Java engine (Archon) exist as plugins, with difficulty levels that the backend passes through `PluginConfiguration`. *Why it fits:* it keeps the domain independent of any engine (the backend validates whatever the plugin proposes), shows the output-port idea applied to a real extension point, and the assignment does not require an AI, so it is optional and the system works without it.
 2. **Datalake as the history.** Instead of a game table, every fact is appended as an event and the history is a read model over those events. *Why it fits:* the record is traceable and reproducible, and the writer does not care who reads it.
-3. **Alfi, an optional sarcastic opponent and mascot,** and a themeable pixel-art interface (ten board/piece themes, sounds, music). It lives only in the frontend and can be switched off; the game works the same without it. *Why it fits:* it is an experience improvement that does not touch the backend contract.
+3. **Alfi, an optional sarcastic mascot and a hidden boss mode,** plus a themeable pixel-art interface (ten board/piece themes, sounds, music). As a mascot he only lives in the frontend and can be switched off. Choosing `???` as a machine difficulty starts a `PVALFI` game: Alfi makes the first move, reveals himself and swaps how the colours look, then cheats during the game with a double move, a dodge (a threatened piece steps away first) and a one-time board flip when the player gets ahead. *Why it fits:* every rule-break is still decided by the server. The backend gained one gamemode and small, explicit exceptions (`keepTurn`, `cheat`, `invert-seats`) that are rejected with `403` in any other mode, so normal games keep their full validation. A rewind cheat was considered and dropped, because undoing a move would have to rewrite the recorded history.
 4. **Invitation links with a spectator mode** on top of the room mechanism.
 
 ---
@@ -813,10 +814,10 @@ node --test src/test/frontend/*.test.mjs      # frontend
 | `GameSimulationTest` | 37 | Full games: mates, stalemate, draws, en passant, promotion |
 | `FenParserTest` | 5 | FEN generation and parsing |
 | `ChessTestSupportTest` | 9 | Test helpers |
-| **Backend total** | **90** | **All passing** (`BUILD SUCCESS`, run 2026-11-11) |
-| Frontend (`src/test/frontend`) | 140 | **137 passing, 3 failing** (run 2026-11-11) |
+| **Backend total** | **90** | **All passing** (`mvn clean package`, `BUILD SUCCESS`, run 2026-11-16) |
+| Frontend (`src/test/frontend`) | 140 | **All passing** (run 2026-11-16) |
 
-The 3 failing frontend checks are in `machine-turns.test.mjs`: they still expect the old mode name `AIVAI` in the creation request, while `api.js` now sends the backend's `MVM`. It is a stale test expectation, not a runtime failure, and it is pending an update.
+The Alfi mode was also checked by playing full games in the browser against the Stockfish plugin: reveal, double moves, dodges, the board flip, and both endings (Alfi wins / the player wins).
 
 ### Manual checks (documented)
 
@@ -850,7 +851,8 @@ Two users on one room: open the invitation link in a second browser (or a privat
 - **Passwords** are hashed with plain SHA-256 (no salt, no key stretching). Acceptable for a course project, not for production.
 - **Malformed JSON** bodies produce a generic `400` rather than a detailed message.
 - **Plugin loader.** A plugin whose `start()` throws a runtime exception other than `PluginException` (for instance Stockfish on an OS without a bundled engine and no `STOCKFISH_PATH`) terminates the `plugins-reloader` thread: the other plugins stay registered but the one-minute rescan stops until the next restart. It also re-calls `start()` on every loaded plugin at each rescan.
-- **Frontend tests:** 3 stale expectations, see [section 17](#17-verification).
+- **Engine crashes.** If the Stockfish process dies, the plugin does not restart it: machine games fail until the backend restarts. The known causes (impossible positions sent to the engine) are fixed, but there is no recovery.
+- **Alfi mode** relies on three `PVALFI`-only exceptions (`keepTurn`, `cheat`, `invert-seats`). A double move is skipped when its first half gives check or promotes, so the engine never receives a position where the side not to move is in check.
 - **Build:** the `archchess-plugins` library must be installed in the local Maven repository first ([section 3](#3-requirements-and-dependencies)).
 
 ---

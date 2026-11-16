@@ -175,6 +175,8 @@ body[data-mascot="off"] .mascot:not(.mascot-seat, .mascot-intro) { display: none
   left: calc(var(--mascot-size) + 56px);
   top: 50%;
   width: calc(var(--board-fit, 600px) - var(--mascot-size) - 80px);
+  /* A small board must not squeeze the bubble into a column of single words. */
+  min-width: min(260px, calc(100vw - var(--mascot-size) - 96px));
   max-width: 620px;
   transform: translateY(-50%);
 }

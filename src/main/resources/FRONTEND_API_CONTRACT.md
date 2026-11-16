@@ -64,7 +64,7 @@ The page saves the account in localStorage. At startup, if an account is saved, 
 
 ## 1. Create a session
 
-The backend enum is `PRACTICE`, `PVP`, `PVM` (player vs machine) and `MVM` (machine vs machine). Internally the frontend keeps `PVCPU` / `AIVAI`; `modules/api.js` translates at the boundary: it sends `PVCPU`/`PVAI` as `PVM` and `AIVAI` as `MVM`, and reads any `gamemode` of `PVM`/`MVM` back as `PVCPU`/`AIVAI`. A name the server does not know becomes a `null` gamemode, which breaks machine vs machine (its first plugin seat is never created).
+The backend enum is `PRACTICE`, `PVP`, `PVM` (player vs machine) and `MVM` (machine vs machine). Internally the frontend keeps `PVCPU` / `AIVAI`; `modules/api.js` translates at the boundary: it sends `PVCPU`/`PVAI` as `PVM` and `AIVAI` as `MVM`, and reads any `gamemode` of `PVM`/`MVM`/`PVALFI` back as `PVCPU`/`AIVAI`/`PVCPU`. Alfi's `PVALFI` is sent only when the frontend created an Alfi session; it is read back as `PVCPU` so history and labels do not reveal him, and the boss is recognised by the session's own `alfiBoss` flag. A name the server does not know becomes a `null` gamemode, which breaks machine vs machine (its first plugin seat is never created).
 
 `POST /api/sessions`
 
@@ -298,7 +298,7 @@ The plugin dialog reads `GET /api/plugins`, which answers `{ "plugins": ["stockf
 | Step | Route | Notes |
 | --- | --- | --- |
 | Create normal CPU | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD" \| "MAX", "pluginNames": ["stockfish.jar"] }` |
-| Create Alfi (`???`) | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "MAX", "pluginNames": [chosenEngine] }`. `ALFI` is a frontend choice only and is never sent as a difficulty. |
+| Create Alfi (`???`) | `POST /api/sessions` | `{ "gamemode": "PVALFI", "difficulty": "MAX", "pluginNames": [chosenEngine] }`. The server seats the creator as WHITE and the engine as BLACK; the frontend never chooses colours. `ALFI` is a frontend choice only and is never sent as a difficulty. |
 | Seat the CPU | — | Seated on creation. It plays the colour opposite `playerColor`. |
 | CPU / Alfi move | `GET /api/sessions/{id}/request-move` | Uses the current authoritative position whenever `turnColor` is the CPU's colour and no other CPU action is in progress. |
 
@@ -310,28 +310,29 @@ The frontend saves `session.alfiBoss: true` alongside the reveal phase (`session
 
 All board-mutating requests (`request-move` and explicit `/moves`, including promotion/state-read completion) pass through one frontend promise queue. Cheats are awaited before a fresh engine request is scheduled on Alfi's next authoritative turn. No pre-cheat engine move is reused. After four consecutive failed engine requests, the frontend first rereads the authoritative state, then chooses a fresh random legal move only if Alfi still has the turn. It tries the engine again on the next turn. If state/legal reads or the fallback also fail, retries continue; loss of connectivity or backend rejection cannot be repaired by the frontend.
 
+### Alfi's reveal sequence
+
+A `PVALFI` session starts on Black's turn (the engine's seat). Reveal order: (1) after about 2 s of calm, Alfi makes his first move as Black with a plain `request-move`; (2) about 2.6 s later he enters and speaks; (3) the colour inversion: purely visual, no request. Every piece keeps its square and swaps colour on screen; seats, position and turn on the server stay unchanged (the player is still White and moves next); (4) the board unlocks. The board stays locked (no `legal-moves` calls) for the whole reveal. The server must not swap seats for this: a seat swap would make the server and the page disagree about whose turn it is.
+
 ### Alfi's cheats
 
-The existing cheat presentation, fatigue, hints, colour twist and endings remain. Explicit-square cheat attempts still use `/moves` with a `moveId`. **The current backend validates both the caller's turn and legal destinations: it does not provide arbitrary teleport or position-edit support.** `TurnColorUpdater` gives the turn to the rival of the moved piece. The following describes the intended cheats and their current limitations.
+Alfi has four rule-breaks. Every one goes through the server, which stays authoritative; the cheat flags are accepted only in `PVALFI` sessions (403 in any other gamemode).
 
-| Cheat | How it works | When it is sent |
+| Cheat | How it works | When |
 | --- | --- | --- |
-| Opening push | During the reveal, a pawn of Alfi's assigned colour attempts to advance with `moveId` 0 or 1. Needs an authorized out-of-turn move. | Reveal. |
-| Double move | A second fresh `request-move`, awaited after the first. It is attempted only if the authoritative turn still belongs to Alfi; no energy is charged otherwise. The current backend always passes the turn to the human, so a true engine double move is blocked pending the needed support below. | Alfi's turn only. |
-| Dodge | When the player is about to capture one of his pieces (not the king), that piece first teleports to a free neighbouring square. | Player's turn. |
-| Rewind | If the player's move gives check (no capture, promotion or castling), that piece teleports back. | CPU's turn. |
-| Board flip | Once per game, when the player leads by 5 points: the frontend swaps `playerColor` and the CPU colour and persists them. The next frontend CPU turn asks the engine afresh. Server seat reassignment is still needed for the swap to be playable. | CPU action. |
+| Opening move | The session starts on Black's (Alfi's) turn, so his first move is a plain `request-move` before he appears. | Reveal. |
+| Double move | `GET /api/sessions/{id}/request-move?keepTurn=true` applies the engine move without passing the turn. The server still passes it when that move gives check or promotes, and clears the en-passant square when it keeps it. The frontend sends the second, plain `request-move` only if the game is ACTIVE and the turn is still Alfi's. | Alfi's turn. |
+| Dodge | When the player is about to capture one of his pieces (not the king, and not with a pawn or king), the frontend asks `POST /legal-moves` with `{ from, "cheat": true }` for that piece and sends one random non-capturing, non-promoting move as `POST /moves` with `{ from, to, moveId, "cheat": true }`. The server skips only the turn check and still validates legality; the turn passes to the player. The player's move is then checked again and dropped if it is no longer legal. A refused dodge is silent. | Player's turn. |
+| Board flip | Once per game, when the player leads by 5 points: `POST /api/sessions/{id}/alfi/invert-seats` (empty body, empty answer) swaps which seat plays each colour; position and turn colour are untouched, so the player now moves the side Alfi was about to move. Only after a success does the frontend swap `playerColor`/`cpu.color`, persist them and spin the board. | Alfi's turn. |
 
-Each cheat costs Alfi energy out of 100: double 20, dodge 15, rewind 25, flip 40. At zero he falls asleep and plays clean.
+Cheats have no cost. After the first six plies each one fires by chance (`cheatChances` in `modules/cheats.js`): double move 15% of Alfi's turns, dodge 50% of eligible captures, and the flip always once the player leads by 5. A rewind cheat was considered and dropped: undoing a move would need history and replay changes on the server.
 
-### Backend support — NEEDED (not implemented in this frontend task)
+### Known backend limitations
 
-- **NEEDED: authorized Alfi position/turn editing.** Opening pushes, dodge and rewind cannot rely on `/moves` bypassing validation. Provide a documented atomic operation that returns authoritative state, with explicit turn handling. After an edit, the frontend must request a new engine move only when the resulting turn belongs to Alfi.
-- **NEEDED: authorized CPU fallback submission.** The random legal fallback is wired in the frontend, but the current `/moves` route rejects a human caller on the machine's turn. A documented way to submit a fallback for the machine seat is required for the fallback to advance a game when the engine is unavailable.
-- **NEEDED: engine double-move support.** `request-move` selects the plugin from the current server seat and applies its move immediately. It cannot calculate/apply an extra Alfi move on the human's turn. Provide authorized extra-turn control or an atomic engine extra-move operation; never make the frontend call the existing route on the human's turn or reuse stale/random suggestions for the second move.
-- **NEEDED: atomic seat swap for the gameplay flip.** Update the human/plugin colour assignments on the server before requesting the engine for its new colour. A browser-only swap cannot change which plugin `request-move` chooses or which human `/moves` authorizes.
-- **NEEDED: mutation completion/idempotency for timed-out requests.** A frontend queue prevents overlapping browser calls, but a timed-out HTTP request may still run on the server. The backend must serialize mutations per session or expose completion/idempotency so a late engine result cannot race a retry or fallback.
-- **NEEDED for authoritative plugin classification:** expose an engine/AI type in `/api/plugins` in a future version. Until then the frontend uses only the filename allowlist above; no new response field or endpoint is assumed or implemented here.
+- **CPU fallback submission.** The random legal fallback is wired in the frontend, but `/moves` rejects a human caller on the machine's turn, so it cannot advance a game when the engine is unavailable.
+- **Engine restarts.** If the Stockfish process dies, the plugin does not restart it; every machine game fails until the server restarts.
+- **Mutation completion/idempotency for timed-out requests.** A frontend queue prevents overlapping browser calls, but a timed-out HTTP request may still run on the server.
+- **Plugin classification.** `/api/plugins` exposes only names; the frontend uses the filename allowlist above.
 
 ## 8. UI behaviour tied to this contract
 

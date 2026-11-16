@@ -60,7 +60,7 @@ export class SessionAccess {
 		const local = !sessionId && mode === "LOCAL";
 		const practice = !sessionId && mode === "PRACTICE";
 		const created = sessionId ? null :
-			await this.api.create(modeDefinition(mode).server ?? mode, difficulty, pluginNames);
+			await this.api.create(alfiBoss ? "ALFI" : modeDefinition(mode).server ?? mode, difficulty, pluginNames);
 		const id = sessionId ?? created.sessionId ?? created.id;
 		if(!id)
 			throw new Error("The server did not provide the session ID.");

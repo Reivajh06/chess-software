@@ -17,8 +17,10 @@ const defaultMessages = {
 
 // The server names its machine modes PVM (player vs machine) and MVM (machine vs machine). The page keeps its own
 // PVCPU / AIVAI ids, so gamemodes are translated here, at the boundary, and nowhere else.
-const toServerMode = { PVCPU: "PVM", PVAI: "PVM", AIVAI: "MVM" };
-const fromServerMode = { PVM: "PVCPU", MVM: "AIVAI" };
+// PVALFI is the server's Alfi mode. The page keeps showing it as an ordinary machine game (PVCPU): the boss is
+// recognised by the session's own `alfiBoss` flag, so the history and labels never give him away before the reveal.
+const toServerMode = { PVCPU: "PVM", PVAI: "PVM", AIVAI: "MVM", ALFI: "PVALFI" };
+const fromServerMode = { PVM: "PVCPU", MVM: "AIVAI", PVALFI: "PVCPU" };
 
 function localModes(value) {
 	if(Array.isArray(value)) return value.map(localModes);
@@ -123,8 +125,9 @@ export class ChessApi {
 		return fetch(`/api/sessions/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true, cache: "no-store" })
 			.then(() => undefined, () => undefined);
 	}
-	legal(id, from) {
-		return this.request(`/sessions/${encodeURIComponent(id)}/legal-moves`, { from });
+	// cheat (PVALFI only): the legal moves of one of Alfi's pieces during the player's turn, for a dodge.
+	legal(id, from, { cheat = false } = {}) {
+		return this.request(`/sessions/${encodeURIComponent(id)}/legal-moves`, { from, ...(cheat ? { cheat: true } : {}) });
 	}
 	promote(id, tile, newType) {
 		return this.request(`/sessions/${encodeURIComponent(id)}/promote`, {
@@ -132,13 +135,15 @@ export class ChessApi {
 			newType,
 		}, { allowEmpty: true });
 	}
-	async move(id, from, to, moveId, promotion = null) {
+	// cheat (PVALFI only): one of Alfi's cheat moves. Still a legal move of that piece, but made out of turn.
+	async move(id, from, to, moveId, promotion = null, { cheat = false } = {}) {
 		if(!Number.isSafeInteger(moveId) || moveId < 0)
 			throw new TypeError("The move requires a valid moveId from the server.");
 		const response = await this.request(`/sessions/${encodeURIComponent(id)}/moves`, {
 			from,
 			moveId,
 			to,
+			...(cheat ? { cheat: true } : {}),
 		}, { allowEmpty: true });
 		if(promotion) {
 			await this.promote(id, to, promotion);
@@ -152,8 +157,14 @@ export class ChessApi {
 	}
 	// The server asks the plugin for its move, applies it (promotion included) and answers with the move it
 	// played. It can take a while for AI plugins, hence the long timeout.
-	async machineMove(id) {
-		const response = await this.request(`/sessions/${encodeURIComponent(id)}/request-move`, undefined, { timeout: 120000 });
+	// Alfi's board flip (PVALFI only): the server swaps which seat plays each colour. Empty answer.
+	alfiInvertSeats(id) {
+		return this.request(`/sessions/${encodeURIComponent(id)}/alfi/invert-seats`, {}, { allowEmpty: true });
+	}
+	// keepTurn (PVALFI only): the server applies the move without passing the turn, for Alfi's double move.
+	async machineMove(id, { keepTurn = false } = {}) {
+		const query = keepTurn ? "?keepTurn=true" : "";
+		const response = await this.request(`/sessions/${encodeURIComponent(id)}/request-move${query}`, undefined, { timeout: 120000 });
 		const move = playedMove(response);
 		const details = normalizeDetails(response.details);
 		// The plugin that played, when the server says so: as a field of the response or inside the details.

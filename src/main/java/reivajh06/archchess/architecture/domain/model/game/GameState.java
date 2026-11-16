@@ -26,10 +26,10 @@ public record GameState(
 		Map<Position, Integer> positions
 ) {
 
-    public static GameState startingState() {
+    public static GameState startingState(Color color) {
 		GameState initialState = new GameStateBuilder()
 				.board(Board.startingBoard())
-				.turnColor(Color.WHITE)
+				.turnColor(color)
 				.checkedColor(null)
 				.eatenPieces(Map.of(Color.BLACK, new ArrayList<>(), Color.WHITE, new ArrayList<>()))
 				.status(GameStatus.ACTIVE)
