@@ -1,6 +1,6 @@
 import { wait } from "./ui.js";
 import { setColorSwap } from "./colors.js";
-import { legalOptions, outOfTurnPawnPush } from "./cpu.js";
+import { legalOptions } from "./cpu.js";
 import { cheatChances, cleanPlies, flipLead, freeNeighbours, materialLead, teleport } from "./cheats.js";
 import { profileLine } from "./alfi-profile.js";
 import { machineName } from "./thinking.js";
@@ -18,10 +18,7 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 			const stillWaiting = store.state?.moves.length === ply && store.state?.status === "ACTIVE" &&
 				store.state.turn === session.playerColor && !store.cpuBusy;
 			if(!stillWaiting || document.body.dataset.screen !== "game") return;
-			if(alfi.active && !alfi.seat.timer) {
-				alfi.followGame(store.state, true);
-				alfi.seat.talk("bossWaiting", 1);
-			}
+			if(alfi.active && !alfi.seat.timer) alfi.seat.talk("bossWaiting", 1);
 			scheduleAlfiWait(nudges + 1);
 		}, nudges ? 30000 : 22000);
 	}
@@ -63,19 +60,20 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 		try {
 			const rival = machine === store.session.cpu;
 			if(rival && await alfiFlip()) return;
-			const double = rival && wantsCheat("double");
-			if(generation !== version()) return;
 			const boss = store.session.alfiBoss;
+			const double = rival && boss && wantsCheat("double");
+			if(generation !== version()) return;
 			if(!boss) thinkingLog.start(machineName(store.session), machine.color);
-			const move = await playEngineMove(generation, machine);
+			// Double move: the first engine move keeps the turn on Alfi (PVALFI only), so the second one is an
+			// ordinary request-move that hands the turn to the player.
+			const move = await playEngineMove(generation, machine, { keepTurn: double });
 			// Against a person the raw thinking stays hidden: it would reveal the machine's plans.
 			if(generation === version() && !boss) {
 				thinkingLog.end(move, machineDetails, { thinking: !store.session.cpu, pluginName: machinePlugin });
 				// Between machines the page learns who plays each colour when the server names the plugin.
 				if(machinePlugin) store.session.machineNames = { ...store.session.machineNames, [machine.color]: machinePlugin };
 			}
-			// request-move always uses the authoritative side to move. A second engine
-			// move needs backend turn control (contract §7); never ask on the human's turn.
+			// Only if the server really kept the turn: never ask for an engine move on the player's turn.
 			if(move && double && generation === version() && store.state?.status === "ACTIVE" &&
 				store.state.turn === machine.color) {
 				alfi.cheat("double");
@@ -92,10 +90,10 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 		}
 	}
 
-	async function playEngineMove(generation, machine) {
+	async function playEngineMove(generation, machine, request = {}) {
 		if(generation !== version() || store.state?.status !== "ACTIVE" ||
 			store.state.turn !== machine.color) return null;
-		const move = await submitMachineMove();
+		const move = await submitMachineMove(request);
 		if(generation !== version()) return null;
 		cpuFailures = move ? 0 : cpuFailures + 1;
 		if(move || !store.session.alfiBoss) return move;
@@ -121,6 +119,9 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 	async function alfiFlip() {
 		const session = store.session;
 		if(session.flipped || !wantsCheat("flip") || materialLead(store.state.pieces, session.playerColor) < flipLead) return false;
+		// The server swaps who plays each colour; the page only follows once it has. A refusal means no flip.
+		const swapped = await api.alfiInvertSeats(session.sessionId).then(() => true, () => false);
+		if(!swapped) return false;
 		alfi.cheat("flip");
 		session.flipped = true;
 		[session.playerColor, session.cpu.color] = [session.cpu.color, session.playerColor];
@@ -194,11 +195,32 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 		gameMascot.silence();
 		renderGame();
 
-		await alfi.reveal({
-			cheat: async () => {
-				const move = outOfTurnPawnPush(store.state.pieces, session.cpu.color);
-				if(move) await submitMove(move);
-			},
+		try {
+			await revealScenes(generation, session);
+		} catch (error) {
+			// A broken animation must never leave the board locked: skip to the end of the reveal and play on.
+			console.error(error);
+			if(generation === version()) {
+				alfi.abort();
+				session.alfi = "revealed";
+				sessions.persist(session);
+				alfi.apply(true);
+			}
+		}
+		if(generation !== version()) return;
+		store.cpuBusy = false;
+		renderGame();
+		scheduleCpu();
+		schedulePoll(0);
+		scheduleAlfiWait();
+		const comment = profileLine(session.profile);
+		if(comment) setTimeout(() => alfi.active && alfi.seat.talk(comment.kind, 2, {}, comment.vars), 5000);
+	}
+
+	function revealScenes(generation, session) {
+		return alfi.reveal({
+			// PVALFI starts on Black's turn: Alfi's first move is an ordinary engine move before he shows up.
+			cheat: () => submitMachineMove(),
 			alive: () => generation === version(),
 			encounters: alfiEncounters(),
 			onRevealed: () => {
@@ -206,18 +228,10 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 				sessions.persist(session);
 				alfiEncounters(1);
 			},
+			// The inversion is only visual: every piece stays where it is and swaps colour on screen, while the
+			// seats and the position on the server stay exactly the same.
 			swapColors: async (onRow) => {
-				// The server swaps the seats: the player ends up Black and Alfi White, the position stays as it is.
-				// The page mirrors that and spins the board so the player's pieces are at the bottom again. If the
-				// server refuses, nothing changed there, so nothing is shown here either.
-				const swapped = await api.alfiInvertColors(session.sessionId).then(() => true, () => false);
-				if(!swapped) return;
-				onRow?.();
-				[session.playerColor, session.cpu.color] = [session.cpu.color, session.playerColor];
-				alfi.side = session.cpu.color;
-				setColorSwap(false);
-				sessions.persist(session);
-				await board.spin();
+				await board.colorWave(() => setColorSwap(true), onRow);
 				renderGame();
 			},
 			crownKing: async () => {
@@ -232,14 +246,6 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 				renderGame();
 			},
 		});
-		if(generation !== version()) return;
-		store.cpuBusy = false;
-		renderGame();
-		scheduleCpu();
-		schedulePoll(0);
-		scheduleAlfiWait();
-		const comment = profileLine(session.profile);
-		if(comment) setTimeout(() => alfi.active && alfi.seat.talk(comment.kind, 2, {}, comment.vars), 5000);
 	}
 
 
@@ -249,13 +255,13 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 	// hears about it when it keeps failing.
 	const silentMachineFailures = 4;
 
-	async function submitMachineMove() {
+	async function submitMachineMove(request = {}) {
 		const generation = version();
 		let played = null;
 		machineDetails = {};
 		machinePlugin = null;
 		await sendMove(async () => {
-			const { move, details, plugin, state } = await api.machineMove(store.session.sessionId);
+			const { move, details, plugin, state } = await api.machineMove(store.session.sessionId, request);
 			if(generation !== version()) return state;
 			played = move;
 			machineDetails = store.session.alfiBoss ? {} : details;

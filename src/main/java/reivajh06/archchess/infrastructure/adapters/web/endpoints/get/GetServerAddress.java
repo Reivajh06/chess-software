@@ -1,9 +1,10 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.get;
 
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.ServerAddress;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;

@@ -2,8 +2,8 @@ package reivajh06.archchess.infrastructure.adapters.web;
 
 import io.javalin.http.Context;
 import reivajh06.archchess.architecture.domain.model.Player;
-import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 
+import java.util.List;
 import java.util.Map;
 
 public class JavalinEndpointContext implements EndpointContext {
@@ -33,6 +33,11 @@ public class JavalinEndpointContext implements EndpointContext {
     @Override
     public Map<String, String> pathParams() {
         return ctx.pathParamMap();
+    }
+
+    @Override
+    public Map<String, List<String>> queryParams() {
+        return ctx.queryParamMap();
     }
 
     @Override

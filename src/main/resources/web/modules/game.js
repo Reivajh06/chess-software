@@ -175,7 +175,6 @@ export function createGame({ api, preferences, audio, sessions, alfi, gameMascot
 			}
 		}
 
-		alfi.followGame(state);
 		if(["WHITE_WIN", "BLACK_WIN", "DRAW"].includes(state.status)) {
 			showResult(state.status);
 		} else if(store.reviewPly === null) {

@@ -189,15 +189,6 @@ export const alfiLines = {
 			"oh, you came back. i'll put on my welcoming expression. done.",
 		],
 	},
-	bossAgainMany: {
-		calm: [
-			"visit {veces}. familiar board. familiar warning.",
-			"game {veces}. still looking for the ending you ordered?",
-		],
-		funny: [
-			"{veces} visits. i'd offer a loyalty card, but you know the reward.",
-		],
-	},
 	bossWaiting: {
 		calm: [
 			"take your time. the next move will still be waiting.",

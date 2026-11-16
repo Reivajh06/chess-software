@@ -1,4 +1,4 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.post;
 
 import reivajh06.archchess.architecture.domain.logic.GameDirector;
 import reivajh06.archchess.architecture.domain.model.Piece;
@@ -12,6 +12,7 @@ import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.MovePiece;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.util.List;
 import java.util.UUID;

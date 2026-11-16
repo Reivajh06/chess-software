@@ -110,6 +110,21 @@ test("Alfi is created as PVALFI with the player fixed as White, and the page sti
   assert.deepEqual(session.cpu, { color: "BLACK" });
 });
 
+test("Alfi's double move asks for the first engine move with keepTurn; ordinary requests carry no flag", async (t) => {
+  const paths = [];
+  t.mock.method(globalThis, "fetch", async (path) => {
+    paths.push(path);
+    const body = path.includes("/request-move") ? { from: "e7", to: "e5" } : state;
+    return new Response(JSON.stringify(body), { status: 200 });
+  });
+  const api = new ChessApi();
+  await api.machineMove(created.sessionId, { keepTurn: true });
+  await api.machineMove(created.sessionId);
+  const requests = paths.filter((path) => path.includes("/request-move"));
+  assert.equal(requests[0], `/api/sessions/${created.sessionId}/request-move?keepTurn=true`);
+  assert.equal(requests[1], `/api/sessions/${created.sessionId}/request-move`);
+});
+
 test("the installed plugins are read from the server, and an empty list is a valid answer", async (t) => {
   const calls = [];
   const replies = [{ plugins: ["stockfish.jar", "alfi.jar"] }, { plugins: [] }];

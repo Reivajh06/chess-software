@@ -30,7 +30,7 @@ const kindMoods = {
 	bossLostPiece: "sospecha", bossAhead: "aburrido", bossBehind: "vacio", bossComeback: "brillo", bossPromotion: "sospecha",
 	bossTaunt: "sonrisa", bossProfileLosses: "sonrisa", bossProfileWins: "sospecha", bossProfileFirstMove: "sospecha",
 	bossProfilePiece: "sospecha",
-	bossAgain: "guino", bossAgainMany: "sonrisa", bossWaiting: "aburrido", bossReturn: "sonrisa", bossSleepTalk: "durmiendo",
+	bossAgain: "guino", bossWaiting: "aburrido", bossReturn: "sonrisa", bossSleepTalk: "durmiendo",
 };
 const moodFor = (kind) => kindMoods[kind] ?? (kind.startsWith("theme-") ? "contento" : "normal");
 

@@ -312,7 +312,7 @@ All board-mutating requests (`request-move` and explicit `/moves`, including pro
 
 ### Alfi's reveal sequence
 
-Alfi's own endpoints live under `/api/sessions/{id}/alfi/...` and are accepted only for `PVALFI` sessions. Reveal order: (1) after about 2 s of calm, Alfi makes one out-of-turn Black move; (2) about 2.6 s later he enters and speaks; (3) the frontend calls `POST /api/sessions/{id}/alfi/invert-colors` (empty body). The server swaps the two colour seats (the player becomes Black, the engine White; the position is untouched). On success the frontend swaps `playerColor` and `cpu.color` locally, persists them and spins the board so the player stays at the bottom; the engine, now White, moves next if it is White's turn. If the call fails, nothing changes anywhere and no swap is shown; (4) the board unlocks. The board stays locked (no `legal-moves` calls) for the whole reveal. The answer is ignored: an empty 200/204 is enough, and the endpoint rejects sessions that are not `PVALFI` with 403.
+A `PVALFI` session starts on Black's turn (the engine's seat). Reveal order: (1) after about 2 s of calm, Alfi makes his first move as Black with a plain `request-move`; (2) about 2.6 s later he enters and speaks; (3) the colour inversion: purely visual, no request. Every piece keeps its square and swaps colour on screen; seats, position and turn on the server stay unchanged (the player is still White and moves next); (4) the board unlocks. The board stays locked (no `legal-moves` calls) for the whole reveal. The server must not swap seats for this: a seat swap would make the server and the page disagree about whose turn it is.
 
 ### Alfi's cheats
 
@@ -320,20 +320,20 @@ The existing cheat presentation, fatigue, hints, colour twist and endings remain
 
 | Cheat | How it works | When it is sent |
 | --- | --- | --- |
-| Opening push | During the reveal, a pawn of Alfi's assigned colour attempts to advance with `moveId` 0 or 1. Needs an authorized out-of-turn move. | Reveal. |
-| Double move | A second fresh `request-move`, awaited after the first. It is attempted only if the authoritative turn still belongs to Alfi; no energy is charged otherwise. The current backend always passes the turn to the human, so a true engine double move is blocked pending the needed support below. | Alfi's turn only. |
+| Opening move | The session starts on Black's (Alfi's) turn, so his first move is a plain `request-move` before he appears. | Reveal. |
+| Double move | The first engine move is `GET /api/sessions/{id}/request-move?keepTurn=true`: the server applies it without passing the turn (PVALFI only; other gamemodes reject the flag with 403). The second is a plain `request-move`, sent only if the game is still ACTIVE and the authoritative turn is still Alfi's; it passes the turn to the player as usual. | Alfi's turn only. |
 | Dodge | When the player is about to capture one of his pieces (not the king), that piece first teleports to a free neighbouring square. | Player's turn. |
 | Rewind | If the player's move gives check (no capture, promotion or castling), that piece teleports back. | CPU's turn. |
-| Board flip | Once per game, when the player leads by 5 points: the frontend swaps `playerColor` and the CPU colour and persists them. The next frontend CPU turn asks the engine afresh. Server seat reassignment is still needed for the swap to be playable. | CPU action. |
+| Board flip | Once per game, when the player leads by 5 points: `POST .../alfi/invert-seats`, then the frontend swaps `playerColor` and the CPU colour, persists them and spins the board. | CPU action. |
 
 Each cheat costs Alfi energy out of 100: double 20, dodge 15, rewind 25, flip 40. At zero he falls asleep and plays clean.
 
 ### Backend support — NEEDED (not implemented in this frontend task)
 
-- **NEEDED: authorized Alfi position/turn editing.** Opening pushes, dodge and rewind cannot rely on `/moves` bypassing validation. Provide a documented atomic operation that returns authoritative state, with explicit turn handling. After an edit, the frontend must request a new engine move only when the resulting turn belongs to Alfi.
+- **NEEDED: authorized Alfi position/turn editing.** Dodge and rewind cannot rely on `/moves` bypassing validation. Provide a documented atomic operation that returns authoritative state, with explicit turn handling. After an edit, the frontend must request a new engine move only when the resulting turn belongs to Alfi.
 - **NEEDED: authorized CPU fallback submission.** The random legal fallback is wired in the frontend, but the current `/moves` route rejects a human caller on the machine's turn. A documented way to submit a fallback for the machine seat is required for the fallback to advance a game when the engine is unavailable.
-- **NEEDED: engine double-move support.** `request-move` selects the plugin from the current server seat and applies its move immediately. It cannot calculate/apply an extra Alfi move on the human's turn. Provide authorized extra-turn control or an atomic engine extra-move operation; never make the frontend call the existing route on the human's turn or reuse stale/random suggestions for the second move.
-- **NEEDED: atomic seat swap for the gameplay flip.** Update the human/plugin colour assignments on the server before requesting the engine for its new colour. A browser-only swap cannot change which plugin `request-move` chooses or which human `/moves` authorizes.
+- **NEEDED: `keepTurn` on `request-move`.** A boolean query flag; when true on a PVALFI session the engine's move is applied without rotating the turn colour. Rejected (403) on any other gamemode.
+- **Board flip: `POST /api/sessions/{id}/alfi/invert-seats`** (empty body, empty answer; 403 if not `PVALFI`). The server swaps which seat plays each colour; position and turn colour are untouched, so the side Alfi was about to move now belongs to the player, who moves next. The frontend calls it first and only flips (swaps `playerColor`/`cpu.color`, spins the board) after a success; on failure Alfi plays a normal move instead.
 - **NEEDED: mutation completion/idempotency for timed-out requests.** A frontend queue prevents overlapping browser calls, but a timed-out HTTP request may still run on the server. The backend must serialize mutations per session or expose completion/idempotency so a late engine result cannot race a retry or fallback.
 - **NEEDED for authoritative plugin classification:** expose an engine/AI type in `/api/plugins` in a future version. Until then the frontend uses only the filename allowlist above; no new response field or endpoint is assumed or implemented here.
 

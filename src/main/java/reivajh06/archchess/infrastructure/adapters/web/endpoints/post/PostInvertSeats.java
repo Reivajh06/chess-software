@@ -1,4 +1,4 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.post;
 
 import reivajh06.archchess.architecture.domain.model.Color;
 import reivajh06.archchess.architecture.domain.model.Player;
@@ -8,10 +8,11 @@ import reivajh06.archchess.infrastructure.adapters.Sessions;
 import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 import java.util.UUID;
 
-public class PostInvertColors implements EndpointOperator<Void, Void> {
+public class PostInvertSeats implements EndpointOperator<Void, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, Void input) {

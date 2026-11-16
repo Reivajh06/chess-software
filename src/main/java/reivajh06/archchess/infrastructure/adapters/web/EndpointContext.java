@@ -2,6 +2,7 @@ package reivajh06.archchess.infrastructure.adapters.web;
 
 import reivajh06.archchess.architecture.domain.model.Player;
 
+import java.util.List;
 import java.util.Map;
 
 public interface EndpointContext {
@@ -11,6 +12,8 @@ public interface EndpointContext {
     String sessionId();
 
     Map<String, String> pathParams();
+
+    Map<String, List<String>> queryParams();
 
     String body();
 

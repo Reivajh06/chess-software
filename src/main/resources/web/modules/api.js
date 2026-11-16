@@ -152,14 +152,16 @@ export class ChessApi {
 				state.pieces != null || state.gameStateFen != null)) return response;
 		return this.state(id);
 	}
-	// Alfi's colour inversion (PVALFI sessions only). Answers with the game state; see the contract, section 7.
-	alfiInvertColors(id) {
-		return this.request(`/sessions/${encodeURIComponent(id)}/alfi/invert-colors`, {}, { allowEmpty: true });
-	}
 	// The server asks the plugin for its move, applies it (promotion included) and answers with the move it
 	// played. It can take a while for AI plugins, hence the long timeout.
-	async machineMove(id) {
-		const response = await this.request(`/sessions/${encodeURIComponent(id)}/request-move`, undefined, { timeout: 120000 });
+	// Alfi's board flip (PVALFI only): the server swaps which seat plays each colour. Empty answer.
+	alfiInvertSeats(id) {
+		return this.request(`/sessions/${encodeURIComponent(id)}/alfi/invert-seats`, {}, { allowEmpty: true });
+	}
+	// keepTurn (PVALFI only): the server applies the move without passing the turn, for Alfi's double move.
+	async machineMove(id, { keepTurn = false } = {}) {
+		const query = keepTurn ? "?keepTurn=true" : "";
+		const response = await this.request(`/sessions/${encodeURIComponent(id)}/request-move${query}`, undefined, { timeout: 120000 });
 		const move = playedMove(response);
 		const details = normalizeDetails(response.details);
 		// The plugin that played, when the server says so: as a field of the response or inside the details.

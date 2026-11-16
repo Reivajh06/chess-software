@@ -1,4 +1,4 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.post;
 
 import reivajh06.archchess.architecture.domain.model.Color;
 import reivajh06.archchess.architecture.domain.model.Player;
@@ -10,6 +10,7 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.CreateSession
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.CreateSessionRequest;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.CreateSessionResponse;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
 public class PostCreateSession implements EndpointOperator<CreateSessionRequest, CreateSessionResponse> {
 

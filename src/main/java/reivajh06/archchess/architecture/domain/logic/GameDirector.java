@@ -50,10 +50,18 @@ public class GameDirector {
 	}
 
 	public void movePieceAndUpdate(int moveIndex, Tile from, Tile to) {
-		movePieceAndUpdate(session.gameState().board().pieceAt(from).moveset().get(moveIndex), from, to);
+		movePieceAndUpdate(session.gameState().board().pieceAt(from).moveset().get(moveIndex), from, to, true);
+	}
+
+	public void movePieceAndUpdate(int moveIndex, Tile from, Tile to, boolean rotateTurn) {
+		movePieceAndUpdate(session.gameState().board().pieceAt(from).moveset().get(moveIndex), from, to, rotateTurn);
 	}
 
 	public void movePieceAndUpdate(Move move, Tile from, Tile to) {
+		movePieceAndUpdate(move, from, to, true);
+	}
+
+	public void movePieceAndUpdate(Move move, Tile from, Tile to, boolean rotateTurn) {
 		if(session.gameState().status() != GameStatus.ACTIVE) return;
 
 		Piece movedPiece = session.gameState().board().pieceAt(from);
@@ -64,7 +72,7 @@ public class GameDirector {
 
 		if(movedPiece.type() == PieceType.KING) updateKingTile(movedPiece.color(), to);
 
-		session.gameState(updateGameState(move, movedPiece, capturedPiece, from, to));
+		session.gameState(updateGameState(move, movedPiece, capturedPiece, from, to, rotateTurn));
 	}
 
 	private void updateKingTile(Color color, Tile newLocation) {
@@ -123,7 +131,7 @@ public class GameDirector {
 		session.gameState(updatedGameState);
 	}
 
-	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to) {
+	private GameState updateGameState(Move move, Piece movedPiece, Piece capturedPiece, Tile from, Tile to, boolean rotateTurn) {
 		GameStateBuilder updatedGameStateBuilder = new GameStateBuilder();
 
 		updatedGameStateBuilder.board(session.gameState().board().copy());
@@ -137,6 +145,8 @@ public class GameDirector {
 		updatedGameStateBuilder.positions(new HashMap<>(session.gameState().positions()));
 
 		evaluators.forEach(e -> e.evaluate(updatedGameStateBuilder, transitiveState, move, movedPiece, capturedPiece, from, to));
+
+		if(!rotateTurn) updatedGameStateBuilder.turnColor(session.gameState().turnColor());
 
 		return updatedGameStateBuilder.build();
 	}

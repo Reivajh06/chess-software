@@ -4,6 +4,9 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
 import reivajh06.archchess.infrastructure.adapters.web.endpoints.*;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.get.*;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.post.*;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.delete.*;
 
 import java.io.File;
 
@@ -50,6 +53,6 @@ public class ChessAPI {
 	}
 
 	private void configureAlfiEndpoints(JavalinConfig config) {
-		config.routes.post("/api/sessions/{sessionId}/alfi/invert-colors", c -> EndpointHandler.of(new PostInvertColors()).handle(JavalinEndpointContext.of(c)));
+		config.routes.post("/api/sessions/{sessionId}/alfi/invert-seats", c -> EndpointHandler.of(new PostInvertSeats()).handle(JavalinEndpointContext.of(c)));
 	}
 }

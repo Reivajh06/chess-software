@@ -1,10 +1,11 @@
-package reivajh06.archchess.infrastructure.adapters.web.endpoints;
+package reivajh06.archchess.infrastructure.adapters.web.endpoints.get;
 
 import reivajh06.archchess.architecture.domain.logic.GameDirector;
 import reivajh06.archchess.architecture.domain.model.PieceType;
 import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.Tile;
 import reivajh06.archchess.architecture.domain.model.game.GameSession;
+import reivajh06.archchess.architecture.domain.model.game.Gamemode;
 import reivajh06.archchess.infrastructure.Archchess;
 import reivajh06.archchess.infrastructure.adapters.datalake.events.MovePieceEvent;
 import reivajh06.archchess.infrastructure.adapters.datalake.events.RequestMoveEvent;
@@ -12,6 +13,7 @@ import reivajh06.archchess.infrastructure.adapters.web.ApiException;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.RequestMovePiece;
+import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 import reivajh06.plugins.Plugin;
 import reivajh06.plugins.PluginConfiguration;
 import reivajh06.plugins.PluginResponse;
@@ -25,8 +27,10 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 	@Override
 	public RequestMovePiece run(EndpointContext ctx, Void input) {
 		GameSession session = Archchess.instance().session(UUID.fromString(ctx.pathParams().get("sessionId")));
+		boolean keepTurn = ctx.queryParams().get("keepTurn") != null && Boolean.parseBoolean(ctx.queryParams().get("keepTurn").getFirst());
 
 		if(session == null) throw new ApiException(HttpStatus.NOT_FOUND, "Session not found");
+		if(session.gamemode() != Gamemode.PVALFI && keepTurn) throw new ApiException(HttpStatus.FORBIDDEN, "Session's gamemode does not allow blocking the turn rotation");
 
 		Player player = session.playerIdentifier(session.gameState().turnColor());
 		GameDirector director = new GameDirector(session);
@@ -35,6 +39,7 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 		plugin.sendParameters(new PluginConfiguration(PluginConfiguration.Difficulty.valueOf(session.difficulty().name()), 50));
 
 		PluginResponse response = plugin.requestMove(session.toFEN());
+
 
 		if(plugin.type() == Plugin.PluginType.AI) {
 			Tile selectedTile = new Tile(response.message().get("selected_tile"));
@@ -60,7 +65,8 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 				.getKey();
 
 		Archchess.instance().publish(new RequestMoveEvent(player.username()));
-		director.movePieceAndUpdate(moveId, from, to);
+
+		director.movePieceAndUpdate(moveId, from, to, !keepTurn);
 
 		Archchess.instance().publish(new MovePieceEvent(
 				player.username(),
