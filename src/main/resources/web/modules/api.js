@@ -17,8 +17,10 @@ const defaultMessages = {
 
 // The server names its machine modes PVM (player vs machine) and MVM (machine vs machine). The page keeps its own
 // PVCPU / AIVAI ids, so gamemodes are translated here, at the boundary, and nowhere else.
-const toServerMode = { PVCPU: "PVM", PVAI: "PVM", AIVAI: "MVM" };
-const fromServerMode = { PVM: "PVCPU", MVM: "AIVAI" };
+// PVALFI is the server's Alfi mode. The page keeps showing it as an ordinary machine game (PVCPU): the boss is
+// recognised by the session's own `alfiBoss` flag, so the history and labels never give him away before the reveal.
+const toServerMode = { PVCPU: "PVM", PVAI: "PVM", AIVAI: "MVM", ALFI: "PVALFI" };
+const fromServerMode = { PVM: "PVCPU", MVM: "AIVAI", PVALFI: "PVCPU" };
 
 function localModes(value) {
 	if(Array.isArray(value)) return value.map(localModes);
@@ -149,6 +151,10 @@ export class ChessApi {
 		if(state && (state.fen != null || state.board != null ||
 				state.pieces != null || state.gameStateFen != null)) return response;
 		return this.state(id);
+	}
+	// Alfi's colour inversion (PVALFI sessions only). Answers with the game state; see the contract, section 7.
+	alfiInvertColors(id) {
+		return this.request(`/sessions/${encodeURIComponent(id)}/alfi/invert-colors`, {}, { allowEmpty: true });
 	}
 	// The server asks the plugin for its move, applies it (promotion included) and answers with the move it
 	// played. It can take a while for AI plugins, hence the long timeout.

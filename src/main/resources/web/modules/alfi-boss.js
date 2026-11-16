@@ -9,6 +9,10 @@ import { line } from "./mascot.js";
 
 const rules = { theme: "classic", mascot: true, muted: false, music: true };
 const minimumVolume = 20;
+// Beats of the reveal around Alfi's first, out-of-turn move: enough time before it to notice the silence and after
+// it to read the board, so the player understands what is happening before he even appears.
+const beforeFirstMove = 2000;
+const afterFirstMove = 2600;
 
 function alfiKing() {
 	const body = pieceImage("BISHOP", "WHITE", "classic");
@@ -200,7 +204,7 @@ export class AlfiBoss {
 		this.aborted = false;
 		const live = () => !this.aborted && alive();
 
-		await wait(1300);
+		await wait(beforeFirstMove);
 		if(!live()) return false;
 		this.music.cut();
 		this.enforce(true);
@@ -209,7 +213,7 @@ export class AlfiBoss {
 		document.body.classList.add("alfi-hush");
 		await cheat();
 		if(!live()) return false;
-		await wait(1100);
+		await wait(afterFirstMove);
 		if(!live()) return false;
 
 		this.intro.setMood("vacio");

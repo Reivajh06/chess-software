@@ -64,7 +64,7 @@ The page saves the account in localStorage. At startup, if an account is saved, 
 
 ## 1. Create a session
 
-The backend enum is `PRACTICE`, `PVP`, `PVM` (player vs machine) and `MVM` (machine vs machine). Internally the frontend keeps `PVCPU` / `AIVAI`; `modules/api.js` translates at the boundary: it sends `PVCPU`/`PVAI` as `PVM` and `AIVAI` as `MVM`, and reads any `gamemode` of `PVM`/`MVM` back as `PVCPU`/`AIVAI`. A name the server does not know becomes a `null` gamemode, which breaks machine vs machine (its first plugin seat is never created).
+The backend enum is `PRACTICE`, `PVP`, `PVM` (player vs machine) and `MVM` (machine vs machine). Internally the frontend keeps `PVCPU` / `AIVAI`; `modules/api.js` translates at the boundary: it sends `PVCPU`/`PVAI` as `PVM` and `AIVAI` as `MVM`, and reads any `gamemode` of `PVM`/`MVM`/`PVALFI` back as `PVCPU`/`AIVAI`/`PVCPU`. Alfi's `PVALFI` is sent only when the frontend created an Alfi session; it is read back as `PVCPU` so history and labels do not reveal him, and the boss is recognised by the session's own `alfiBoss` flag. A name the server does not know becomes a `null` gamemode, which breaks machine vs machine (its first plugin seat is never created).
 
 `POST /api/sessions`
 
@@ -298,7 +298,7 @@ The plugin dialog reads `GET /api/plugins`, which answers `{ "plugins": ["stockf
 | Step | Route | Notes |
 | --- | --- | --- |
 | Create normal CPU | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "EASY" \| "MEDIUM" \| "HARD" \| "MAX", "pluginNames": ["stockfish.jar"] }` |
-| Create Alfi (`???`) | `POST /api/sessions` | `{ "gamemode": "PVCPU", "difficulty": "MAX", "pluginNames": [chosenEngine] }`. `ALFI` is a frontend choice only and is never sent as a difficulty. |
+| Create Alfi (`???`) | `POST /api/sessions` | `{ "gamemode": "PVALFI", "difficulty": "MAX", "pluginNames": [chosenEngine] }`. The server seats the creator as WHITE and the engine as BLACK; the frontend never chooses colours. `ALFI` is a frontend choice only and is never sent as a difficulty. |
 | Seat the CPU | — | Seated on creation. It plays the colour opposite `playerColor`. |
 | CPU / Alfi move | `GET /api/sessions/{id}/request-move` | Uses the current authoritative position whenever `turnColor` is the CPU's colour and no other CPU action is in progress. |
 
@@ -309,6 +309,10 @@ The difficulty dialog has EASY, MEDIUM, HARD and MAX (Spanish labels), plus `???
 The frontend saves `session.alfiBoss: true` alongside the reveal phase (`session.alfi`), energy and other session fields in sessionStorage. Resume and rematch retain the boss choice independently of difficulty. Older saved explicit reveal phases are accepted; HARD alone never enables Alfi. The rival is `???` until the reveal and `Alfi` afterwards. Plugin names and all plugin details stay hidden, and no thinking log is populated for Alfi.
 
 All board-mutating requests (`request-move` and explicit `/moves`, including promotion/state-read completion) pass through one frontend promise queue. Cheats are awaited before a fresh engine request is scheduled on Alfi's next authoritative turn. No pre-cheat engine move is reused. After four consecutive failed engine requests, the frontend first rereads the authoritative state, then chooses a fresh random legal move only if Alfi still has the turn. It tries the engine again on the next turn. If state/legal reads or the fallback also fail, retries continue; loss of connectivity or backend rejection cannot be repaired by the frontend.
+
+### Alfi's reveal sequence
+
+Alfi's own endpoints live under `/api/sessions/{id}/alfi/...` and are accepted only for `PVALFI` sessions. Reveal order: (1) after about 2 s of calm, Alfi makes one out-of-turn Black move; (2) about 2.6 s later he enters and speaks; (3) the frontend calls `POST /api/sessions/{id}/alfi/invert-colors` (empty body). The server swaps the two colour seats (the player becomes Black, the engine White; the position is untouched). On success the frontend swaps `playerColor` and `cpu.color` locally, persists them and spins the board so the player stays at the bottom; the engine, now White, moves next if it is White's turn. If the call fails, nothing changes anywhere and no swap is shown; (4) the board unlocks. The board stays locked (no `legal-moves` calls) for the whole reveal. The answer is ignored: an empty 200/204 is enough, and the endpoint rejects sessions that are not `PVALFI` with 403.
 
 ### Alfi's cheats
 

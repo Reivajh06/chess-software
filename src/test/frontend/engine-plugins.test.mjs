@@ -61,7 +61,7 @@ function apiWith(plugins) {
     plugins: async () => plugins,
     create: async (gamemode, difficulty, pluginNames) => {
       creations.push({ gamemode, difficulty, pluginNames });
-      return { sessionId: "boss", gamemode, difficulty, playerColor: "BLACK", state: { moves: [] } };
+      return { sessionId: "boss", gamemode: gamemode === "ALFI" ? "PVCPU" : gamemode, difficulty, playerColor: "WHITE", state: { moves: [] } };
     },
   };
 }
@@ -69,11 +69,12 @@ function apiWith(plugins) {
 test("Alfi sends MAX and exactly the highest-priority installed engine, independently of the selected plugin", async () => {
   const api = apiWith(["ollama.jar", "archon.jar", "berserk.jar", "Stockfish.JAR"]);
   const { session } = await new SessionAccess(api).open(null, "PVCPU", "ALFI", ["ollama.jar"]);
-  assert.deepEqual(api.creations, [{ gamemode: "PVCPU", difficulty: "MAX", pluginNames: ["Stockfish.JAR"] }]);
+  assert.deepEqual(api.creations, [{ gamemode: "ALFI", difficulty: "MAX", pluginNames: ["Stockfish.JAR"] }]);
   assert.equal(session.alfiBoss, true);
   assert.equal(session.alfi, "hidden");
   assert.equal(session.difficulty, "MAX");
-  assert.deepEqual(session.cpu, { color: "WHITE" });
+  assert.equal(session.playerColor, "WHITE");
+  assert.deepEqual(session.cpu, { color: "BLACK" });
   assert.deepEqual(session.pluginNames, ["Stockfish.JAR"]);
   assert.equal(machineName(session), "???");
   assert.equal(machineName({ ...session, alfi: "revealed" }), "Alfi");

@@ -25,6 +25,15 @@ public class PostCreateSession implements EndpointOperator<CreateSessionRequest,
 			Player rival = Player.plugin(request.pluginNames().getLast(), id);
 			session.assignColor(player, Color.WHITE);
 			session.assignColor(rival, Color.BLACK);
+			Archchess.instance().registerSession(session);
+
+			return new CreateSessionResponse(
+					session.id(),
+					session.gamemode(),
+					session.difficulty(),
+					id,
+					Color.WHITE,
+					session.gameState());
 
 		} else if(session.gamemode() != Gamemode.PRACTICE && session.gamemode() != Gamemode.PVP) {
 			if(session.gamemode() == Gamemode.MVM) player = Player.plugin(request.pluginNames().getFirst(), id);

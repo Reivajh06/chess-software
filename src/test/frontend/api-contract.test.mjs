@@ -89,6 +89,27 @@ test("PvCPU creates the session and asks the server for the machine's move", asy
   assert.equal(after.fen, state.fen);
 });
 
+test("Alfi is created as PVALFI with the player fixed as White, and the page still sees a machine game", async (t) => {
+  const calls = [];
+  const replies = [
+    { ...created, gamemode: "PVALFI", difficulty: "MAX", playerId, playerColor: "WHITE" },
+    { plugins: ["stockfish.jar"] },
+  ];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    calls.push({ path, options });
+    const reply = path.endsWith("/plugins") ? replies[1] : replies[0];
+    return new Response(JSON.stringify(reply), { status: 200 });
+  });
+  const { session } = await new SessionAccess(new ChessApi()).open(null, "PVCPU", "ALFI");
+  const create = calls.find((call) => call.path === "/api/sessions");
+  assert.deepEqual(JSON.parse(create.options.body),
+    { gamemode: "PVALFI", difficulty: "MAX", pluginNames: ["stockfish.jar"] });
+  assert.equal(session.alfiBoss, true);
+  assert.equal(session.gamemode, "PVCPU");
+  assert.equal(session.playerColor, "WHITE");
+  assert.deepEqual(session.cpu, { color: "BLACK" });
+});
+
 test("the installed plugins are read from the server, and an empty list is a valid answer", async (t) => {
   const calls = [];
   const replies = [{ plugins: ["stockfish.jar", "alfi.jar"] }, { plugins: [] }];

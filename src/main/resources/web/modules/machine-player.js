@@ -207,7 +207,17 @@ export function createMachinePlayer({ store, api, board, alfi, audio, sessions, 
 				alfiEncounters(1);
 			},
 			swapColors: async (onRow) => {
-				await board.colorWave(() => setColorSwap(true), onRow);
+				// The server swaps the seats: the player ends up Black and Alfi White, the position stays as it is.
+				// The page mirrors that and spins the board so the player's pieces are at the bottom again. If the
+				// server refuses, nothing changed there, so nothing is shown here either.
+				const swapped = await api.alfiInvertColors(session.sessionId).then(() => true, () => false);
+				if(!swapped) return;
+				onRow?.();
+				[session.playerColor, session.cpu.color] = [session.cpu.color, session.playerColor];
+				alfi.side = session.cpu.color;
+				setColorSwap(false);
+				sessions.persist(session);
+				await board.spin();
 				renderGame();
 			},
 			crownKing: async () => {
