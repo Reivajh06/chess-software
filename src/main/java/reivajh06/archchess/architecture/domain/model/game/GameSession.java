@@ -63,6 +63,10 @@ public class GameSession {
         return null;
     }
 
+    public void assignColor(Player player, Color color) {
+        colorPlayers.put(color, player);
+    }
+
     public Player playerIdentifier(Color color) {
         return colorPlayers.get(color);
     }
