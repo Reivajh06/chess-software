@@ -52,12 +52,16 @@ What it does:
 ## 2. Quick start
 
 ```bash
+# 0. `java -version` and `mvn -v` must both report JDK 25 (set JAVA_HOME if your default is older).
 # 1. Install the plugins library once (section 3), then build and write the classpath:
 mvn -q -DskipTests package dependency:build-classpath -Dmdep.outputFile=target/classpath.txt
-# 2. Run the backend (use ";" instead of ":" on Windows); it also serves the frontend:
-java -cp "target/classes:$(cat target/classpath.txt)" reivajh06.archchess.Launcher
+# 2. Run the backend; it also serves the frontend:
+java -cp "target/classes:$(cat target/classpath.txt)" reivajh06.archchess.Launcher     # Linux / macOS
+java -cp "target/classes;$(cat target/classpath.txt)" reivajh06.archchess.Launcher     # Windows (Git Bash): note the ";"
 # 3. Open http://localhost:5000
 ```
+
+Maven runs on the JDK it finds, so with an older default JDK the build fails with a compile error about release/source 25. Check `mvn -v` shows `Java version: 25`.
 
 Or with Docker, see [section 5](#5-docker).
 
@@ -249,7 +253,7 @@ Each plugin is its own project with its own repository, built independently (`mv
 | Plugin | Repository | Jar | What it is | Configuration |
 | --- | --- | --- | --- | --- |
 | **Stockfish** | [archchess-stockfish-plugin](https://github.com/Reivajh06/archchess-stockfish-plugin) | `stockfish.jar` | Wraps the [Stockfish](https://stockfishchess.org/) engine. The jar is self-contained and bundles a Windows build (extracted to `<tmp>/archchess-stockfish/` on first start). GPLv3, because it redistributes Stockfish. | `STOCKFISH_PATH` or `-Dstockfish.path` for other operating systems (also overrides the bundled engine). Difficulty maps to Stockfish's Skill Level: EASY 1, MEDIUM 8, HARD 15, MAX 20. |
-| **Ollama** | [archchess-ollama-plugin](https://github.com/Reivajh06/archchess-ollama-plugin) | `ollama.jar` | An **AI-type** plugin: asks a local LLM served by [Ollama](https://ollama.com) for its move. Obviously invalid answers are re-asked up to 4 times, but full legality is not checked by the plugin: the backend does that. | `OLLAMA_MODEL` (or first program argument / `-Dollama.model`; defaults to the first installed model) and `OLLAMA_HOST`. Difficulty maps to sampling temperature: EASY 1.2, MEDIUM 0.7, HARD 0.3, MAX 0. Reports "Local llm not installed" if Ollama or its models are missing. |
+| **Ollama** | [archchess-ollama-plugin](https://github.com/Reivajh06/archchess-ollama-plugin) | `ollama.jar` | An **AI-type** plugin: asks a local LLM served by [Ollama](https://ollama.com) for its move. Obviously invalid answers are re-asked up to 4 times, but full legality is not checked by the plugin: the backend does that. | `OLLAMA_MODEL` (or first program argument / `-Dollama.model`; defaults to the first installed model) and `OLLAMA_HOST`. Difficulty maps to sampling temperature: EASY 1.2, MEDIUM 0.7, HARD 0.3, MAX 0. Reports "Local llm not installed" if Ollama or its models are missing. Released as `v1.0.0` (the jar is on the repository's Releases page). |
 | **Archon** | [archon-engine](https://github.com/Reivajh06/archon-engine) | `archon.jar` | A pure-Java chess engine written for Archchess: no external engine needed, so it runs the same on any operating system (including the Docker image). | EASY (depth 2, randomized within 180 cp), MEDIUM (depth 5, randomized within 25 cp), HARD (depth 9, best move), MAX (time-limited, best move). Default budget 1000 ms; the backend sends 50 ms. |
 
 All three also speak a small line protocol over stdin/stdout when run with `java -jar` (`name`, `move <FEN>`, `config <level> [ms]`, `exit`; replies are prefixed with `$archchess:`), which is handy for testing a plugin without the backend. In the app they are listed by `GET /api/plugins` (by the name each plugin reports) and chosen in the "Play a machine" / "Machine vs machine" menus.
@@ -627,7 +631,7 @@ Every failure is a JSON body `{ "error": "<STATUS>", "message": "<text>" }` prod
 
 | Status | When |
 | --- | --- |
-| `400 BAD_REQUEST` | Invalid username/password on sign-up, plugin error, unexpected exception |
+| `400 BAD_REQUEST` | Invalid username/password on sign-up, unknown or missing `gamemode`/`difficulty` when creating a room, missing or unknown plugin for a machine mode, plugin error, unexpected exception |
 | `403 FORBIDDEN` | Illegal move, move out of turn, incomplete request (missing `from`/`to`), guest asking for history, not your game |
 | `404 NOT_FOUND` | Session does not exist, wrong login |
 | `409 CONFLICT` | Room already full, account already exists |
@@ -814,8 +818,8 @@ node --test src/test/frontend/*.test.mjs      # frontend
 | `GameSimulationTest` | 37 | Full games: mates, stalemate, draws, en passant, promotion |
 | `FenParserTest` | 5 | FEN generation and parsing |
 | `ChessTestSupportTest` | 9 | Test helpers |
-| **Backend total** | **90** | **All passing** (`mvn clean package`, `BUILD SUCCESS`, run 2026-11-16) |
-| Frontend (`src/test/frontend`) | 140 | **All passing** (run 2026-11-16) |
+| **Backend total** | **90** | **All passing** (`mvn clean package`, `BUILD SUCCESS`, run 2026-11-17) |
+| Frontend (`src/test/frontend`) | 146 | **All passing** (run 2026-11-17) |
 
 The Alfi mode was also checked by playing full games in the browser against the Stockfish plugin: reveal, double moves, dodges, the board flip, and both endings (Alfi wins / the player wins).
 
@@ -850,7 +854,7 @@ Two users on one room: open the invitation link in a second browser (or a privat
 - **Identity.** Players are identified by the HTTP session cookie; the cookie is lost on restart, so logged-in users must sign in again. Guests are `guest#<session id>`.
 - **Passwords** are hashed with plain SHA-256 (no salt, no key stretching). Acceptable for a course project, not for production.
 - **Malformed JSON** bodies produce a generic `400` rather than a detailed message.
-- **Plugin loader.** A plugin whose `start()` throws a runtime exception other than `PluginException` (for instance Stockfish on an OS without a bundled engine and no `STOCKFISH_PATH`) terminates the `plugins-reloader` thread: the other plugins stay registered but the one-minute rescan stops until the next restart. It also re-calls `start()` on every loaded plugin at each rescan.
+- **Plugin loader.** A plugin whose `start()` throws (for instance Stockfish on an OS without a bundled engine and no `STOCKFISH_PATH`, or Ollama without a model) is logged and removed from the list, so it is not offered and the other plugins are unaffected; it is retried at the next one-minute rescan. The rescan re-calls `start()` on every plugin that loaded, so `start()` must be cheap when the plugin is already ready.
 - **Engine crashes.** If the Stockfish process dies, the plugin does not restart it: machine games fail until the backend restarts. The known causes (impossible positions sent to the engine) are fixed, but there is no recovery.
 - **Alfi mode** relies on three `PVALFI`-only exceptions (`keepTurn`, `cheat`, `invert-seats`). A double move is skipped when its first half gives check or promotes, so the engine never receives a position where the side not to move is in check.
 - **Build:** the `archchess-plugins` library must be installed in the local Maven repository first ([section 3](#3-requirements-and-dependencies)).

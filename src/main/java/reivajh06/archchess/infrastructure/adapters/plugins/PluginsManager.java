@@ -9,6 +9,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class PluginsManager {
@@ -16,11 +19,13 @@ public class PluginsManager {
 	public File pluginsFolder;
     public Map<String, Plugin> plugins;
 	private URLClassLoader classLoader;
+	private final Logger logger;
 
     public PluginsManager(String pluginsPath) {
-        plugins = new HashMap<>();
+        plugins = new ConcurrentHashMap<>();
         this.pluginsFolder = new File(pluginsPath);
         this.pluginsFolder.mkdir();
+		logger = Logger.getLogger(PluginsManager.class.getName());
     }
 
     public void reloadPlugins() throws PluginException {
@@ -38,7 +43,18 @@ public class PluginsManager {
 		plugins.putAll(loader.stream()
 				.filter(p -> plugins.get(p.get().name()) == null)
 				.collect(Collectors.toMap(p -> p.get().name(), ServiceLoader.Provider<Plugin>::get)));
-		plugins.values().forEach(Plugin::start);
+
+		var iterator = plugins.entrySet().iterator();
+
+		while(iterator.hasNext()) {
+			try {
+				iterator.next().getValue().start();
+
+			} catch(Exception e) {
+				logger.log(Level.WARNING, "Could not load plugin", e);
+				iterator.remove();
+			}
+		}
 	}
 
     public void configurePluginsReload() {
@@ -46,7 +62,7 @@ public class PluginsManager {
             while(true) {
 				try {
 					reloadPlugins();
-					System.out.println("Plugins loaded: %s".formatted(pluginNames()));
+					logger.info("Plugins loaded: %s".formatted(pluginNames()));
 					Thread.sleep(Duration.ofMinutes(1));
 
 				} catch (PluginException | InterruptedException e) {
