@@ -42,32 +42,72 @@ function modeIcon(name) {
 	return image;
 }
 
-function playerColor(game, username) {
-	if(["PRACTICE", "AIVAI"].includes(game.gamemode)) return null;
+const ALFI = "Alfi";
 
-	const move = game.moves.find(move => move.player === username);
-
-	if(move) return move.ply % 2 === 1 ? "WHITE" : "BLACK";
-	if(game.moves.length > 0) {
-		return game.moves[0].ply % 2 === 1 ? "BLACK" : "WHITE";
+// Colour of the piece standing on `square` in a FEN, or null. The position is the one after the move, so the
+// piece on the move's destination is the mover's: this holds for Alfi's out-of-turn cheats and seat flips too,
+// where the ply parity does not.
+export function colorAt(fen, square) {
+	if(typeof fen !== "string" || typeof square !== "string" || square.length < 2) return null;
+	const file = square.charCodeAt(0) - 97;
+	const rank = Number(square[1]);
+	const row = fen.split(" ")[0].split("/")[8 - rank];
+	if(!row || file < 0 || file > 7) return null;
+	let column = 0;
+	for(const char of row) {
+		if(/\d/.test(char)) { column += Number(char); continue; }
+		if(column === file) return char === char.toUpperCase() ? "WHITE" : "BLACK";
+		column++;
 	}
-
 	return null;
 }
 
-function resultOf(game, color) {
+const moveColor = (move) => colorAt(move.fen, move.to) ?? (move.ply % 2 === 1 ? "WHITE" : "BLACK");
+const opposite = (color) => color && (color === "WHITE" ? "BLACK" : "WHITE");
+const sideToMove = (fen) => typeof fen === "string" && fen.split(" ")[1] === "b" ? "BLACK" : "WHITE";
+
+// The server saves Alfi's moves under the engine's plugin name, and his dodges (cheat moves of his pieces sent
+// from the player's page) under the player's name. In an Alfi game every move is credited to Alfi except the
+// player's real ones: a real move moves a piece of the colour that had the turn in the position before it.
+// A flip leaves the turn as it was and hands it to the player, so their next real move already has their new
+// colour; Alfi's double moves stay his.
+export function creditAlfi(game, username) {
+	if(!game.alfiBoss) return game;
+	const moves = game.moves.map((move, index) => {
+		const before = game.moves[index - 1];
+		const real = move.player === username && (!before || moveColor(move) === sideToMove(before.fen));
+		return real ? move : { ...move, player: ALFI };
+	});
+	return { ...game, moves };
+}
+
+// The colour the player ended the game with (Alfi can swap seats mid-game), which is what the result is about.
+export function playerColor(game, username) {
+	if(["PRACTICE", "AIVAI"].includes(game.gamemode)) return null;
+
+	const mine = game.moves.filter(move => move.player === username);
+	if(mine.length) return moveColor(mine.at(-1));
+
+	const theirs = game.moves.at(-1);
+	return theirs ? opposite(moveColor(theirs)) : null;
+}
+
+export function resultOf(game, color) {
 	if(game.status === "DRAW") return results.DRAW;
 	if(game.status === "ACTIVE" || !color) return results[game.status] ?? results.ACTIVE;
 
 	return game.status === `${color}_WIN` ? results.WIN : results.LOSS;
 }
 
-function rivalOf(game, username) {
+export function rivalOf(game, username) {
 	if(game.gamemode === "PRACTICE") return "You vs yourself";
+
+	if(game.alfiBoss) return ALFI;
 
 	const rival = game.creator === username ? game.rival : game.creator;
 
-	return rival ?? "No opponent";
+	// Machine games have no rival account: the game is named after its mode instead.
+	return rival ?? modeLabel(game.gamemode);
 }
 
 function sides(game, username, color) {
@@ -75,11 +115,12 @@ function sides(game, username, color) {
 
 	const rival = rivalOf(game, username);
 
-	const white = game.moves.find(move => move.ply % 2 === 1)?.player;
-	const black = game.moves.find(move => move.ply % 2 === 0)?.player;
+	// With a known colour the sides follow it (after an Alfi flip both seats moved pieces of both colours).
+	if(color === "BLACK") return { white: rival, black: username };
+	if(color === "WHITE") return { white: username, black: rival };
 
-	if(color === "BLACK") return { white: white ?? rival, black: username };
-	if(color === "WHITE") return { white: username, black: black ?? rival };
+	const white = game.moves.find(move => moveColor(move) === "WHITE")?.player;
+	const black = game.moves.find(move => moveColor(move) === "BLACK")?.player;
 
 	return { white: white ?? game.creator, black: black ?? rival };
 }
@@ -222,7 +263,8 @@ export class ProfileScreen {
 	showGames(sessions) {
 		const username = this.account.username;
 
-		this.games = sessions.map(game => {
+		this.games = sessions.map(saved => {
+			const game = creditAlfi(saved, username);
 			const color = playerColor(game, username);
 			return {
 				...game,
