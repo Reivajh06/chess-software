@@ -46,7 +46,8 @@ export class ChessApi {
 		for(const controller of this.controllers) controller.abort();
 		this.controllers.clear();
 	}
-	async request(path, body, { allowEmpty = false, method = body === undefined ? "GET" : "POST", timeout = 10000 } = {}) {
+	// raw: hand back the server's own gamemodes, for callers that must see PVALFI before it becomes PVCPU.
+	async request(path, body, { allowEmpty = false, method = body === undefined ? "GET" : "POST", timeout = 10000, raw = false } = {}) {
 		const controller = new AbortController();
 		this.controllers.add(controller);
 		const timer = setTimeout(() => controller.abort("timeout"), timeout);
@@ -75,7 +76,7 @@ export class ChessApi {
 			if(payload === null && allowEmpty && !bodyText.trim()) return null;
 			if(!payload || typeof payload !== "object" || Array.isArray(payload))
 				throw new ApiError("Invalid server response.");
-			return localModes(payload);
+			return raw ? payload : localModes(payload);
 		} catch (error) {
 			if(error instanceof ApiError) throw error;
 			if(controller.signal.aborted && controller.signal.reason !== "timeout")
@@ -89,9 +90,12 @@ export class ChessApi {
 	create(mode, difficulty, pluginNames) {
 		return this.request("/sessions", { gamemode: toServerMode[mode] ?? mode, difficulty, pluginNames });
 	}
+	// Alfi games are read back as PVCPU like everywhere else, but keep `alfiBoss: true` so the profile can name
+	// and score them: by the time a game is in the history, Alfi has been revealed.
 	async history() {
-		const { sessions } = await this.request("/history");
-		return { sessions: Array.isArray(sessions) ? sessions : [] };
+		const { sessions } = await this.request("/history", undefined, { raw: true });
+		if(!Array.isArray(sessions)) return { sessions: [] };
+		return { sessions: sessions.map(game => ({ ...localModes(game), ...(game?.gamemode === "PVALFI" ? { alfiBoss: true } : {}) })) };
 	}
 	async plugins() {
 		const { plugins } = await this.request("/plugins");

@@ -1,6 +1,7 @@
 package reivajh06.archchess.infrastructure.adapters.web.endpoints.get;
 
 import reivajh06.archchess.architecture.domain.logic.GameDirector;
+import reivajh06.archchess.architecture.domain.model.Piece;
 import reivajh06.archchess.architecture.domain.model.PieceType;
 import reivajh06.archchess.architecture.domain.model.Player;
 import reivajh06.archchess.architecture.domain.model.Tile;
@@ -53,6 +54,7 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 		if(response.message().containsKey("error")) throw new ApiException(HttpStatus.BAD_REQUEST, response.message().get("error"));
 
 		Tile from = new Tile(response.message().get("from"));
+		Piece piece = session.gameState().board().pieceAt(from);
 		Tile to = new Tile(response.message().get("to"));
 		PieceType promoteTo = response.message().get("promote_to") != null ?
 				PieceType.valueOf(response.message().get("promote_to").toUpperCase())
@@ -74,7 +76,7 @@ public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> 
 				moveId,
 				from,
 				to,
-				promoteTo,
+				piece.type(),
 				session.toFEN(),
 				session.gameState().status())
 		);
