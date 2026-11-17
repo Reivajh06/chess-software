@@ -6,5 +6,9 @@ public enum Gamemode {
 	PVP,
 	PVM,
 	MVM,
-	PVALFI
+	PVALFI;
+
+	public static boolean requiresPlugin(Gamemode gamemode) {
+		return gamemode != PRACTICE && gamemode != PVP;
+	}
 }
