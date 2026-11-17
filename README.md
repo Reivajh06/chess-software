@@ -63,6 +63,8 @@ java -cp "target/classes;$(cat target/classpath.txt)" reivajh06.archchess.Launch
 
 Maven runs on the JDK it finds, so with an older default JDK the build fails with a compile error about release/source 25. Check `mvn -v` shows `Java version: 25`.
 
+**Windows shortcut:** `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1` clones and installs the plugins library (next to this project) and puts `stockfish.jar` in `temp/plugins`, so you can skip the manual library install. The scripts find a JDK 25 by themselves (JAVA_HOME or the usual install folders) and use it for that run only, so an older default JDK does not matter there. `scripts\docker-setup.ps1` does the same and also builds and starts the Docker container.
+
 Or with Docker, see [section 5](#5-docker).
 
 ---
