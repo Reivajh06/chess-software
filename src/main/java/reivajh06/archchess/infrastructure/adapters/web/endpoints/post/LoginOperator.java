@@ -10,7 +10,7 @@ import reivajh06.archchess.infrastructure.adapters.web.HttpStatus;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.AccountRequest;
 import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
-public class PostLogin implements EndpointOperator<AccountRequest, Void> {
+public class LoginOperator implements EndpointOperator<AccountRequest, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, AccountRequest input) {

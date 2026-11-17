@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class GetRequestMove implements EndpointOperator<Void, RequestMovePiece> {
+public class RequestMoveOperator implements EndpointOperator<Void, RequestMovePiece> {
 
 	@Override
 	public RequestMovePiece run(EndpointContext ctx, Void input) {

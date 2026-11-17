@@ -13,7 +13,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 
 import java.util.UUID;
 
-public class PostJoinSession implements EndpointOperator<Void, Join> {
+public class JoinSessionOperator implements EndpointOperator<Void, Join> {
 
 	@Override
 	public Join run(EndpointContext ctx, Void input) {

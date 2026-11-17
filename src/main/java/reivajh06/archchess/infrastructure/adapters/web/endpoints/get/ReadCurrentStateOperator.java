@@ -10,7 +10,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 
 import java.util.UUID;
 
-public class GetReadCurrentState implements EndpointOperator<Void, ReadStateResponse> {
+public class ReadCurrentStateOperator implements EndpointOperator<Void, ReadStateResponse> {
 
 	@Override
 	public ReadStateResponse run(EndpointContext ctx, Void input) {

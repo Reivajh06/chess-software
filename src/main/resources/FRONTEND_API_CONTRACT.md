@@ -8,13 +8,13 @@ This document describes the HTTP interface between the web frontend (`src/main/r
 
 | HTTP | Route | Handler | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/api/sessions` | `PostCreateSession` | Create a session and seat its creator. |
-| `GET` | `/api/sessions/{sessionId}` | `GetReadCurrentState` | Read the current game state. |
-| `POST` | `/api/sessions/{sessionId}/join` | `PostJoinSession` | Take the free seat of a PvP session. |
-| `POST` | `/api/sessions/{sessionId}/legal-moves` | `PostLegalMoves` | Legal moves of one piece. |
-| `POST` | `/api/sessions/{sessionId}/moves` | `PostMovePiece` | Play one move (player or machine). |
-| `POST` | `/api/sessions/{sessionId}/promote` | `PostPromotePiece` | Promote a pawn. |
-| `GET` | `/api/server` | `GetServerAddress` | LAN address of the server, for invitations. |
+| `POST` | `/api/sessions` | `CreateSessionOperator` | Create a session and seat its creator. |
+| `GET` | `/api/sessions/{sessionId}` | `ReadCurrentStateOperator` | Read the current game state. |
+| `POST` | `/api/sessions/{sessionId}/join` | `JoinSessionOperator` | Take the free seat of a PvP session. |
+| `POST` | `/api/sessions/{sessionId}/legal-moves` | `LegalMovesOperator` | Legal moves of one piece. |
+| `POST` | `/api/sessions/{sessionId}/moves` | `MovePieceOperator` | Play one move (player or machine). |
+| `POST` | `/api/sessions/{sessionId}/promote` | `PromotePieceOperator` | Promote a pawn. |
+| `GET` | `/api/server` | `ServerAddressOperator` | LAN address of the server, for invitations. |
 | `DELETE` | `/api/sessions/{sessionId}` | `DeleteSession` | A player abandons the game; remove it when no player is left. |
 
 ### Conventions

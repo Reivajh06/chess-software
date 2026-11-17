@@ -9,11 +9,11 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class GetServerAddress implements EndpointOperator<Void, ServerAddress> {
+public class ServerAddressOperator implements EndpointOperator<Void, ServerAddress> {
 
 	private final int port;
 
-	public GetServerAddress(int port) {
+	public ServerAddressOperator(int port) {
 		this.port = port;
 	}
 

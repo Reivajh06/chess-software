@@ -18,7 +18,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 import java.util.List;
 import java.util.UUID;
 
-public class PostMovePiece implements EndpointOperator<MovePiece, Void> {
+public class MovePieceOperator implements EndpointOperator<MovePiece, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, MovePiece moveRequest) {

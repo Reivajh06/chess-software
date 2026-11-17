@@ -16,7 +16,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class GetSessionsHistory implements EndpointOperator<Void, History> {
+public class SessionsHistoryOperator implements EndpointOperator<Void, History> {
 
 	@Override
 	public History run(EndpointContext ctx, Void input) {

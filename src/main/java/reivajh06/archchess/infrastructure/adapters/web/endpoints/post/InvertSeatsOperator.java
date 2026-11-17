@@ -12,7 +12,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 
 import java.util.UUID;
 
-public class PostInvertSeats implements EndpointOperator<Void, Void> {
+public class InvertSeatsOperator implements EndpointOperator<Void, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, Void input) {

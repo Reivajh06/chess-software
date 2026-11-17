@@ -13,7 +13,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 
 import java.util.UUID;
 
-public class PostPromotePiece implements EndpointOperator<PromotePiece, Void> {
+public class PromotePieceOperator implements EndpointOperator<PromotePiece, Void> {
 
     @Override
     public Void run(EndpointContext ctx, PromotePiece request) {
