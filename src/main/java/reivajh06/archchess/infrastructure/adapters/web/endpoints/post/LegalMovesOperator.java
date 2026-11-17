@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class PostLegalMoves implements EndpointOperator<PieceMovesRequest, PieceMovesResponse> {
+public class LegalMovesOperator implements EndpointOperator<PieceMovesRequest, PieceMovesResponse> {
 
 	@Override
 	public PieceMovesResponse run(EndpointContext ctx, PieceMovesRequest input) {

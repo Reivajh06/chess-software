@@ -12,7 +12,7 @@ import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperato
 
 import java.util.regex.Pattern;
 
-public class PostCreateAccount implements EndpointOperator<AccountRequest, Void> {
+public class CreateAccountOperator implements EndpointOperator<AccountRequest, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, AccountRequest request) {

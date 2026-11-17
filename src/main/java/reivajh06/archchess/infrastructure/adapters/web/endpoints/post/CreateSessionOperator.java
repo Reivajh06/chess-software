@@ -12,7 +12,7 @@ import reivajh06.archchess.infrastructure.adapters.web.dtos.CreateSessionRequest
 import reivajh06.archchess.infrastructure.adapters.web.dtos.CreateSessionResponse;
 import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
-public class PostCreateSession implements EndpointOperator<CreateSessionRequest, CreateSessionResponse> {
+public class CreateSessionOperator implements EndpointOperator<CreateSessionRequest, CreateSessionResponse> {
 
 	@Override
 	public CreateSessionResponse run(EndpointContext ctx, CreateSessionRequest request) {

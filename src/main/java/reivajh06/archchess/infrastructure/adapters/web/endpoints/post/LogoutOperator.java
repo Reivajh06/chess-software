@@ -5,7 +5,7 @@ import reivajh06.archchess.infrastructure.adapters.datalake.events.LogoutEvent;
 import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
-public class PostLogout implements EndpointOperator<Void, Void> {
+public class LogoutOperator implements EndpointOperator<Void, Void> {
 
 	@Override
 	public Void run(EndpointContext ctx, Void input) {

@@ -370,7 +370,7 @@ flowchart TB
 
 - **Domain in the centre, framework outside.** `architecture/` has no import of Javalin, Gson or JDBC. The HTTP framework only appears in `infrastructure.adapters.web`; the endpoints are written against an `EndpointContext` interface (implemented by `JavalinEndpointContext`), so the use-case code does not see Javalin types.
 - **Output port with a swappable adapter.** Persistence of accounts is hidden behind `UserDatabaseClient`; `SqliteDatabaseClient` is just one implementation. `Archchess` is the only place that decides which one is used.
-- **Use cases.** The use-case logic is the `GameDirector` family in `domain/logic`. Each endpoint class (`PostMovePiece`, `PostLegalMoves`...) is a thin use-case entry that parses the request, calls the domain and publishes an event. There are deliberately **no per-use-case input interfaces**: for a project of this size they would only add classes.
+- **Use cases.** The use-case logic is the `GameDirector` family in `domain/logic`. Each endpoint class (`MovePieceOperator`, `LegalMovesOperator`...) is a thin use-case entry that parses the request, calls the domain and publishes an event. There are deliberately **no per-use-case input interfaces**: for a project of this size they would only add classes.
 - **Not fully by the book.** The datalake and the plugin loader are adapters, but they do not yet have an interface in `architecture/ports`; the endpoints reach them through the `Archchess` composition root. Introducing `EventStorePort` and `EnginePort` there is the next step if the project grows, and would not change the domain.
 
 ### Demonstrating an adapter swap without touching the use case
@@ -499,7 +499,7 @@ Where FEN is used:
 
 | Use | Where |
 | --- | --- |
-| Ask an engine for a move | `GetRequestMove` sends `session.toFEN()` to the plugin |
+| Ask an engine for a move | `RequestMoveOperator` sends `session.toFEN()` to the plugin |
 | Record every move | `MovePieceEvent.stateFen` in the datalake, and every `MoveEvent` in the in-memory history |
 | Detect repetition | `PositionsEvaluator` counts `Position(fen)` occurrences |
 | Return the state to the client | `GET /api/sessions/{id}` → `fen` |
@@ -581,7 +581,7 @@ Every event carries `id`, `timestamp` and `username`; each type adds its own fie
 
 ### How the history is rebuilt
 
-`GetSessionsHistory` is a read model over the events:
+`SessionsHistoryOperator` is a read model over the events:
 
 1. Take the `JoinSessionEvent`s of the player to know which rooms they joined.
 2. Take the `CreateSessionEvent`s created by them or joined by them.
@@ -885,7 +885,7 @@ chess-software/
 └── README.md
 ```
 
-Main classes to read first: `GameDirector` (orchestration), `GameController` and `MovesValidator` (move filtering), `GameConditions` (check/mate/draw), `FenParser`, `PostMovePiece` (a complete use case), `Archchess` (composition root) and `PluginsManager`.
+Main classes to read first: `GameDirector` (orchestration), `GameController` and `MovesValidator` (move filtering), `GameConditions` (check/mate/draw), `FenParser`, `MovePieceOperator` (a complete use case), `Archchess` (composition root) and `PluginsManager`.
 
 ---
 

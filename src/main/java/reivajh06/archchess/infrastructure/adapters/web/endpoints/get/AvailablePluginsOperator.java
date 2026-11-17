@@ -5,7 +5,7 @@ import reivajh06.archchess.infrastructure.adapters.web.EndpointContext;
 import reivajh06.archchess.infrastructure.adapters.web.dtos.AvailablePlugins;
 import reivajh06.archchess.infrastructure.adapters.web.endpoints.EndpointOperator;
 
-public class GetAvailablePlugins implements EndpointOperator<Void, AvailablePlugins> {
+public class AvailablePluginsOperator implements EndpointOperator<Void, AvailablePlugins> {
 
     @Override
     public AvailablePlugins run(EndpointContext ctx, Void input) {
