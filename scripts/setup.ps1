@@ -79,9 +79,9 @@ function Get-StockfishEngine($repoDir) {
 }
 
 # --- Prerequisites ------------------------------------------------------------------------------------------------
-# Finds a JDK 25 (JAVA_HOME first, then the usual install folders) and puts it first in PATH for this process only,
+# Finds a JDK 21 (JAVA_HOME first, then the usual install folders) and puts it first in PATH for this process only,
 # so an older default JDK does not matter and nothing global is changed.
-function Use-Jdk25 {
+function Use-Jdk21 {
     $candidates = @()
     if ($env:JAVA_HOME) { $candidates += $env:JAVA_HOME }
     $roots = @(
@@ -93,33 +93,33 @@ function Use-Jdk25 {
     foreach ($root in $roots) {
         if (Test-Path $root) {
             $candidates += Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
-                Where-Object { $_.Name -match '(^|[^0-9])25([^0-9]|$)' } | ForEach-Object { $_.FullName }
+                Where-Object { $_.Name -match '(^|[^0-9])21([^0-9]|$)' } | ForEach-Object { $_.FullName }
         }
     }
     foreach ($dir in $candidates) {
         $java = Join-Path $dir 'bin\java.exe'
         if (-not (Test-Path $java)) { continue }
         $out = cmd /c "`"$java`" -version 2>&1" | Select-Object -First 1
-        if ($out -match '"25') {
+        if ($out -match '"21') {
             $env:JAVA_HOME = $dir
             $env:Path = "$dir\bin;$env:Path"
-            Write-Host "Using JDK 25 at $dir"
+            Write-Host "Using JDK 21 at $dir"
             return
         }
     }
-    throw "No JDK 25 found. Install one (or set JAVA_HOME to it) and retry."
+    throw "No JDK 21 found. Install one (or set JAVA_HOME to it) and retry."
 }
 
 Step 'Checking prerequisites'
 Require git  'Install Git.'
 Require mvn  'Install Maven 3.9+.'
-Use-Jdk25
+Use-Jdk21
 
 $mvnJava = (cmd /c "mvn -v 2>&1" | Select-String "Java version" | Select-Object -First 1).ToString()
-if ($mvnJava -notmatch 'Java version: 25') {
-    throw "Maven is not running on JDK 25 ($mvnJava). Check that JAVA_HOME points to a JDK 25."
+if ($mvnJava -notmatch 'Java version: 21') {
+    throw "Maven is not running on JDK 21 ($mvnJava). Check that JAVA_HOME points to a JDK 21."
 }
-Write-Host "Java and Maven are on JDK 25."
+Write-Host "Java and Maven are on JDK 21."
 
 # --- 1. Plugins library -------------------------------------------------------------------------------------------
 Step 'Installing archchess-plugins library'

@@ -52,7 +52,7 @@ What it does:
 ## 2. Quick start
 
 ```bash
-# 0. `java -version` and `mvn -v` must both report JDK 25 (set JAVA_HOME if your default is older).
+# 0. `java -version` and `mvn -v` must both report JDK 21 (set JAVA_HOME if your default is older).
 # 1. Install the plugins library once (section 3), then build and write the classpath:
 mvn -q -DskipTests package dependency:build-classpath -Dmdep.outputFile=target/classpath.txt
 # 2. Run the backend; it also serves the frontend:
@@ -61,9 +61,9 @@ java -cp "target/classes;$(cat target/classpath.txt)" reivajh06.archchess.Launch
 # 3. Open http://localhost:5000
 ```
 
-Maven runs on the JDK it finds, so with an older default JDK the build fails with a compile error about release/source 25. Check `mvn -v` shows `Java version: 25`.
+Maven runs on the JDK it finds, so with an older default JDK the build fails with a compile error about release/source 21. Check `mvn -v` shows `Java version: 21`.
 
-**Windows shortcut:** `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1` clones and installs the plugins library (next to this project) and puts `stockfish.jar` in `temp/plugins`, so you can skip the manual library install. The scripts find a JDK 25 by themselves (JAVA_HOME or the usual install folders) and use it for that run only, so an older default JDK does not matter there. `scripts\docker-setup.ps1` does the same and also builds and starts the Docker container.
+**Windows shortcut:** `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1` clones and installs the plugins library (next to this project) and puts `stockfish.jar` in `temp/plugins`, so you can skip the manual library install. The scripts find a JDK 21 by themselves (JAVA_HOME or the usual install folders) and use it for that run only, so an older default JDK does not matter there. `scripts\docker-setup.ps1` does the same and also builds and starts the Docker container.
 
 Or with Docker, see [section 5](#5-docker).
 
@@ -73,7 +73,7 @@ Or with Docker, see [section 5](#5-docker).
 
 | Requirement | Version | Notes |
 | --- | --- | --- |
-| JDK | **25** | `maven.compiler.source/target = 25`. The entry point uses Java 25's `static void main`. |
+| JDK | **21** | `maven.compiler.source/target = 21`. |
 | Maven | 3.9+ | Any recent Maven works. |
 | Node.js | 20+ | Optional: only for the frontend tests (`node --test`). |
 | Docker | 24+ | Optional: only for the container. |
@@ -277,7 +277,7 @@ flowchart LR
         UI --> UC --> API
     end
 
-    subgraph Backend["Backend — Java 25 + Javalin (port 5000)"]
+    subgraph Backend["Backend — Java 21 + Javalin (port 5000)"]
         HTTP["HTTP adapter<br/>endpoints + DTOs"]
         CORE["Domain<br/>rules, GameDirector, FEN"]
         PORTS(("ports"))
@@ -297,7 +297,7 @@ flowchart LR
 | Piece | Technology | Responsibility |
 | --- | --- | --- |
 | Frontend | Vanilla JS modules, HTML, CSS (served by the backend) | Drawing the board, collecting the user's intent, showing the state the backend returns. **It does not decide whether a move is legal.** |
-| Backend | Java 25, Javalin | Rooms, rules, turn order, game state, history, plugin calls. **Single source of truth** for the game. |
+| Backend | Java 21, Javalin | Rooms, rules, turn order, game state, history, plugin calls. **Single source of truth** for the game. |
 | SQLite | `temp/archchess.db` | Accounts (username + SHA-256 password hash). |
 | Datalake | JSONL files in `temp/datalake/` | Append-only record of everything that happens (sessions, moves, promotions...). |
 | Plugins | `.jar` via `ServiceLoader` | Chess engines that answer "what move would you play for this FEN?". |

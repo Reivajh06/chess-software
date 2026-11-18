@@ -18,7 +18,7 @@ public abstract class JavalinQuery<R> implements Query<R> {
 	}
 
 	public JavalinQuery(String sql) {
-		this(sql, _ -> null);
+		this(sql, r -> null);
 	}
 
 	@Override

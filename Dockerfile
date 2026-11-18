@@ -2,7 +2,7 @@
 # Build the Java artifacts first (see README, "Docker"):
 #   mvn -DskipTests package dependency:copy-dependencies -DincludeScope=runtime
 
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:21-jre
 
 # Set to true to install a Linux Stockfish for the (optional) stockfish.jar plugin.
 ARG INSTALL_STOCKFISH=false

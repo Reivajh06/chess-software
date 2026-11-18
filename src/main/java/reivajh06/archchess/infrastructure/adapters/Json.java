@@ -11,16 +11,16 @@ public class Json {
 	private static final Gson GSON_PRETTY = new GsonBuilder()
 			.setPrettyPrinting()
 			.serializeNulls()
-			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, _, _) -> new Tile(json.getAsString()))
-			.registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (ts, _, _) -> new JsonPrimitive(ts.toString()))
-			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, _, _) -> new JsonPrimitive(tile.name().toLowerCase()))
+			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, t, j) -> new Tile(json.getAsString()))
+			.registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (ts, t, j) -> new JsonPrimitive(ts.toString()))
+			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, t, j) -> new JsonPrimitive(tile.name().toLowerCase()))
 			.create();
 
 	private static final Gson GSON = new GsonBuilder()
 			.serializeNulls()
-			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, _, _) -> new Tile(json.getAsString()))
-			.registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (ts, _, _) -> new JsonPrimitive(ts.toString()))
-			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, _, _) -> new JsonPrimitive(tile.name().toLowerCase()))
+			.registerTypeAdapter(Tile.class, (JsonDeserializer<Tile>) (json, t, j) -> new Tile(json.getAsString()))
+			.registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (ts, t, j) -> new JsonPrimitive(ts.toString()))
+			.registerTypeAdapter(Tile.class, (JsonSerializer<Tile>) (tile, t, j) -> new JsonPrimitive(tile.name().toLowerCase()))
 			.create();
 
 	public static <T> T fromJson(String json, Type type) {
